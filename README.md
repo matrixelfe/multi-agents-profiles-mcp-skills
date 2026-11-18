@@ -31,14 +31,14 @@ Cuando instalas decenas de servidores MCP (C++, DirectX/PIX, RenderDoc, GameDev,
 
 ### Windows (PowerShell 5.1+)
 ```powershell
-git clone https://github.com/esanchezpa/multi-agents-profiles-mcp-skills.git
+git clone https://github.com/matrixelfe/multi-agents-profiles-mcp-skills.git
 cd multi-agents-profiles-mcp-skills
 .\install.ps1
 ```
 
 ### Linux / macOS / WSL2
 ```bash
-git clone https://github.com/esanchezpa/multi-agents-profiles-mcp-skills.git
+git clone https://github.com/matrixelfe/multi-agents-profiles-mcp-skills.git
 cd multi-agents-profiles-mcp-skills
 chmod +x install.sh && ./install.sh
 ```
