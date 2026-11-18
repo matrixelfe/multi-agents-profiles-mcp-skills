@@ -1,0 +1,9 @@
+name: gamedev
+description: Games, DirectX/RenderDoc, and performance profiling
+mcp_servers:
+  - cpp
+  - pix-mcp
+  - dcc-mcp-renderdoc
+  - etw-trace-analyzer
+  - game-player
+skills: []

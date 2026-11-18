@@ -1,0 +1,4 @@
+name: experimental
+description: Isolated experimental tools (never auto-enabled)
+mcp_servers: []
+skills: []

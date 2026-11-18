@@ -1,0 +1,22 @@
+family: antigravity
+surfaces:
+  antigravity:app:
+    scope: user
+    config_root: "~/.gemini/antigravity"
+    supports_local_stdio_mcp: true
+    supports_skills: true
+    mode: observe_only
+  antigravity:ide:
+    scope: repo
+    config_files:
+      - ".agents/mcp_config.json"
+      - ".agents/rules/"
+      - ".agents/skills/"
+    supports_local_stdio_mcp: true
+    supports_skills: true
+    mode: managed
+  antigravity:cli:
+    scope: user
+    supports_local_stdio_mcp: true
+    supports_skills: true
+    mode: observe_only

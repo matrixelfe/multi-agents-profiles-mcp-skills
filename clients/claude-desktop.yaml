@@ -1,0 +1,25 @@
+family: claude
+surfaces:
+  claude:chat:
+    scope: account
+    supports_local_stdio_mcp: false
+    supports_skills: false
+    mode: observe_only
+  claude:cowork:
+    scope: desktop
+    supports_local_stdio_mcp: true
+    supports_skills: false
+    mode: observe_only
+  claude:code-local:
+    scope: repo
+    config_files:
+      - ".claude/settings.json"
+      - ".mcp.json"
+    supports_local_stdio_mcp: true
+    supports_skills: true
+    mode: managed
+  claude:code-cloud:
+    scope: cloud
+    supports_local_stdio_mcp: false
+    supports_skills: false
+    mode: unsupported

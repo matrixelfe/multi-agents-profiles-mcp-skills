@@ -1,0 +1,38 @@
+# Example Canonical Tooling Registry (Copy to registry.yaml and customize paths; never commit secrets)
+version: 1
+servers:
+  chrome-devtools:
+    transport: stdio
+    executable: "npx"
+    args: ["-y", "chrome-devtools-mcp@1.10.1", "--no-usage-statistics"]
+    profiles: [web]
+    default_enabled: false
+    supported_clients: [codex, claude, antigravity]
+  scrapling:
+    transport: stdio
+    executable: "scrapling-mcp"
+    args: []
+    profiles: [research, web]
+    default_enabled: false
+    supported_clients: [opencode, codex, claude, antigravity]
+  github:
+    transport: stdio
+    executable: "github-mcp-server"
+    args: ["stdio"]
+    profiles: [research]
+    default_enabled: false
+    supported_clients: [opencode, claude, antigravity]
+  cpp:
+    transport: stdio
+    executable: "mcp-cpp-server"
+    args: []
+    profiles: [windows-native, gamedev]
+    default_enabled: false
+    supported_clients: [opencode, claude, antigravity]
+  mobile-mcp:
+    transport: stdio
+    executable: "npx"
+    args: ["-y", "@mobilenext/mobile-mcp@1.0.5"]
+    profiles: [android]
+    default_enabled: false
+    supported_clients: [codex, claude, antigravity]

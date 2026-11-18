@@ -1,0 +1,6 @@
+name: android
+description: Android, Flutter, and mobile devices
+mcp_servers:
+  - mobile-mcp
+  - rea
+skills: []

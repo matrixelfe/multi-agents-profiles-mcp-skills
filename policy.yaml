@@ -1,0 +1,22 @@
+version: 1
+security:
+  redact_keys:
+    - token
+    - key
+    - secret
+    - password
+    - auth
+    - pat
+    - x-goog-api-key
+    - authorization
+  never_store_secrets_in_sqlite: true
+  require_approval_for:
+    - global_mcp_enable
+    - new_install
+    - permission_expansion
+sqlite:
+  journal_mode: WAL
+  busy_timeout_ms: 5000
+  foreign_keys: ON
+backups:
+  root: "%LOCALAPPDATA%/agent-tooling-backups"

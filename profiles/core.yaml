@@ -1,0 +1,4 @@
+name: core
+description: Minimal baseline profile with no specialized MCPs
+mcp_servers: []
+skills: []

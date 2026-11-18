@@ -1,0 +1,7 @@
+name: windows-native
+description: Win32, C++, Rust, and Windows performance
+mcp_servers:
+  - cpp
+  - etw-trace-analyzer
+  - computer-use
+skills: []

@@ -1,0 +1,28 @@
+# Local state & SQLite databases (never commit)
+state/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Private backups & secrets
+backups/
+*.bak
+.env
+.env.*
+*secret*
+*credenciales*
+registry.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

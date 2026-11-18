@@ -1,0 +1,9 @@
+name: web
+description: Web, frontend, full-stack, and APIs
+mcp_servers:
+  - chrome-devtools
+  - scrapling
+skills:
+  - browser-testing-with-devtools
+  - frontend-ui-engineering
+  - api-and-interface-design

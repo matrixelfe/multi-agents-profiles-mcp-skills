@@ -1,0 +1,6 @@
+name: reverse
+description: Reverse engineering and binary analysis
+mcp_servers:
+  - rea
+  - craft-anything
+skills: []

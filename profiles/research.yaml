@@ -1,0 +1,6 @@
+name: research
+description: Repository research and web scraping
+mcp_servers:
+  - github
+  - scrapling
+skills: []
