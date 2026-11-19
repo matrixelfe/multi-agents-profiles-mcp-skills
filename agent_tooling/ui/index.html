@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Agent Tooling v3 + OAC V3.4 Control Center</title>
+<style>
+  :root {
+    --bg: #0b0f17;
+    --panel: #131a26;
+    --panel-2: #192232;
+    --border: #263248;
+    --text: #e6edf7;
+    --muted: #8ea0bc;
+    --accent: #38bdf8;
+    --accent-2: #818cf8;
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.45;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; background: var(--panel); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 20;
+  }
+  header h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .badge.ok { color: #86efac; border-color: #166534; background: #052e16; }
+  .badge.warn { color: #fde68a; border-color: #854d0e; background: #422006; }
+  .badge.danger { color: #fca5a5; border-color: #991b1b; background: #450a0a; }
+  .badge.info { color: #7dd3fc; border-color: #075985; background: #082f49; }
+
+  nav {
+    display: flex; gap: 8px; padding: 12px 24px; background: var(--panel); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  nav button {
+    background: transparent; color: var(--muted); border: 1px solid transparent;
+    padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;
+  }
+  nav button.active { background: var(--panel-2); color: var(--accent); border-color: var(--border); }
+  nav button:hover { color: var(--text); }
+
+  main { max-width: 1440px; margin: 0 auto; padding: 20px 24px 60px; }
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px;
+  }
+  .card h2, .card h3 { margin: 0 0 10px; font-size: 15px; color: var(--text); }
+  .kpi { font-size: 26px; font-weight: 700; color: var(--accent); margin: 4px 0; }
+  .muted { color: var(--muted); font-size: 12px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr:hover td { background: rgba(56, 189, 248, 0.04); }
+
+  select, input[type="text"], textarea {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100%;
+  }
+  button.btn {
+    background: var(--accent); color: #04131c; border: none; border-radius: 6px;
+    padding: 7px 12px; font-weight: 700; font-size: 12px; cursor: pointer;
+  }
+  button.btn:hover { filter: brightness(1.1); }
+  button.btn-sec {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px; font-weight: 600; font-size: 12px; cursor: pointer;
+  }
+
+  .pill-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pill {
+    font-size: 11px; padding: 2px 7px; border-radius: 6px;
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    font-family: ui-monospace, Consolas, monospace;
+  }
+  .pill.deny { border-color: #7f1d1d; color: #fca5a5; }
+  .pill.allow { border-color: #14532d; color: #86efac; }
+  .pill.chain { border-color: #1e3a5f; color: #93c5fd; }
+
+  #toast {
+    position: fixed; bottom: 20px; right: 20px; background: var(--panel-2);
+    border: 1px solid var(--accent); color: var(--text); padding: 12px 16px;
+    border-radius: 8px; font-size: 13px; display: none; z-index: 100; max-width: 420px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .row-inline { display: flex; gap: 8px; align-items: center; }
+  .mcp-toggle {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;
+    border-radius: 6px; border: 1px solid var(--border); background: var(--bg);
+    font-size: 12px; cursor: pointer; user-select: none;
+  }
+  .mcp-toggle.on { border-color: #166534; background: #052e16; color: #86efac; }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Agent Tooling v3 <span class="badge info">OAC V3.4 + ECC</span></h1>
+  <div class="row-inline">
+    <span id="spendGuardBadge" class="badge ok">PAYG: ...</span>
+    <span id="sqliteBadge" class="badge">SQLite: ...</span>
+    <button class="btn-sec" onclick="loadSnapshot()">↻ Recargar</button>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showTab('agents', this)">1. Agentes, Modelos y Reintentos (OAC)</button>
+  <button onclick="showTab('relations', this)">2. Relaciones: Perfiles ↔ MCPs ↔ Plugins ↔ Skills</button>
+  <button onclick="showTab('ecc', this)">3. Simulador ECC (Recomendación Contextual)</button>
+  <button onclick="showTab('health', this)">4. Salud SQLite, Superficies y Rollbacks</button>
+</nav>
+
+<main>
+  <!-- TAB 1: AGENTS, MODELS, RETRIES & OAC BEHAVIOR -->
+  <section id="tab-agents" class="tab active">
+    <div class="grid grid-4" style="margin-bottom: 16px;">
+      <div class="card">
+        <div class="muted">Agentes Detectados</div>
+        <div class="kpi" id="kpiAgents">-</div>
+        <div class="muted" id="kpiAgentsSub">OAC + Code Mode</div>
+      </div>
+      <div class="card">
+        <div class="muted">Routing OAC</div>
+        <div class="kpi" id="kpiRoutingVer">-</div>
+        <div class="muted" id="kpiLine2">Line 2 Fallback</div>
+      </div>
+      <div class="card">
+        <div class="muted">Spend Guard (PAYG)</div>
+        <div class="kpi" id="kpiSpendGuard" style="color: var(--ok);">-</div>
+        <div class="muted">Protegido (Solo lectura)</div>
+      </div>
+      <div class="card">
+        <div class="muted">Quota Cooldowns Activos</div>
+        <div class="kpi" id="kpiCooldowns">-</div>
+        <div class="muted" id="kpiTracked">Modelos monitoreados</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <h3>⚙️ Comportamiento de Reintentos y Fallback (oac-routing.yaml)</h3>
+      <div class="grid grid-2" style="align-items: end;">
+        <div>
+          <label class="muted">Cadena Go-Free permitida (separada por comas, Iceman bloqueado por política)</label>
+          <input type="text" id="inputGoFree" placeholder="longcat-2.5-free, crouton-alpha-free, beam-free" />
+        </div>
+        <div class="row-inline" style="justify-content: space-between;">
+          <label class="row-inline" style="cursor:pointer;">
+            <input type="checkbox" id="chkLine2" />
+            <span>Habilitar Line 2 Fallback (OpenAI OAuth)</span>
+          </label>
+          <button class="btn" onclick="saveRetryBehavior()">Guardar Reintentos (con Backup)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🤖 Configuración de Agentes, Modelos Asignados, Cadenas y Permisos</h3>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Agente</th>
+              <th>Grupo / Rol</th>
+              <th>Modelo Asignado (Edición Rápida)</th>
+              <th>Cadena Preferred → Fallback</th>
+              <th>Delegación / Restricciones</th>
+            </tr>
+          </thead>
+          <tbody id="agentsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 2: RELATIONSHIPS -->
+  <section id="tab-relations" class="tab">
+    <div class="grid grid-2" style="margin-bottom: 16px;">
+      <div class="card">
+        <h3>🔌 Estado Global de MCPs (OpenCode V2 vs Codex)</h3>
+        <table>
+          <thead><tr><th>Servidor MCP</th><th>OpenCode Global</th><th>Codex Global</th></tr></thead>
+          <tbody id="mcpMatrixBody"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>🧩 Plugins Activos y Skills Globales</h3>
+        <div style="margin-bottom: 12px;">
+          <div class="muted" style="margin-bottom:4px;">OpenCode Plugins Declarados</div>
+          <div class="pill-list" id="ocPluginsDeclared"></div>
+        </div>
+        <div style="margin-bottom: 12px;">
+          <div class="muted" style="margin-bottom:4px;">OpenCode Plugins Locales (~/.config/opencode/plugins)</div>
+          <div class="pill-list" id="ocPluginsLocal"></div>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:4px;">Skills Globales OpenCode (<span id="ocSkillsCount">0</span>) · Compartidas (<span id="sharedSkillsCount">0</span>)</div>
+          <div class="pill-list" id="ocGlobalSkills"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🗂️ Perfiles Especializados (Click en un MCP para activar/desactivar en ese perfil con Backup SHA-256)</h3>
+      <div class="grid grid-3" id="profilesGrid"></div>
+    </div>
+  </section>
+
+  <!-- TAB 3: ECC RECOMMENDER -->
+  <section id="tab-ecc" class="tab">
+    <div class="card" style="margin-bottom: 16px;">
+      <h3>🧠 Simulador Determinista de Recomendación ECC (0 llamadas LLM)</h3>
+      <div class="grid grid-3" style="margin-bottom: 12px;">
+        <div>
+          <label class="muted">Agente Activo</label>
+          <select id="recAgent"></select>
+        </div>
+        <div>
+          <label class="muted">Cliente / Superficie</label>
+          <select id="recClient">
+            <option value="openchamber:opencode-runtime">openchamber:opencode-runtime</option>
+            <option value="opencode:local">opencode:local</option>
+            <option value="codex:local">codex:local</option>
+            <option value="claude:code-local">claude:code-local</option>
+            <option value="claude:chat">claude:chat (MANUAL_ONLY)</option>
+            <option value="claude:code-cloud">claude:code-cloud (UNSUPPORTED)</option>
+            <option value="antigravity:ide">antigravity:ide</option>
+          </select>
+        </div>
+        <div>
+          <label class="muted">Perfil del Proyecto</label>
+          <select id="recProfile"></select>
+        </div>
+      </div>
+      <div style="margin-bottom: 12px;">
+        <label class="muted">Descripción de la tarea (señales detectadas localmente)</label>
+        <input type="text" id="recTask" value="Explore the codebase, debug repeated failing tests and review security before implementing" />
+      </div>
+      <button class="btn" onclick="runRecommend()">Evaluar Recomendaciones</button>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>📚 Skills Recomendadas (Máx 3, carga bajo demanda)</h3>
+        <div id="recSkillsOut" class="muted">Ejecuta una evaluación para ver resultados.</div>
+      </div>
+      <div class="card">
+        <h3>🤝 Subagentes Sugeridos (Filtrados por Allowlist Real)</h3>
+        <div id="recSubagentsOut" class="muted">Ejecuta una evaluación para ver resultados.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: SQLITE & ROLLBACKS -->
+  <section id="tab-health" class="tab">
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>🗄️ Superficies Multicliente (SQLite `client_targets`)</h3>
+        <table>
+          <thead><tr><th>Target ID</th><th>Familia</th><th>Alcance</th><th>Estado</th></tr></thead>
+          <tbody id="targetsTableBody"></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h3>⏪ Historial de Backups / Rollbacks Privados</h3>
+        <p class="muted">Para restaurar cualquier cambio: <code>rollback.ps1 -ChangeId &lt;id&gt; -Apply</code></p>
+        <div id="backupsList" class="pill-list" style="flex-direction: column;"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script>
+let SNAPSHOT = null;
+
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = isErr ? 'var(--danger)' : 'var(--accent)';
+  el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 4500);
+}
+
+function showTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+async function loadSnapshot() {
+  try {
+    const res = await fetch('/api/snapshot');
+    SNAPSHOT = await res.json();
+    renderAll();
+  } catch (e) {
+    toast('Error cargando snapshot: ' + e, true);
+  }
+}
+
+function getAllSafeModels() {
+  const set = new Set();
+  const priv = SNAPSHOT?.oac?.privacy || {};
+  (priv.zero_retention || []).forEach(m => { if (!m.includes('*')) set.add(m); });
+  (priv.retention_30d || []).forEach(m => set.add(m));
+  Object.values(SNAPSHOT?.oac?.roles || {}).forEach(r => {
+    (r.preferred || []).forEach(m => set.add(m));
+    (r.fallback || []).forEach(m => set.add(m));
+  });
+  Object.values(SNAPSHOT?.oac?.assignments || {}).forEach(m => set.add(m));
+  return Array.from(set).sort();
+}
+
+function renderAll() {
+  const oac = SNAPSHOT.oac || {};
+  const sq = SNAPSHOT.sqlite || {};
+
+  // Header badges
+  const sgState = oac.spend_guard?.state || 'UNKNOWN';
+  const sgEl = document.getElementById('spendGuardBadge');
+  sgEl.textContent = 'PAYG: ' + sgState;
+  sgEl.className = 'badge ' + (sgState === 'DENY' ? 'ok' : 'danger');
+
+  const sqEl = document.getElementById('sqliteBadge');
+  sqEl.textContent = sq.exists ? `SQLite: ${sq.integrity_check} (${sq.resources} res)` : 'SQLite: no DB';
+  sqEl.className = 'badge ' + (sq.integrity_check === 'ok' ? 'ok' : 'warn');
+
+  // KPIs
+  document.getElementById('kpiAgents').textContent = (SNAPSHOT.agents || []).length;
+  document.getElementById('kpiRoutingVer').textContent = 'v' + (oac.routing_version ?? '?');
+  document.getElementById('kpiLine2').textContent = 'Line 2 Fallback: ' + (oac.routing?.line2_fallback_enabled ? 'ON' : 'OFF');
+  document.getElementById('kpiSpendGuard').textContent = sgState;
+  document.getElementById('kpiCooldowns').textContent = (oac.quota_summary?.cooldowns || []).length;
+  document.getElementById('kpiTracked').textContent = `${oac.quota_summary?.models_tracked || 0} modelos en quota-state.json`;
+
+  // Retry inputs
+  document.getElementById('inputGoFree').value = (oac.routing?.go_free_allowed || []).join(', ');
+  document.getElementById('chkLine2').checked = !!oac.routing?.line2_fallback_enabled;
+
+  // Agents table
+  const models = getAllSafeModels();
+  const tbody = document.getElementById('agentsTableBody');
+  tbody.innerHTML = '';
+  const recAgentSel = document.getElementById('recAgent');
+  recAgentSel.innerHTML = '';
+
+  (SNAPSHOT.agents || []).forEach(ag => {
+    const opt = document.createElement('option');
+    opt.value = ag.id;
+    opt.textContent = `${ag.id} (${ag.group})`;
+    recAgentSel.appendChild(opt);
+
+    const isOacAssigned = !!(oac.assignments && oac.assignments[ag.rel_path]);
+    const tr = document.createElement('tr');
+
+    let modelCell = `<span class="pill">${ag.oac_assigned_model || ag.model || 'heredado'}</span>`;
+    if (isOacAssigned) {
+      const selId = 'sel_' + ag.rel_path.replace(/[^a-z0-9]/gi, '_');
+      const optionsHtml = models.map(m => `<option value="${m}" ${m === ag.oac_assigned_model ? 'selected' : ''}>${m}</option>`).join('');
+      modelCell = `
+        <div class="row-inline">
+          <select id="${selId}" style="min-width:210px;">${optionsHtml}</select>
+          <button class="btn-sec" onclick="saveAgentModel('${ag.rel_path}', '${selId}')">Guardar</button>
+        </div>`;
+    }
+
+    const chains = [
+      ...(ag.preferred_chain || []).map(m => `<span class="pill chain">${m}</span>`),
+      ...(ag.fallback_chain || []).map(m => `<span class="pill">↳ ${m}</span>`)
+    ].join('');
+
+    const permsHtml = [
+      ...(ag.allowed_subagents || []).map(s => `<span class="pill allow">allow:${s}</span>`),
+      ...(ag.denied_tools || []).map(d => `<span class="pill deny">deny:${d}</span>`)
+    ].join('') || '<span class="muted">Por defecto</span>';
+
+    tr.innerHTML = `
+      <td><strong>${ag.id}</strong><div class="muted">${ag.rel_path}</div></td>
+      <td><span class="badge ${ag.group === 'oac' ? 'info' : 'warn'}">${ag.group}</span> <span class="badge">${ag.oac_role || ag.mode}</span></td>
+      <td>${modelCell}</td>
+      <td><div class="pill-list">${chains || '<span class="muted">Sin cadena OAC</span>'}</div></td>
+      <td><div class="pill-list">${permsHtml}</div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // MCP Matrix
+  const ocMcps = SNAPSHOT.mcps?.opencode || {};
+  const cxMcps = SNAPSHOT.mcps?.codex || {};
+  const allMcpNames = Array.from(new Set([...Object.keys(ocMcps), ...Object.keys(cxMcps)])).sort();
+  const mcpBody = document.getElementById('mcpMatrixBody');
+  mcpBody.innerHTML = allMcpNames.map(name => {
+    const oc = ocMcps[name];
+    const cx = cxMcps[name];
+    const ocBadge = !oc ? '<span class="muted">—</span>' : (oc.enabled ? '<span class="badge ok">ENABLED</span>' : '<span class="badge">disabled</span>');
+    const cxBadge = !cx ? '<span class="muted">—</span>' : (cx.bundled ? '<span class="badge info">BUNDLED</span>' : (cx.enabled ? '<span class="badge ok">ENABLED</span>' : '<span class="badge">disabled</span>'));
+    return `<tr><td><code>${name}</code></td><td>${ocBadge}</td><td>${cxBadge}</td></tr>`;
+  }).join('');
+
+  // Plugins & Skills
+  document.getElementById('ocPluginsDeclared').innerHTML = (SNAPSHOT.plugins?.opencode_declared || []).map(p => `<span class="pill">${p}</span>`).join('');
+  document.getElementById('ocPluginsLocal').innerHTML = (SNAPSHOT.plugins?.opencode_local || []).map(p => `<span class="pill allow">${p}</span>`).join('');
+  document.getElementById('ocSkillsCount').textContent = SNAPSHOT.skills?.opencode_global_count || 0;
+  document.getElementById('sharedSkillsCount').textContent = SNAPSHOT.skills?.shared_count || 0;
+  document.getElementById('ocGlobalSkills').innerHTML = (SNAPSHOT.skills?.opencode_global || []).map(s => `<span class="pill">${s}</span>`).join('');
+
+  // Profiles Grid + Rec Profile Select
+  const pGrid = document.getElementById('profilesGrid');
+  const recProfSel = document.getElementById('recProfile');
+  pGrid.innerHTML = '';
+  recProfSel.innerHTML = '';
+  const allToggleableMcps = allMcpNames.filter(m => m !== 'node_repl');
+
+  Object.entries(SNAPSHOT.profiles || {}).forEach(([pname, pdata]) => {
+    const opt = document.createElement('option');
+    opt.value = pname;
+    opt.textContent = pname;
+    recProfSel.appendChild(opt);
+
+    const activeMcps = new Set(pdata.mcp_servers || []);
+    const skills = pdata.skills || [];
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.background = 'var(--panel-2)';
+    const togglesHtml = allToggleableMcps.map(m => {
+      const isOn = activeMcps.has(m);
+      return `<span class="mcp-toggle ${isOn ? 'on' : ''}" onclick="toggleMcp('${pname}','${m}',${!isOn})">${isOn ? '✓' : '+'} ${m}</span>`;
+    }).join('');
+    card.innerHTML = `
+      <h3>${pname} <span class="badge">${activeMcps.size} MCPs · ${skills.length} skills</span></h3>
+      <div class="muted" style="margin-bottom:8px;">${pdata.description || ''}</div>
+      <div class="pill-list">${togglesHtml}</div>
+    `;
+    pGrid.appendChild(card);
+  });
+
+  // Client Targets
+  document.getElementById('targetsTableBody').innerHTML = (sq.client_targets || []).map(t => {
+    const cls = t.availability === 'available' ? 'ok' : (t.availability === 'observe_only' ? 'warn' : '');
+    return `<tr><td><code>${t.target_id}</code></td><td>${t.family}</td><td>${t.scope}</td><td><span class="badge ${cls}">${t.availability}</span></td></tr>`;
+  }).join('');
+
+  // Backups
+  document.getElementById('backupsList').innerHTML = (SNAPSHOT.backups || []).map(b =>
+    `<div class="pill" style="display:flex;justify-content:space-between;"><span>${b.change_id}</span><span class="muted">${b.has_manifest ? 'manifest.json ✓' : 'baseline'}</span></div>`
+  ).join('');
+}
+
+async function saveAgentModel(agentRelPath, selectId) {
+  const model = document.getElementById(selectId).value;
+  const res = await fetch('/api/oac/assignment', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ agent: agentRelPath, model })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`Guardado ${agentRelPath} → ${model} (Backup: ${data.result.change_id}, Sync JSONC: ${data.result.synced_jsonc})`);
+    loadSnapshot();
+  } else {
+    toast('Error: ' + data.error, true);
+  }
+}
+
+async function saveRetryBehavior() {
+  const goFree = document.getElementById('inputGoFree').value.split(',').map(s => s.trim()).filter(Boolean);
+  const line2 = document.getElementById('chkLine2').checked;
+  const res = await fetch('/api/oac/retry', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ line2_fallback_enabled: line2, go_free_allowed: goFree })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`Comportamiento de reintentos actualizado (Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else {
+    toast('Error: ' + data.error, true);
+  }
+}
+
+async function toggleMcp(profile, mcp, enabled) {
+  const res = await fetch('/api/profile/mcp', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ profile, mcp, enabled })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`Perfil ${profile}: ${mcp} ${enabled ? 'activado' : 'desactivado'} (Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else {
+    toast('Error: ' + data.error, true);
+  }
+}
+
+async function runRecommend() {
+  const payload = {
+    agent: document.getElementById('recAgent').value,
+    client_target: document.getElementById('recClient').value,
+    project_profile: document.getElementById('recProfile').value,
+    task: document.getElementById('recTask').value,
+  };
+  const res = await fetch('/api/recommend', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!data.ok) { toast('Error: ' + data.error, true); return; }
+  const r = data.result;
+
+  const skOut = document.getElementById('recSkillsOut');
+  if (!r.skills.length) {
+    skOut.innerHTML = `<p class="muted">${r.note || 'Sin skills recomendadas para esta tarea.'}</p>`;
+  } else {
+    skOut.innerHTML = r.skills.map(s => `
+      <div style="padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
+        <div class="row-inline" style="justify-content:space-between;">
+          <strong>${s.resource_id}</strong>
+          <span class="badge ${s.decision === 'RECOMMENDED' ? 'ok' : (s.decision === 'BLOCKED' ? 'danger' : 'warn')}">${s.decision}</span>
+        </div>
+        <div class="muted">Razón: <code>${s.reason_code}</code> · Instalada: <b>${s.available ? 'Sí' : 'No (pendiente)'}</b> · Permiso: <code>${s.permission}</code> · load_now: <code>${s.load_now}</code></div>
+      </div>
+    `).join('');
+  }
+
+  const saOut = document.getElementById('recSubagentsOut');
+  if (!r.subagents.length) {
+    saOut.innerHTML = '<p class="muted">Sin subagentes sugeridos.</p>';
+  } else {
+    saOut.innerHTML = r.subagents.map(s => `
+      <div style="padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
+        <div class="row-inline" style="justify-content:space-between;">
+          <strong>${s.recommended_agent}</strong>
+          <span class="badge ${s.invocation_allowed ? 'ok' : 'danger'}">${s.invocation_allowed ? 'ALLOWLIST OK' : 'BLOCKED'}</span>
+        </div>
+        <div class="muted">Razón: <code>${s.reason_code}</code> · Superficie: <code>${r.surface_status}</code></div>
+      </div>
+    `).join('');
+  }
+}
+
+loadSnapshot();
+</script>
+</body>
+</html>

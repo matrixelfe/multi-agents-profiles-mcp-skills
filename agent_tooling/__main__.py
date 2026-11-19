@@ -1,11 +1,14 @@
-"""CLI entry point for python -m agent_tooling."""
+"""CLI entry point for python -m agent_tooling / agent-tooling."""
 from __future__ import annotations
 
 import argparse
+import json
 import os
 from pathlib import Path
 
 from agent_tooling.db.schema import backup_db, connect, migrate
+from agent_tooling.oac.reader import load_oac_snapshot
+from agent_tooling.resolver.recommend import recommend
 from agent_tooling.scanner.discover import (
     import_registry_yaml,
     scan_codex,
@@ -13,6 +16,7 @@ from agent_tooling.scanner.discover import (
     scan_skills_dir,
     seed_client_targets,
 )
+from agent_tooling.ui.server import run_server
 
 TOOLING_ROOT = Path(os.environ.get("AGENT_TOOLING_ROOT", Path.home() / ".agents" / "tooling"))
 DB_PATH = TOOLING_ROOT / "state" / "registry.sqlite3"
@@ -70,14 +74,43 @@ def cmd_backup(dest: str) -> None:
     print(f"Backup created at {dest} (integrity_check={res})")
 
 
+def cmd_recommend(args: argparse.Namespace) -> None:
+    snap = load_oac_snapshot(tooling_root=TOOLING_ROOT)
+    agent_info = next(
+        (a for a in snap["agents"] if a["id"] == args.agent or a["rel_path"] == args.agent),
+        None,
+    )
+    res = recommend(
+        agent_id=args.agent,
+        task=args.task,
+        client_target=args.client,
+        project_profile=args.profile,
+        tooling_root=TOOLING_ROOT,
+        agent_permissions=agent_info,
+    )
+    print(json.dumps(res, indent=2, ensure_ascii=False))
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="agent_tooling")
+    parser = argparse.ArgumentParser(prog="agent-tooling")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("scan", help="Read-only scan of all local clients and skills into SQLite")
     sub.add_parser("status", help="Show SQLite inventory counts")
     sub.add_parser("doctor", help="Verify SQLite integrity, foreign keys, and WAL mode")
+
     bkp = sub.add_parser("backup", help="Create online SQLite backup")
     bkp.add_argument("--dest", required=True, help="Destination .sqlite3 path")
+
+    rec = sub.add_parser("recommend", help="Deterministic ECC contextual skill/subagent recommender")
+    rec.add_argument("--agent", default="auto-orchestrator", help="Target agent ID")
+    rec.add_argument("--task", required=True, help="Task description")
+    rec.add_argument("--client", default="openchamber:opencode-runtime", help="Client surface target")
+    rec.add_argument("--profile", default="core", help="Active project profile")
+
+    ui = sub.add_parser("ui", help="Launch on-demand local Web UI for OAC, Agents, Models, MCPs & ECC")
+    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--port", type=int, default=8765)
+    ui.add_argument("--no-browser", action="store_true")
 
     args = parser.parse_args()
     if args.command == "scan":
@@ -88,6 +121,10 @@ def main() -> None:
         cmd_doctor()
     elif args.command == "backup":
         cmd_backup(args.dest)
+    elif args.command == "recommend":
+        cmd_recommend(args)
+    elif args.command == "ui":
+        run_server(host=args.host, port=args.port, open_browser=not args.no_browser)
 
 
 if __name__ == "__main__":

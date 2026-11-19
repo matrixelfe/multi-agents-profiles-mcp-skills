@@ -1,0 +1,98 @@
+# Declarative ECC Contextual Skill & Subagent Recommendations (Policy Only)
+schema_version: 1
+agent_skill_recommendations:
+  defaults:
+    load_on_discovery: false
+    auto_install: false
+    unknown_compatibility: block
+    preserve_permissions: true
+
+  agents:
+    auto-orchestrator:
+      recommended:
+        - resource: ecc/agentic-engineering
+          when: complex_orchestrated_task
+          policy: RECOMMENDED
+        - resource: ecc/search-first
+          when: research_before_implementation
+          policy: RECOMMENDED
+        - resource: ecc/iterative-retrieval
+          when: missing_codebase_context
+          policy: RECOMMENDED
+        - resource: ecc/blueprint
+          when: complex_orchestrated_task
+          policy: OPTIONAL
+      allowed_subagents:
+        - code-explorer
+        - code-implementer
+        - code-specialist
+        - code-qa
+
+    openagent:
+      recommended:
+        - resource: ecc/agentic-engineering
+          when: complex_orchestrated_task
+          policy: RECOMMENDED
+        - resource: ecc/search-first
+          when: research_before_implementation
+          policy: RECOMMENDED
+        - resource: ecc/iterative-retrieval
+          when: missing_codebase_context
+          policy: RECOMMENDED
+
+    opencoder:
+      recommended:
+        - resource: ecc/search-first
+          when: research_before_implementation
+          policy: RECOMMENDED
+        - resource: ecc/agent-introspection-debugging
+          when: repeated_failure_no_progress
+          policy: RECOMMENDED
+        - resource: test-driven-development
+          when: code_review_or_qa
+          policy: RECOMMENDED
+
+    code-explorer:
+      recommended:
+        - resource: ecc/iterative-retrieval
+          when: missing_codebase_context
+          policy: RECOMMENDED
+        - resource: ecc/search-first
+          when: research_before_implementation
+          policy: RECOMMENDED
+
+    contextscout:
+      recommended:
+        - resource: ecc/iterative-retrieval
+          when: missing_codebase_context
+          policy: RECOMMENDED
+
+    code-implementer:
+      recommended:
+        - resource: ecc/search-first
+          when: research_before_implementation
+          policy: RECOMMENDED
+        - resource: ecc/agent-introspection-debugging
+          when: repeated_failure_no_progress
+          policy: RECOMMENDED
+
+    code-qa:
+      recommended:
+        - resource: code-review-and-quality
+          when: code_review_or_qa
+          policy: RECOMMENDED
+        - resource: security-review
+          when: code_review_or_qa
+          policy: RECOMMENDED
+        - resource: ecc/ai-regression-testing
+          when: code_review_or_qa
+          policy: OPTIONAL
+
+    reviewer:
+      recommended:
+        - resource: code-review-and-quality
+          when: code_review_or_qa
+          policy: RECOMMENDED
+        - resource: security-review
+          when: code_review_or_qa
+          policy: RECOMMENDED
