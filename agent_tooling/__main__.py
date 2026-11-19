@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 
+from agent_tooling.adapters.antigravity_agents import sync_antigravity_agents
 from agent_tooling.db.schema import backup_db, connect, migrate
 from agent_tooling.oac.reader import load_oac_snapshot
 from agent_tooling.resolver.recommend import recommend
@@ -112,6 +113,9 @@ def main() -> None:
     ui.add_argument("--port", type=int, default=8765)
     ui.add_argument("--no-browser", action="store_true")
 
+    sag = sub.add_parser("sync-antigravity-agents", help="Project OAC/OpenCode agents into Antigravity plugin bundle")
+    sag.add_argument("--dry-run", action="store_true", help="Preview without writing files")
+
     args = parser.parse_args()
     if args.command == "scan":
         cmd_scan()
@@ -125,6 +129,9 @@ def main() -> None:
         cmd_recommend(args)
     elif args.command == "ui":
         run_server(host=args.host, port=args.port, open_browser=not args.no_browser)
+    elif args.command == "sync-antigravity-agents":
+        res = sync_antigravity_agents(dry_run=args.dry_run)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
