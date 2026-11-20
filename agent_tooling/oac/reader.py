@@ -330,9 +330,17 @@ def load_oac_snapshot(
         1 for d in cx_skills_dir.iterdir() if d.is_dir() and (d / "SKILL.md").exists()
     ) if cx_skills_dir.exists() else 0
 
-    # 11. Antigravity & Claude inspection (read-only)
+    # 11. Antigravity, Claude & GitHub Copilot inspection
     ag_mcp_dir = home / ".gemini" / "antigravity" / "mcp"
-    ag_mcps = sorted(d.name for d in ag_mcp_dir.iterdir() if d.is_dir()) if ag_mcp_dir.exists() else []
+    ag_mcps_set = {d.name for d in ag_mcp_dir.iterdir() if d.is_dir()} if ag_mcp_dir.exists() else set()
+    ag_mcp_cfg = home / ".gemini" / "config" / "mcp_config.json"
+    if ag_mcp_cfg.exists():
+        try:
+            ag_cfg_data = json.loads(ag_mcp_cfg.read_text(encoding="utf-8-sig"))
+            ag_mcps_set.update((ag_cfg_data.get("mcpServers") or {}).keys())
+        except Exception:
+            pass
+    ag_mcps = sorted(ag_mcps_set)
     ag_plugins_dir = home / ".gemini" / "config" / "plugins"
     ag_plugins = sorted(d.name for d in ag_plugins_dir.iterdir() if d.is_dir()) if ag_plugins_dir.exists() else []
     ag_custom_agents_dir = ag_plugins_dir / "oac-custom-agents" / "agents"
@@ -340,6 +348,27 @@ def load_oac_snapshot(
 
     claude_dir = home / ".claude"
     claude_desktop_dir = Path(os.environ.get("APPDATA", home / "AppData" / "Roaming")) / "Claude"
+
+    copilot_dir = home / ".copilot"
+    copilot_mcp_cfg = copilot_dir / "mcp-config.json"
+    copilot_mcps: dict[str, Any] = {}
+    if copilot_mcp_cfg.exists():
+        try:
+            cp_data = json.loads(copilot_mcp_cfg.read_text(encoding="utf-8-sig"))
+            for mk, mv in (cp_data.get("mcpServers") or {}).items():
+                if isinstance(mv, dict):
+                    copilot_mcps[mk] = {
+                        "enabled": mv.get("enabled", True),
+                        "type": mv.get("type", "local"),
+                        "command": mv.get("command", ""),
+                        "managed_externally": True,
+                    }
+        except Exception:
+            pass
+    copilot_plugins_dir = copilot_dir / "installed-plugins"
+    copilot_plugins = sorted(d.name for d in copilot_plugins_dir.iterdir() if d.is_dir()) if copilot_plugins_dir.exists() else []
+    copilot_skills_dir = copilot_dir / "skills"
+    copilot_skills_count = len([d for d in copilot_skills_dir.iterdir() if d.is_dir()]) if copilot_skills_dir.exists() else 0
 
     ides = {
         "opencode": {
@@ -372,6 +401,16 @@ def load_oac_snapshot(
             "plugins_active": ag_plugins,
             "skills_count": len(shared_skills),
             "agents_count": ag_custom_agents_count,
+        },
+        "copilot": {
+            "title": "GitHub Copilot (CLI & VS Code)",
+            "editable": False,
+            "config_path": str(copilot_mcp_cfg),
+            "status": "available" if copilot_dir.exists() else "not_installed",
+            "mcps": copilot_mcps,
+            "plugins_active": copilot_plugins,
+            "skills_count": copilot_skills_count,
+            "agents_count": 0,
         },
         "claude": {
             "title": "Claude Desktop / Claude Code",
@@ -879,7 +918,7 @@ def build_catalog_lists(
 
     skill_sources: dict[str, dict[str, Any]] = {}
     for label, sdir, is_active, ides_where in [
-        ("shared", shared_dir, True, ["Antigravity", "OpenCode", "Codex", "Claude Code"]),
+        ("shared", shared_dir, True, ["Antigravity", "OpenCode", "Codex", "Copilot", "Claude Code"]),
         ("opencode", oc_sk_dir, True, ["OpenCode / OpenChamber"]),
         ("codex", cx_sk_dir, True, ["Codex"]),
         ("cold_catalog", cold_dir, False, ["Catálogo Frío"]),

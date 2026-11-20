@@ -906,7 +906,8 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
             <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('opencode')">OpenCode / OpenChamber</button>
             <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('codex')">Codex</button>
             <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('antigravity')">Antigravity</button>
-            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('claude_desktop')">Claude Desktop</button>
+            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('copilot')">GitHub Copilot</button>
+            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('claude')">Claude</button>
           </div>
           <span class="muted" id="ovFilterHint">Pulsa cualquier tarjeta, porción o barra para navegar al detalle</span>
         </div>
@@ -1038,6 +1039,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
                   <option value="opencode">OpenCode / OpenChamber</option>
                   <option value="codex">Codex</option>
                   <option value="antigravity">Antigravity</option>
+                  <option value="copilot">GitHub Copilot</option>
                   <option value="claude">Claude Desktop</option>
                 </select>
                 <label for="filterMcpLoad" class="field-label" style="display:none;">Carga MCP</label>
@@ -1103,6 +1105,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
                   <option value="opencode">OpenCode / OpenChamber</option>
                   <option value="codex">Codex</option>
                   <option value="antigravity">Antigravity</option>
+                  <option value="copilot">GitHub Copilot</option>
                   <option value="claude">Claude Code</option>
                 </select>
                 <label for="searchSkillCat" class="field-label" style="display:none;">Buscar skill</label>
@@ -1587,7 +1590,7 @@ function renderAll() {
 
 function setOverviewIdeFilter(ideKey) {
   OV_IDE_FILTER = ideKey;
-  const keys = ['all', 'opencode', 'codex', 'antigravity', 'claude_desktop'];
+  const keys = ['all', 'opencode', 'codex', 'antigravity', 'copilot', 'claude'];
   document.querySelectorAll('#ovIdeFilterPills .ov-pill').forEach((btn, idx) => {
     btn.setAttribute('aria-pressed', keys[idx] === ideKey ? 'true' : 'false');
   });
