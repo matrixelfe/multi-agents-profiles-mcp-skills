@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+# Cross-agent pre-commit hook: ensures .agent-docs/CHANGELOG.md is kept in sync
+# whenever code/config/docs are committed in a repository that uses .agent-docs/.
+#
+# Modes:
+#   Default: warns if .agent-docs/ exists and CHANGELOG.md is not staged.
+#   Strict (AGENT_DOCS_STRICT=1): blocks the commit until CHANGELOG.md is updated & staged.
+#   Bypass: SKIP_AGENT_DOCS_HOOK=1 git commit ...
+
+if [ "${SKIP_AGENT_DOCS_HOOK:-0}" = "1" ]; then
+  exit 0
+fi
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+# Only apply when the repository has opted into .agent-docs/
+if [ ! -d "${REPO_ROOT}/.agent-docs" ]; then
+  exit 0
+fi
+
+STAGED="$(git diff --cached --name-only)"
+if [ -z "${STAGED}" ]; then
+  exit 0
+fi
+
+if printf '%s\n' "${STAGED}" | grep -qx '\.agent-docs/CHANGELOG\.md'; then
+  exit 0
+fi
+
+echo "[agent-docs] Notice: .agent-docs/CHANGELOG.md is not staged in this commit." >&2
+echo "[agent-docs] Keep .agent-docs/ and .agent-docs/CHANGELOG.md updated on every commit." >&2
+
+if [ "${AGENT_DOCS_STRICT:-0}" = "1" ]; then
+  echo "[agent-docs] Commit blocked (AGENT_DOCS_STRICT=1). Stage .agent-docs/CHANGELOG.md or set SKIP_AGENT_DOCS_HOOK=1." >&2
+  exit 1
+fi
+
+exit 0
