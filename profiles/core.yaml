@@ -1,6 +1,7 @@
 name: core
-description: Minimal baseline profile with cross-agent project documentation and changelog skills
+description: Minimal baseline profile with cross-agent project documentation, changelog, and conventional-commits skills
 mcp_servers: []
 skills:
   - project-docs
   - project-changelog
+  - conventional-commits
