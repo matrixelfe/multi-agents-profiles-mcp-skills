@@ -1,16 +1,46 @@
-# RTK (Rust Token Killer) Plugin for OpenCode
+# RTK (Rust Token Killer) — Cross-Harness Plugin & Hooks
 
 > **Upstream Repository:** [https://github.com/rtk-ai/rtk](https://github.com/rtk-ai/rtk)  
-> **Package / Binary:** `rtk` (Rust native binary)  
-> **Target:** OpenCode (`~/.config/opencode/plugins/rtk.ts`)  
-> **Purpose:** Ultra-fast (<25 ms) shell output compressor that cuts command output tokens by 60%–90% for builds, tests, diffs, and git commands.
+> **Binary:** `rtk` (`~/.local/bin/rtk.exe` on Windows, native Rust binary)  
+> **Purpose:** Ultra-fast (<25 ms) shell output compressor that cuts command output tokens by 60%–90% across builds, test runners, diffs, and git commands.
 
-## How It Works
+## Cross-Harness Hook Installation
 
-This plugin intercepts command execution in OpenCode and delegates to `rtk hook opencode`. RTK compresses verbose command outputs before the LLM ingests them into the context window, without altering command execution semantics or violating permission rules.
+1. **Install the binary** (Windows prebuilt release from GitHub or `winget install rtk-ai.rtk`):
+   ```powershell
+   # Verify binary
+   rtk --version
+   ```
+2. **Register hooks across all harnesses**:
+   ```powershell
+   # Claude Code (~/.claude/settings.json PreToolUse + ~/.claude/RTK.md)
+   rtk init --global --auto-patch
 
-## Installation
+   # OpenCode / OpenChamber (~/.config/opencode/plugins/rtk.ts)
+   rtk init --global --opencode --auto-patch
 
-1. Install the `rtk` CLI binary (e.g., via GitHub releases or package manager).
-2. Deploy `rtk.ts` to `~/.config/opencode/plugins/rtk.ts`.
-3. Check accumulated token savings at any time with `rtk gain`.
+   # OpenAI Codex CLI (~/.codex/hooks.json PreToolUse + ~/.codex/RTK.md)
+   rtk init --global --codex
+
+   # Google Antigravity (~/.gemini/config/plugins/rtk/hooks.json + rules/AGENTS.md)
+   rtk init --global --agent antigravity --auto-patch
+
+   # GitHub Copilot CLI (~/.copilot/hooks/rtk-rewrite.json + copilot-instructions.md)
+   rtk init --global --copilot
+
+   # Gemini CLI (~/.gemini/hooks/rtk-hook-gemini.sh + ~/.gemini/GEMINI.md)
+   rtk init --global --gemini --auto-patch
+   ```
+
+## Verification
+
+```powershell
+# Inspect installed hooks and files
+rtk init --show
+
+# Dry-run rewrite check
+rtk hook check "git status"
+
+# View accumulated token savings
+rtk gain
+```

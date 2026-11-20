@@ -61,9 +61,39 @@ skills:
 
   - id: pmb-memory
     category: memory
-    upstream_repo: https://github.com/pmb-memory/pmb
-    install_cmd: "pmb connect"
-    notes: "Local-first cross-agent persistent memory engine."
+    upstream_repo: https://github.com/oleksiijko/pmb
+    install_cmd: "uv tool install pmb-ai && pmb warmup && pmb doctor"
+    notes: "Local-first cross-agent persistent memory engine (SQLite + LanceDB + BM25)."
+
+  - id: continuous-learning-v2
+    category: learning
+    upstream_repo: https://github.com/affaan-m/ecc
+    install_cmd: "Copy skills/continuous-learning-v2 to ~/.agents/catalog/skills/ and wire cross-agent-hook.py in Codex/OpenCode"
+    notes: "Instinct-based passive session observation and evolution (subpath: skills/continuous-learning-v2)."
+
+  - id: code-mode
+    category: tooling
+    upstream_repo: https://github.com/universal-tool-calling-protocol/code-mode
+    install_cmd: "npm install -g @utcp/code-mode-cli @utcp/code-mode-mcp"
+    notes: "UTCP TypeScript sandbox execution engine via `utcp` CLI and `mcp-bridge` MCP server."
+
+  - id: rtk-tdd
+    category: rust
+    upstream_repo: https://github.com/rtk-ai/rtk
+    install_cmd: "Install rtk binary + rtk init -g (--opencode / --codex / --copilot / --gemini / --agent antigravity)"
+    notes: "Rust TDD workflow bundled with RTK shell output compressor."
+
+  - id: rtk-triage
+    category: engineering
+    upstream_repo: https://github.com/rtk-ai/rtk
+    install_cmd: "Install rtk binary + copy .claude/skills/rtk-triage"
+    notes: "Issue & PR cross-analysis triage orchestrator bundled with RTK."
+
+  - id: headroom
+    category: optimization
+    upstream_repo: https://github.com/headroomlabs-ai/headroom
+    install_cmd: "uv tool install --python 3.13 headroom-ai"
+    notes: "Transversal LLM context compression proxy and SDK (`headroom wrap` / `headroom proxy`)."
 
 custom_local_skills:
   - id: project-docs

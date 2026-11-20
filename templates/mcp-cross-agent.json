@@ -1,7 +1,8 @@
 {
   "_comment": "Clean cross-IDE MCP template (zero secrets). Replace <USER_HOME> with your home directory before applying to OpenCode, Codex, Antigravity, Copilot CLI, or VS Code.",
   "upstream_references": {
-    "pmb-shared": "https://github.com/pmb-memory/pmb",
+    "pmb-shared": "https://github.com/oleksiijko/pmb",
+    "code-mode": "https://github.com/universal-tool-calling-protocol/code-mode",
     "codegraph": "https://github.com/codegraph-ai/codegraph",
     "chrome-devtools": "https://github.com/ChromeDevTools/chrome-devtools-mcp",
     "agent-browser": "https://github.com/vercel-labs/agent-browser"
@@ -14,6 +15,14 @@
       "env": {
         "PMB_WORKSPACE": "personal",
         "PMB_CWD": "<USER_HOME>"
+      }
+    },
+    "code-mode": {
+      "type": "stdio",
+      "command": "<USER_HOME>\\AppData\\Roaming\\npm\\mcp-bridge.cmd",
+      "args": [],
+      "env": {
+        "UTCP_CONFIG_FILE": "<USER_HOME>\\.agents\\.utcp_config.json"
       }
     },
     "codegraph": {

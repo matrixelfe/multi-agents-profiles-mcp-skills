@@ -148,6 +148,16 @@ agent-tooling ui
 
 ---
 
+## Notas de Instalación Cross-Harness (Skills, Plugins, Hooks & MCPs)
+
+Consulta la guía detallada con comandos de instalación, registro de hooks por IDE, verificación y repositorios upstream en:
+
+- **[docs/INSTALLATION-NOTES.md](docs/INSTALLATION-NOTES.md)** — cubre `PMB`, `RTK`, `OpenSlimedit`, `Headroom`, `UTCP Code-Mode`, `Continuous Learning v2` y `TokenEconomizer`.
+- **[manifests/skills-top.yaml](manifests/skills-top.yaml)** — manifiesto declarativo con URLs upstream y comandos de instalación.
+- **[templates/mcp-cross-agent.json](templates/mcp-cross-agent.json)** — plantilla limpia (cero secretos) de servidores MCP compartidos.
+
+---
+
 ## Gobernanza OAC V3.4
 
 - **`config/oac-routing.yaml`** es la única autoridad para enrutamiento de modelos y fallbacks.
