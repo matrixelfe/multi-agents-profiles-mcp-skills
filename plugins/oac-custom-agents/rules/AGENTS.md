@@ -3,8 +3,10 @@
 > Single Source of Truth for **OpenCode V2, OpenChamber, Codex CLI, Claude Code, and Google Antigravity**.
 
 ## 1. Shared Environment & Paths (Windows)
-- **Central Skills Repository:** `C:\Users\edgar\.agents\skills\` (shared across all IDEs; linked via NTFS junction to `~/.gemini/config/skills`). Always install, update, and read custom skills here—never scatter duplicates across client-isolated folders.
-- **Cold Skill Catalog:** `C:\Users\edgar\.agents\catalog\skills\` (specialized packages like the 28 `gamedev-*` skills; linked per-repo on demand via NTFS junctions).
+- **Active Skills Repository (`~/.agents/skills`):** Linked via NTFS junction to Antigravity (`~/.gemini/config/skills`), GitHub Copilot (`~/.copilot/skills`), Claude (`~/.claude/skills`), and OpenCode. Controlled by the active profile (`core`, `web`, `gamedev`, etc.) to keep sessions fast, un-truncated, and under context token budgets.
+- **Cold Skill Vault (`~/.agents/catalog/skills`):** Master repository holding all 359+ installed skills.
+  - **Just-in-Time (JIT) Skill Activation:** Any agent can read and execute any specialized skill directly from `C:\Users\edgar\.agents\catalog\skills\<skill-name>\SKILL.md` whenever needed, without requiring it to be preloaded globally in the active session.
+  - **Global Profile Switch:** When starting a specialized session (e.g. web, gamedev, reverse), switch profiles with `agent-tooling switch-profile <name>` or via the Control Center UI (`http://127.0.0.1:8765`).
 - **Tooling & Governance Engine (`agent-tooling` v3):** `C:\Users\edgar\.agents\tooling\`
   - **SQLite Registry (Observed State & History):** `C:\Users\edgar\.agents\tooling\state\registry.sqlite3` (`WAL`, `foreign_keys=ON`, zero secrets).
   - **Declarative Profiles:** `C:\Users\edgar\.agents\tooling\profiles\*.yaml` (`core`, `web`, `gamedev`, `windows-native`, `android`, `research`, `reverse`, `experimental`, `browser-automation`).
