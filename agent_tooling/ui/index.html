@@ -1012,6 +1012,29 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
           </div>
         </div>
 
+        <div class="ov-kpi-grid" id="catSummaryCounters" style="margin-bottom:var(--space-4);">
+          <div class="ov-kpi" onclick="showCatalogSubtab('mcps')">
+            <span class="ov-kpi-label"><span>Servidores MCP</span><span class="chip measured" id="catSumMcpActive">0 vivos</span></span>
+            <span class="ov-kpi-val" id="catSumMcpTotal">0</span>
+            <span class="ov-kpi-sub" id="catSumMcpShown">Mostrando 0</span>
+          </div>
+          <div class="ov-kpi" onclick="showCatalogSubtab('skills')">
+            <span class="ov-kpi-label"><span>Skills instaladas</span><span class="chip measured" id="catSumSkillHot">0 hot</span></span>
+            <span class="ov-kpi-val" id="catSumSkillTotal">0</span>
+            <span class="ov-kpi-sub" id="catSumSkillShown">Mostrando 0</span>
+          </div>
+          <div class="ov-kpi" onclick="showCatalogSubtab('plugins')">
+            <span class="ov-kpi-label"><span>Plugins activos</span><span class="chip cool measured">Multi-IDE</span></span>
+            <span class="ov-kpi-val" id="catSumPluginTotal">0</span>
+            <span class="ov-kpi-sub" id="catSumPluginShown">Mostrando 0</span>
+          </div>
+          <div class="ov-kpi" onclick="showCatalogSubtab('hygiene')">
+            <span class="ov-kpi-label"><span>Catálogo frío y salud</span><span class="chip measured" id="catSumErr">0 err</span></span>
+            <span class="ov-kpi-val" id="catSumCold">0</span>
+            <span class="ov-kpi-sub">Skills en espera (0 tokens)</span>
+          </div>
+        </div>
+
         <div class="subtab-bar" role="tablist" aria-label="Categorías del catálogo">
           <button type="button" class="subtab-btn" role="tab" id="subbtn-mcps" aria-selected="true" onclick="showCatalogSubtab('mcps')">
             Servidores MCP <span class="chip measured" id="catMcpCount">0</span>
@@ -1243,8 +1266,19 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         <div class="seam-grid seam-2" style="margin-bottom: var(--space-5);">
           <div>
             <div class="panel-head">
-              <h3>Procesos AI y MCP residentes en Windows</h3>
-              <span class="chip cool measured" id="totalLiveRam">0.0 MB</span>
+              <div>
+                <h3>Procesos AI y MCP residentes en Windows</h3>
+                <span class="muted" id="ramLastSync">Tiempo real (cada 5s)</span>
+              </div>
+              <div class="row-inline">
+                <span class="chip cool measured" id="totalLiveRam">0.0 MB</span>
+                <button type="button" class="btn btn-sm" id="btnRamAuto" onclick="toggleRamAutoRefresh()" title="Activar o pausar actualización automática cada 5 segundos">
+                  Auto 5s: ON
+                </button>
+                <button type="button" class="btn btn-sm" onclick="refreshLiveRam(true)" title="Medir consumo de RAM ahora">
+                  <svg class="icon" aria-hidden="true"><use href="#ic-refresh"/></svg> Actualizar
+                </button>
+              </div>
             </div>
             <div id="liveProcessBars" class="muted">Leyendo procesos…</div>
           </div>
@@ -1499,6 +1533,57 @@ let lastFocusedEl = null;
 let CURRENT_RES = null;
 let OV_IDE_FILTER = 'all';
 let OV_SKILL_MODE = 'category';
+let RAM_AUTO_ON = true;
+let RAM_POLL_TIMER = null;
+
+async function refreshLiveRam(showNotice = false) {
+  try {
+    const res = await fetch('/api/live-ram');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+    const procs = data.live_processes || [];
+    const total = Number(data.total_ram_mb || 0);
+    if (SNAPSHOT && SNAPSHOT.system_load) {
+      SNAPSHOT.system_load.live_processes = procs;
+    }
+    const b1 = document.getElementById('liveRamBadge');
+    if (b1) b1.textContent = `RAM viva: ${total.toFixed(1)} MB`;
+    const b2 = document.getElementById('totalLiveRam');
+    if (b2) b2.textContent = `${total.toFixed(1)} MB`;
+    const b3 = document.getElementById('ovRamSummaryBadge');
+    if (b3) b3.textContent = `${total.toFixed(1)} MB`;
+    const ts = document.getElementById('ramLastSync');
+    if (ts) ts.textContent = `Actualizado: ${new Date().toLocaleTimeString()} (${RAM_AUTO_ON ? 'Auto 5s' : 'Manual'})`;
+    renderSystemLoad(procs);
+    if (showNotice) toast(`RAM actualizada: ${total.toFixed(1)} MB (${procs.length} procesos)`);
+  } catch (e) {
+    if (showNotice) toast('No se pudo actualizar RAM: ' + e.message, true);
+  }
+}
+
+function toggleRamAutoRefresh() {
+  RAM_AUTO_ON = !RAM_AUTO_ON;
+  const btn = document.getElementById('btnRamAuto');
+  if (btn) btn.textContent = RAM_AUTO_ON ? 'Auto 5s: ON' : 'Auto 5s: OFF';
+  if (RAM_AUTO_ON) {
+    refreshLiveRam(false);
+    startRamPoller();
+  } else if (RAM_POLL_TIMER) {
+    clearInterval(RAM_POLL_TIMER);
+    RAM_POLL_TIMER = null;
+  }
+}
+
+function startRamPoller() {
+  if (RAM_POLL_TIMER) clearInterval(RAM_POLL_TIMER);
+  if (RAM_AUTO_ON) {
+    RAM_POLL_TIMER = setInterval(() => {
+      if (!document.hidden && RAM_AUTO_ON) refreshLiveRam(false);
+    }, 5000);
+  }
+}
+startRamPoller();
 
 const LEVEL_MAP = { HIGH: 'Alta', MEDIUM: 'Media', LOW: 'Baja' };
 
@@ -2074,6 +2159,11 @@ function renderCatalogMcps() {
     return m.id.toLowerCase().includes(q) || m.running_in.join(' ').toLowerCase().includes(q) || m.profiles.join(' ').toLowerCase().includes(q) || (m.explorer_path || '').toLowerCase().includes(q);
   });
 
+  const activeMcpsCnt = mcps.filter(m => m.is_loaded).length;
+  const elMcpTot = document.getElementById('catSumMcpTotal'); if (elMcpTot) elMcpTot.textContent = mcps.length;
+  const elMcpAct = document.getElementById('catSumMcpActive'); if (elMcpAct) elMcpAct.textContent = `${activeMcpsCnt} vivos`;
+  const elMcpShw = document.getElementById('catSumMcpShown'); if (elMcpShw) elMcpShw.textContent = `Mostrando ${filtered.length} de ${mcps.length}`;
+
   document.getElementById('catalogMcpsBody').innerHTML = filtered.length ? filtered.map(m => {
     const encId = encodeURIComponent(m.id);
     const beacon = m.health === 'error'
@@ -2142,6 +2232,15 @@ function renderCatalogSkills() {
     return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.running_in.join(' ').toLowerCase().includes(q) || (s.path || '').toLowerCase().includes(q);
   });
 
+  const hotSkillsCnt = skills.filter(s => s.scope === 'global_hot').length;
+  const coldSkillsCnt = skills.filter(s => s.scope === 'cold_catalog').length;
+  const errCnt = SNAPSHOT?.catalog?.hygiene?.errors_count || 0;
+  const elSkTot = document.getElementById('catSumSkillTotal'); if (elSkTot) elSkTot.textContent = skills.length;
+  const elSkHot = document.getElementById('catSumSkillHot'); if (elSkHot) elSkHot.textContent = `${hotSkillsCnt} hot`;
+  const elSkShw = document.getElementById('catSumSkillShown'); if (elSkShw) elSkShw.textContent = `Mostrando ${filtered.length} de ${skills.length}`;
+  const elCold = document.getElementById('catSumCold'); if (elCold) elCold.textContent = coldSkillsCnt;
+  const elErr = document.getElementById('catSumErr'); if (elErr) elErr.textContent = `${errCnt} err`;
+
   const shown = filtered.slice(0, 120);
   document.getElementById('catalogSkillsBody').innerHTML = shown.length ? shown.map(s => {
     const encId = encodeURIComponent(s.id);
@@ -2200,6 +2299,9 @@ function renderCatalogPlugins() {
     if (!q) return true;
     return p.id.toLowerCase().includes(q) || p.running_in.join(' ').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q) || (p.path || '').toLowerCase().includes(q);
   });
+
+  const elPlTot = document.getElementById('catSumPluginTotal'); if (elPlTot) elPlTot.textContent = plugins.length;
+  const elPlShw = document.getElementById('catSumPluginShown'); if (elPlShw) elPlShw.textContent = `Mostrando ${filtered.length} de ${plugins.length}`;
 
   const body = document.getElementById('catalogPluginsBody');
   if (!body) return;

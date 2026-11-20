@@ -136,6 +136,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(snap)
             return
 
+        if parsed.path == "/api/live-ram":
+            from agent_tooling.oac.reader import get_live_process_load
+            procs = get_live_process_load()
+            total_mb = round(sum(float(p.get("ram_mb", 0.0)) for p in procs), 1)
+            self._send_json({"ok": True, "live_processes": procs, "total_ram_mb": total_mb})
+            return
+
         self._send_json({"error": "Not found"}, status=404)
 
     def do_POST(self) -> None:
