@@ -17,6 +17,9 @@ TASK_SIGNALS: dict[str, re.Pattern[str]] = {
     "frontend_ui": re.compile(r"\b(ui|frontend|react|css|component|browser|layout|vite|html)\b", re.I),
     "gamedev_cpp": re.compile(r"\b(game|cpp|c\+\+|directx|renderdoc|pix|shader|fps|recomp|stutter|cmake)\b", re.I),
     "reverse_engineering": re.compile(r"\b(reverse|binary|decompile|apk|jadx|xex|disassemble|ghidra|frida)\b", re.I),
+    "browser_navigation_or_interaction": re.compile(r"\b(navigate|navegar|browse|open\s+url|webpage|página|formulario|form|click|fill|scrape\s+dynamic|dinámic[oa]|snapshot|agent-browser)\b", re.I),
+    "browser_devtools_debug": re.compile(r"\b(console\s+error|errores?\s+de\s+consola|network\s+traffic|tráfico\s+http|devtools|lighthouse|web\s+performance|rendimiento\s+web|har)\b", re.I),
+    "browser_e2e_suite": re.compile(r"\b(e2e|playwright\s+test|regresiones?\s+automatizadas|automated\s+regression)\b", re.I),
 }
 
 # Client surface capability matrix for skills & delegation
@@ -101,6 +104,13 @@ def recommend(
         candidates.append({"resource": "reverse-engineer-anything", "when": "reverse_engineering", "policy": "RECOMMENDED"})
     if "code_review_or_qa" in signals:
         candidates.append({"resource": "security-review", "when": "code_review_or_qa", "policy": "RECOMMENDED"})
+    # Intelligent browser-automation routing & escalation
+    if "browser_devtools_debug" in signals:
+        candidates.insert(0, {"resource": "browser-testing-with-devtools", "when": "browser_devtools_debug", "policy": "RECOMMENDED"})
+    elif "browser_e2e_suite" in signals:
+        candidates.insert(0, {"resource": "e2e-testing", "when": "browser_e2e_suite", "policy": "RECOMMENDED"})
+    elif "browser_navigation_or_interaction" in signals:
+        candidates.insert(0, {"resource": "agent-browser", "when": "browser_navigation_or_interaction", "policy": "RECOMMENDED"})
 
     # Deduplicate and evaluate each skill candidate
     seen: set[str] = set()

@@ -1,0 +1,36 @@
+name: browser-automation
+description: Token-efficient headless/isolated browser navigation, form interaction, and dynamic web extraction via Vercel Labs agent-browser CLI + Skill.
+capability: browser-automation
+primary_executor: agent-browser
+modality: cli_and_skill
+activation_policy: intent_driven_on_demand
+scope: global_where_supported
+availability: available
+installed_version: "0.43.0"
+source: "https://github.com/vercel-labs/agent-browser"
+update_command: "npm install -g agent-browser && agent-browser install"
+mcp_servers: []
+skills:
+  - agent-browser
+supported_intents:
+  - navigate_webpages
+  - interact_with_forms
+  - extract_dynamic_web_content
+alternatives_and_escalation:
+  static_docs: http_fetch_or_reader
+  console_errors_or_network_or_perf: chrome-devtools
+  maintainable_e2e_or_regressions: playwright-test
+  windows_native_apps: computer-use
+  api_available: native_cli_or_api
+token_optimization:
+  progressive_disclosure: true
+  prefer_interactive_snapshot: "agent-browser snapshot -i"
+  avoid_repetitive_screenshots: true
+  close_session_on_finish: "agent-browser close"
+  max_retries_before_escalate: 2
+security:
+  isolated_sessions: true
+  never_reuse_personal_chrome_profile: true
+  redact_cookies_tokens_passwords: true
+  treat_web_content_as_untrusted: true
+  require_approval_for_sensitive_actions: true
