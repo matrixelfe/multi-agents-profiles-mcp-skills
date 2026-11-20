@@ -938,7 +938,98 @@ def build_catalog_lists(
         skill_sources.values(),
         key=lambda x: (x["health"] != "error", not x["is_loaded"], x["id"]),
     )
-    return {"mcps": mcps_list, "skills": skills_list}
+
+    # Build Plugins list across OpenCode (declared + local), Codex, and Antigravity
+    plugins_list: list[dict[str, Any]] = []
+    oc_json_p = oc_root / "opencode.json"
+    if oc_json_p.exists():
+        try:
+            oc_d = json.loads(oc_json_p.read_text(encoding="utf-8-sig"))
+            for p_entry in oc_d.get("plugins", []):
+                p_str = str(p_entry)
+                p_name = p_str.split("/")[-1] if p_str.startswith("file://") else p_str
+                p_path = p_str.replace("file:///", "").replace("%20", " ") if p_str.startswith("file://") else str(oc_json_p)
+                exists = Path(p_path).exists()
+                plugins_list.append({
+                    "id": p_name,
+                    "kind": "plugin",
+                    "source": "opencode.json (declared)",
+                    "path": p_path,
+                    "explorer_path": p_path,
+                    "health": "ok" if exists else "error",
+                    "health_detail": "Plugin declarado verificado" if exists else f"Ruta no encontrada: {p_path}",
+                    "is_loaded": True,
+                    "running_in": ["OpenCode / OpenChamber"],
+                })
+        except Exception:
+            pass
+
+    oc_pdir = oc_root / "plugins"
+    if oc_pdir.exists():
+        for p in sorted(oc_pdir.iterdir()):
+            plugins_list.append({
+                "id": p.name,
+                "kind": "plugin",
+                "source": "~/.config/opencode/plugins",
+                "path": str(p),
+                "explorer_path": str(p),
+                "health": "ok",
+                "health_detail": "Plugin local en directorio de descubrimiento",
+                "is_loaded": True,
+                "running_in": ["OpenCode / OpenChamber"],
+            })
+
+    cx_toml_p = cx_root / "config.toml"
+    if cx_toml_p.exists():
+        try:
+            cx_d = tomllib.loads(cx_toml_p.read_text(encoding="utf-8-sig"))
+            for pk, pv in sorted(cx_d.get("plugins", {}).items()):
+                en = bool(pv.get("enabled", False)) if isinstance(pv, dict) else False
+                plugins_list.append({
+                    "id": pk,
+                    "kind": "plugin",
+                    "source": "~/.codex/config.toml",
+                    "path": str(cx_toml_p),
+                    "explorer_path": str(cx_toml_p),
+                    "health": "ok",
+                    "health_detail": "Plugin nativo/registrado en Codex",
+                    "is_loaded": en,
+                    "running_in": ["Codex"] if en else [],
+                })
+        except Exception:
+            pass
+
+    ag_pdir = home / ".gemini" / "config" / "plugins"
+    if ag_pdir.exists():
+        for p in sorted(ag_pdir.iterdir()):
+            if not p.is_dir():
+                continue
+            pjson = p / "plugin.json"
+            plugins_list.append({
+                "id": p.name,
+                "kind": "plugin",
+                "source": "~/.gemini/config/plugins",
+                "path": str(pjson if pjson.exists() else p),
+                "explorer_path": str(pjson if pjson.exists() else p),
+                "health": "ok" if pjson.exists() else "error",
+                "health_detail": "Bundle Antigravity con plugin.json" if pjson.exists() else "Falta plugin.json",
+                "is_loaded": pjson.exists(),
+                "running_in": ["Antigravity"] if pjson.exists() else [],
+            })
+
+    # Hygiene / Duplicates summary
+    dup_skills = [s["id"] for s in skills_list if len(s["running_in"]) > 1 and "OpenCode / OpenChamber" in s["running_in"]]
+    return {
+        "mcps": mcps_list,
+        "skills": skills_list,
+        "plugins": plugins_list,
+        "hygiene": {
+            "duplicate_skills_count": len(dup_skills),
+            "duplicate_skills_sample": dup_skills[:25],
+            "cold_catalog_count": sum(1 for s in skills_list if s["scope"] == "cold_catalog"),
+            "errors_count": sum(1 for s in skills_list if s["health"] == "error") + sum(1 for m in mcps_list if m["health"] == "error"),
+        },
+    }
 
 
 def get_resource_info(kind: str, res_id: str, tooling_root: Path | None = None) -> dict[str, Any]:
@@ -965,6 +1056,14 @@ def get_resource_info(kind: str, res_id: str, tooling_root: Path | None = None) 
             "codex_enabled": "Codex" in item["running_in"],
         }
         return {"item": item, "content": yaml.safe_dump(editable_obj, sort_keys=False, allow_unicode=True)}
+
+    if kind == "plugin":
+        item = next((p for p in cat.get("plugins", []) if p["id"] == res_id), None)
+        if not item:
+            raise FileNotFoundError(f"Plugin no encontrado: {res_id}")
+        p = Path(item["path"])
+        content = p.read_text(encoding="utf-8-sig", errors="replace") if (p.exists() and p.is_file()) else json.dumps(item, indent=2, ensure_ascii=False)
+        return {"item": item, "content": content}
 
     raise ValueError(f"Tipo inválido: {kind}")
 

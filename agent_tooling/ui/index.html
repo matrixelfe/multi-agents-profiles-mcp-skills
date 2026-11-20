@@ -429,10 +429,47 @@ header.topbar {
   font-weight: 500;
   padding: 0 var(--space-1);
   border-radius: 3px;
+  background: var(--color-paper-3);
+  color: var(--color-muted);
+  border: var(--rule-hair) solid var(--color-rule);
 }
-.load-Alta { background: var(--color-bad-soft); color: var(--color-bad); }
-.load-Media { background: var(--color-accent-soft); color: var(--color-accent); }
-.load-Baja { background: var(--color-ok-soft); color: var(--color-ok); }
+.load-Alta { background: var(--color-bad-soft); color: var(--color-bad); border-color: color-mix(in oklab, var(--color-bad) 45%, var(--color-rule)); }
+.load-Media { background: var(--color-accent-soft); color: var(--color-accent); border-color: color-mix(in oklab, var(--color-accent) 45%, var(--color-rule)); }
+.load-Baja { background: var(--color-paper-3); color: var(--color-muted); }
+
+.subtab-bar {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: var(--color-paper-3);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+.subtab-btn {
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-muted);
+  background: transparent;
+  border: var(--rule-hair) solid transparent;
+  border-radius: var(--radius-pill);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: background-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+}
+.subtab-btn:hover { color: var(--color-ink); }
+.subtab-btn[aria-selected="true"] {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border-color: var(--color-rule-2);
+}
+.subpanel { display: none; }
+.subpanel.active { display: block; animation: surfaceEnter var(--dur-med) var(--ease-out); }
 
 main {
   max-width: 1440px;
@@ -705,96 +742,177 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         </div>
       </section>
 
-      <!-- TAB 2: SKILLS Y MCPS VIVOS -->
+      <!-- TAB 2: SKILLS, MCPS Y PLUGINS (CON SUB-PESTAÑAS) -->
       <section id="tab-catalog" class="tabpanel" role="tabpanel" aria-labelledby="nav-catalog">
         <div class="section-bar">
-          <h2>Catálogo vivo de servidores MCP y skills</h2>
+          <h2>Catálogo vivo de recursos cross-agent</h2>
           <div class="row-inline">
-            <span class="chip ok"><span class="live-beacon" role="status" aria-label="Activo"></span> Cargado y activo</span>
+            <span class="chip"><span class="live-beacon" role="status" aria-label="Activo"></span> Cargado y activo</span>
             <span class="chip"><span class="idle-beacon" role="status" aria-label="En espera"></span> En espera o catálogo frío</span>
             <span class="chip bad"><span class="error-beacon" role="status" aria-label="Error"></span> Con error</span>
           </div>
         </div>
 
-        <!-- MCPs Live Table -->
-        <div class="panel-surface" style="padding:0;overflow:hidden;margin-bottom:var(--space-5);">
-          <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
-            <div>
-              <h3>Servidores MCP registrados (<span id="catMcpCount" class="measured">0</span>)</h3>
-              <span class="muted">Estado de salud del binario, IDEs donde corre actualmente y acciones directas</span>
+        <div class="subtab-bar" role="tablist" aria-label="Categorías del catálogo">
+          <button type="button" class="subtab-btn" role="tab" id="subbtn-mcps" aria-selected="true" onclick="showCatalogSubtab('mcps')">
+            Servidores MCP <span class="chip measured" id="catMcpCount">0</span>
+          </button>
+          <button type="button" class="subtab-btn" role="tab" id="subbtn-skills" aria-selected="false" onclick="showCatalogSubtab('skills')">
+            Skills instaladas <span class="chip measured" id="catSkillCount">0</span>
+          </button>
+          <button type="button" class="subtab-btn" role="tab" id="subbtn-plugins" aria-selected="false" onclick="showCatalogSubtab('plugins')">
+            Plugins <span class="chip measured" id="catPluginCount">0</span>
+          </button>
+          <button type="button" class="subtab-btn" role="tab" id="subbtn-vercel" aria-selected="false" onclick="showCatalogSubtab('vercel')">
+            Vercel skills.sh
+          </button>
+          <button type="button" class="subtab-btn" role="tab" id="subbtn-hygiene" aria-selected="false" onclick="showCatalogSubtab('hygiene')">
+            Higiene <span class="chip measured" id="subCountHygiene">0</span>
+          </button>
+        </div>
+
+        <!-- SUBPANEL 1: MCPS -->
+        <div id="subpanel-mcps" class="subpanel active">
+          <div class="panel-surface" style="padding:0;overflow:hidden;">
+            <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
+              <div>
+                <h3>Servidores MCP registrados</h3>
+                <span class="muted">El pulso verde indica que el servidor está habilitado o corriendo; el foco visual se mantiene en el nombre de la herramienta</span>
+              </div>
+              <div style="min-width:250px;">
+                <label for="searchMcpCat" class="field-label" style="display:none;">Filtrar MCP</label>
+                <input type="search" id="searchMcpCat" placeholder="Filtrar MCP, ruta o IDE (codex, antigravity…)" oninput="renderCatalogMcps()" />
+              </div>
             </div>
-            <div style="min-width:240px;">
-              <label for="searchMcpCat" class="field-label" style="display:none;">Filtrar MCP</label>
-              <input type="search" id="searchMcpCat" placeholder="Filtrar MCP o IDE (codex, antigravity…)" oninput="renderCatalogMcps()" />
+            <div style="overflow-x:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Servidor MCP y ruta</th>
+                    <th>Salud</th>
+                    <th>Activo en IDEs</th>
+                    <th>Perfiles</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="catalogMcpsBody"></tbody>
+              </table>
             </div>
-          </div>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Servidor MCP</th>
-                  <th>Salud</th>
-                  <th>Corriendo / activo en</th>
-                  <th>Perfiles</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="catalogMcpsBody"></tbody>
-            </table>
           </div>
         </div>
 
-        <!-- Skills Live Table + Vercel Finder -->
-        <div class="panel-surface" style="margin-bottom:var(--space-5);">
-          <div class="panel-head">
-            <div>
-              <h3>Buscador externo de skills (Vercel skills.sh)</h3>
-              <span class="muted">Consulta el registro abierto con npx skills find sin salir de la consola</span>
+        <!-- SUBPANEL 2: SKILLS -->
+        <div id="subpanel-skills" class="subpanel">
+          <div class="panel-surface" style="padding:0;overflow:hidden;">
+            <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
+              <div>
+                <h3>Skills del ecosistema (~/.agents/skills y catálogo frío)</h3>
+                <span class="muted">Inspecciona la ruta exacta, edita SKILL.md en vivo, abre en el Explorador o archiva con seguridad</span>
+              </div>
+              <div class="row-inline">
+                <label for="filterSkillState" class="field-label" style="display:none;">Estado</label>
+                <select id="filterSkillState" onchange="renderCatalogSkills()" style="width:auto;">
+                  <option value="all">Todas las skills</option>
+                  <option value="loaded">Solo cargadas (pulso verde)</option>
+                  <option value="error">Con error</option>
+                  <option value="cold">Catálogo frío</option>
+                </select>
+                <label for="searchSkillCat" class="field-label" style="display:none;">Buscar skill</label>
+                <input type="search" id="searchSkillCat" placeholder="Buscar skill, ruta, descripción o IDE…" oninput="renderCatalogSkills()" style="min-width:260px;width:auto;" />
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Skill y ruta en disco</th>
+                    <th>Salud</th>
+                    <th>Disponible en IDEs</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="catalogSkillsBody"></tbody>
+              </table>
             </div>
           </div>
-          <div class="row-inline">
-            <div style="flex:1;min-width:240px;">
-              <label for="inputVercelFind" class="field-label" style="display:none;">Buscar en skills.sh</label>
-              <input type="search" id="inputVercelFind" placeholder="Ejemplo: react performance, playwright, tailwind, rust…" />
-            </div>
-            <button type="button" class="btn btn-amber" onclick="runVercelFind()">
-              <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en Vercel Skills
-            </button>
-          </div>
-          <div id="vercelFindOut" style="margin-top:var(--space-3);"></div>
         </div>
 
-        <div class="panel-surface" style="padding:0;overflow:hidden;">
-          <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
-            <div>
-              <h3>Skills instaladas (<span id="catSkillCount" class="measured">0</span>)</h3>
-              <span class="muted">Pulso verde indica skill cargada y descubrible por los IDEs listados</span>
+        <!-- SUBPANEL 3: PLUGINS -->
+        <div id="subpanel-plugins" class="subpanel">
+          <div class="panel-surface" style="padding:0;overflow:hidden;">
+            <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
+              <div>
+                <h3>Plugins instalados por plataforma</h3>
+                <span class="muted">Plugins declarados y locales de OpenCode, plugins nativos de Codex y bundles de Antigravity</span>
+              </div>
+              <div style="min-width:240px;">
+                <label for="searchPluginCat" class="field-label" style="display:none;">Filtrar plugin</label>
+                <input type="search" id="searchPluginCat" placeholder="Filtrar plugin o IDE…" oninput="renderCatalogPlugins()" />
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Plugin y ubicación</th>
+                    <th>Salud</th>
+                    <th>Activo en IDE</th>
+                    <th>Origen</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="catalogPluginsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBPANEL 4: VERCEL FINDER -->
+        <div id="subpanel-vercel" class="subpanel">
+          <div class="panel-surface">
+            <div class="panel-head">
+              <div>
+                <h3>Buscador externo de skills (Vercel skills.sh)</h3>
+                <span class="muted">Consulta el registro público con npx skills find para descubrir nuevas capacidades</span>
+              </div>
             </div>
             <div class="row-inline">
-              <label for="filterSkillState" class="field-label" style="display:none;">Estado</label>
-              <select id="filterSkillState" onchange="renderCatalogSkills()" style="width:auto;">
-                <option value="all">Todas las skills</option>
-                <option value="loaded">Solo cargadas (en verde)</option>
-                <option value="error">Con error</option>
-                <option value="cold">Catálogo frío</option>
-              </select>
-              <label for="searchSkillCat" class="field-label" style="display:none;">Buscar skill</label>
-              <input type="search" id="searchSkillCat" placeholder="Buscar por nombre, descripción o IDE…" oninput="renderCatalogSkills()" style="min-width:250px;width:auto;" />
+              <div style="flex:1;min-width:240px;">
+                <label for="inputVercelFind" class="field-label" style="display:none;">Buscar en skills.sh</label>
+                <input type="search" id="inputVercelFind" placeholder="Ejemplo: react performance, playwright, tailwind, rust…" />
+              </div>
+              <button type="button" class="btn btn-amber" onclick="runVercelFind()">
+                <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en Vercel Skills
+              </button>
+            </div>
+            <div id="vercelFindOut" style="margin-top:var(--space-4);"></div>
+          </div>
+        </div>
+
+        <!-- SUBPANEL 5: HIGIENE Y DUPLICADOS (SUGERIDO) -->
+        <div id="subpanel-hygiene" class="subpanel">
+          <div class="seam-grid seam-3" style="margin-bottom:var(--space-4);">
+            <div>
+              <div class="muted">Skills compartidas en múltiples rutas</div>
+              <div class="reading"><span id="hygDupCount">0</span><span class="reading-unit">skills</span></div>
+              <div class="muted">Sincronizadas vía ~/.agents/skills</div>
+            </div>
+            <div>
+              <div class="muted">Skills en catálogo frío</div>
+              <div class="reading"><span id="hygColdCount">0</span><span class="reading-unit">skills</span></div>
+              <div class="muted">0 tokens en sesiones generales</div>
+            </div>
+            <div>
+              <div class="muted">Recursos con alerta o error</div>
+              <div class="reading"><span id="hygErrCount">0</span><span class="reading-unit">alertas</span></div>
+              <div class="muted">Verificación de binarios y YAML</div>
             </div>
           </div>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Skill</th>
-                  <th>Salud</th>
-                  <th>Cargada / disponible en</th>
-                  <th>Descripción</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody id="catalogSkillsBody"></tbody>
-            </table>
+          <div class="panel-surface">
+            <h3 style="margin-bottom:var(--space-2);">Estado de alineación cross-agent</h3>
+            <p class="muted" style="margin-top:0;">Antigravity está enlazado mediante NTFS Junction (<code>~/.gemini/config/skills → ~/.agents/skills</code>) y la regla <code>oac-custom-agents/rules/AGENTS.md</code> mantiene un único contrato de persistencia.</p>
+            <div id="hygieneDupList" class="row-inline"></div>
           </div>
         </div>
       </section>
@@ -1086,6 +1204,20 @@ function showTab(name) {
   if (btn) btn.setAttribute('aria-selected', 'true');
 }
 
+function showCatalogSubtab(subName) {
+  document.querySelectorAll('#tab-catalog .subpanel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#tab-catalog .subtab-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
+  const panel = document.getElementById('subpanel-' + subName);
+  if (panel) panel.classList.add('active');
+  const btn = document.getElementById('subbtn-' + subName);
+  if (btn) btn.setAttribute('aria-selected', 'true');
+}
+
+function copyText(txt) {
+  if (!txt) return;
+  navigator.clipboard.writeText(txt).then(() => toast('Ruta copiada: ' + txt)).catch(() => toast(txt));
+}
+
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (document.getElementById('resModal').classList.contains('open')) closeResModal();
@@ -1142,6 +1274,8 @@ function renderAll() {
   renderIdes(loadCatalog);
   renderCatalogMcps();
   renderCatalogSkills();
+  renderCatalogPlugins();
+  renderCatalogHygiene();
   renderSystemLoad(liveProcs);
   renderLoadTable();
   renderOacSummary(oac);
@@ -1230,47 +1364,51 @@ function renderIdes(loadCatalog) {
 function renderCatalogMcps() {
   const mcps = SNAPSHOT?.catalog?.mcps || [];
   document.getElementById('catMcpCount').textContent = mcps.length;
+  const subEl = document.getElementById('subCountMcps');
+  if (subEl) subEl.textContent = mcps.length;
   const q = (document.getElementById('searchMcpCat')?.value || '').trim().toLowerCase();
   const filtered = mcps.filter(m => !q || m.id.toLowerCase().includes(q) || m.running_in.join(' ').toLowerCase().includes(q) || m.profiles.join(' ').toLowerCase().includes(q));
 
   document.getElementById('catalogMcpsBody').innerHTML = filtered.length ? filtered.map(m => {
+    const encId = encodeURIComponent(m.id);
     const beacon = m.health === 'error'
       ? '<span class="error-beacon" role="status" aria-label="Error"></span>'
       : (m.is_loaded ? '<span class="live-beacon" role="status" aria-label="Cargado"></span>' : '<span class="idle-beacon" role="status" aria-label="Inactivo"></span>');
     const healthChip = m.health === 'ok'
-      ? `<span class="chip ok" title="${m.health_detail}">OK</span>`
+      ? `<span class="chip measured" title="${m.health_detail}">OK</span>`
       : `<span class="chip bad" title="${m.health_detail}">Error</span>`;
     const whereHtml = m.running_in.length
-      ? m.running_in.map(ide => `<span class="chip ok">${ide}</span>`).join(' ')
+      ? m.running_in.map(ide => `<span class="chip">${ide}</span>`).join(' ')
       : '<span class="muted">En espera (por perfil)</span>';
     const ramTag = m.live_ram_mb > 0 ? ` <span class="chip cool measured">${m.live_ram_mb} MB vivos</span>` : '';
-    const profHtml = m.profiles.length ? m.profiles.map(p => `<span class="chip measured">${p}</span>`).join(' ') : '<span class="muted">—</span>';
+    const profHtml = m.profiles.length ? m.profiles.map(p => `<span class="chip measured">${p}</span>`).join(' ') : '<span class="muted">:</span>';
 
     return `
       <tr>
         <td>
           <div class="row-inline">
             ${beacon}
-            <strong class="measured">${m.id}</strong>
+            <strong class="measured" style="color:var(--color-ink);">${m.id}</strong>
             <span class="load-pill load-${LEVEL_MAP[m.load_level] || 'Baja'}">${LEVEL_MAP[m.load_level] || 'Baja'}</span>
           </div>
           <div class="muted" style="margin-top:var(--space-1);">${m.health_detail}</div>
+          <div style="margin-top:var(--space-1);"><span class="path-ref">${m.explorer_path || ''}</span></div>
         </td>
         <td>${healthChip}</td>
         <td><div class="row-inline">${whereHtml}${ramTag}</div></td>
         <td><div class="row-inline">${profHtml}</div></td>
         <td>
           <div class="row-inline">
-            <button type="button" class="btn btn-sm" onclick="openResModal('mcp','${m.id}',false)" title="Ver información">
+            <button type="button" class="btn btn-sm" onclick="openResModal('mcp','${encId}',false)" title="Ver información y ruta">
               <svg class="icon" aria-hidden="true"><use href="#ic-eye"/></svg> Info
             </button>
-            <button type="button" class="btn btn-sm" onclick="openResModal('mcp','${m.id}',true)" title="Editar MCP" ${m.bundled ? 'disabled' : ''}>
+            <button type="button" class="btn btn-sm" onclick="openResModal('mcp','${encId}',true)" title="Editar MCP" ${m.bundled ? 'disabled' : ''}>
               <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Editar
             </button>
-            <button type="button" class="btn btn-sm" onclick="openExplorer('mcp','${m.id}')" title="Abrir en el explorador de Windows">
+            <button type="button" class="btn btn-sm" onclick="openExplorer('mcp','${encId}')" title="Abrir en el explorador de Windows">
               <svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> Explorador
             </button>
-            <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('mcp','${m.id}')" title="Desactivar en todos los IDEs" ${m.bundled ? 'disabled' : ''}>
+            <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('mcp','${encId}')" title="Desactivar en todos los IDEs" ${m.bundled ? 'disabled' : ''}>
               <svg class="icon" aria-hidden="true"><use href="#ic-trash"/></svg> Apagar
             </button>
           </div>
@@ -1282,6 +1420,8 @@ function renderCatalogMcps() {
 function renderCatalogSkills() {
   const skills = SNAPSHOT?.catalog?.skills || [];
   document.getElementById('catSkillCount').textContent = skills.length;
+  const subEl = document.getElementById('subCountSkills');
+  if (subEl) subEl.textContent = skills.length;
   const q = (document.getElementById('searchSkillCat')?.value || '').trim().toLowerCase();
   const stateFilter = document.getElementById('filterSkillState')?.value || 'all';
 
@@ -1290,18 +1430,19 @@ function renderCatalogSkills() {
     if (stateFilter === 'error' && s.health !== 'error') return false;
     if (stateFilter === 'cold' && s.scope !== 'cold_catalog') return false;
     if (!q) return true;
-    return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.running_in.join(' ').toLowerCase().includes(q);
+    return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.running_in.join(' ').toLowerCase().includes(q) || (s.path || '').toLowerCase().includes(q);
   });
 
   const shown = filtered.slice(0, 120);
   document.getElementById('catalogSkillsBody').innerHTML = shown.length ? shown.map(s => {
+    const encId = encodeURIComponent(s.id);
     const beacon = s.health === 'error'
       ? '<span class="error-beacon" role="status" aria-label="Error"></span>'
       : (s.is_loaded ? '<span class="live-beacon" role="status" aria-label="Cargada"></span>' : '<span class="idle-beacon" role="status" aria-label="Catálogo frío"></span>');
     const healthChip = s.health === 'ok'
-      ? `<span class="chip ok" title="${s.health_detail}">OK</span>`
+      ? `<span class="chip measured" title="${s.health_detail}">OK</span>`
       : `<span class="chip bad" title="${s.health_detail}">Error</span>`;
-    const whereHtml = s.running_in.map(ide => `<span class="chip ${s.is_loaded ? 'ok' : ''}">${ide}</span>`).join(' ');
+    const whereHtml = s.running_in.map(ide => `<span class="chip">${ide}</span>`).join(' ');
     const profHtml = s.profiles.map(p => `<span class="chip cool measured">perfil:${p}</span>`).join(' ');
 
     return `
@@ -1309,8 +1450,9 @@ function renderCatalogSkills() {
         <td>
           <div class="row-inline">
             ${beacon}
-            <strong class="measured">${s.id}</strong>
+            <strong class="measured" style="color:var(--color-ink);">${s.id}</strong>
           </div>
+          <div style="margin-top:var(--space-1);"><span class="path-ref">${s.path}</span></div>
           ${profHtml ? `<div class="row-inline" style="margin-top:var(--space-1);">${profHtml}</div>` : ''}
         </td>
         <td>${healthChip}</td>
@@ -1318,16 +1460,16 @@ function renderCatalogSkills() {
         <td class="muted" style="max-width:360px;">${s.description}</td>
         <td>
           <div class="row-inline">
-            <button type="button" class="btn btn-sm" onclick="openResModal('skill','${s.id}',false)" title="Ver SKILL.md">
+            <button type="button" class="btn btn-sm" onclick="openResModal('skill','${encId}',false)" title="Ver SKILL.md y ruta">
               <svg class="icon" aria-hidden="true"><use href="#ic-eye"/></svg> Info
             </button>
-            <button type="button" class="btn btn-sm" onclick="openResModal('skill','${s.id}',true)" title="Editar SKILL.md">
+            <button type="button" class="btn btn-sm" onclick="openResModal('skill','${encId}',true)" title="Editar SKILL.md">
               <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Editar
             </button>
-            <button type="button" class="btn btn-sm" onclick="openExplorer('skill','${s.id}')" title="Abrir en el explorador de Windows">
+            <button type="button" class="btn btn-sm" onclick="openExplorer('skill','${encId}')" title="Abrir en el explorador de Windows">
               <svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> Explorador
             </button>
-            <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('skill','${s.id}')" title="Archivar en backup privado">
+            <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('skill','${encId}')" title="Archivar en backup privado">
               <svg class="icon" aria-hidden="true"><use href="#ic-trash"/></svg> Eliminar
             </button>
           </div>
@@ -1336,32 +1478,185 @@ function renderCatalogSkills() {
   }).join('') : '<tr><td colspan="5" class="muted">Sin skills que coincidan con el filtro actual.</td></tr>';
 }
 
-async function openResModal(kind, id, editable) {
+function renderCatalogPlugins() {
+  const plugins = SNAPSHOT?.catalog?.plugins || [];
+  const elCount = document.getElementById('catPluginCount');
+  if (elCount) elCount.textContent = plugins.length;
+  const subEl = document.getElementById('subCountPlugins');
+  if (subEl) subEl.textContent = plugins.length;
+  const q = (document.getElementById('searchPluginCat')?.value || '').trim().toLowerCase();
+  const filtered = plugins.filter(p => !q || p.id.toLowerCase().includes(q) || p.running_in.join(' ').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+
+  const body = document.getElementById('catalogPluginsBody');
+  if (!body) return;
+  body.innerHTML = filtered.length ? filtered.map(p => {
+    const encId = encodeURIComponent(p.id);
+    const beacon = p.health === 'error'
+      ? '<span class="error-beacon" role="status" aria-label="Error"></span>'
+      : (p.is_loaded ? '<span class="live-beacon" role="status" aria-label="Cargado"></span>' : '<span class="idle-beacon" role="status" aria-label="Inactivo"></span>');
+    const healthChip = p.health === 'ok'
+      ? `<span class="chip measured" title="${p.health_detail}">OK</span>`
+      : `<span class="chip bad" title="${p.health_detail}">Error</span>`;
+    const whereHtml = p.running_in.map(ide => `<span class="chip">${ide}</span>`).join(' ');
+
+    return `
+      <tr>
+        <td>
+          <div class="row-inline">
+            ${beacon}
+            <strong class="measured" style="color:var(--color-ink);">${p.id}</strong>
+          </div>
+          <div style="margin-top:var(--space-1);"><span class="path-ref">${p.path}</span></div>
+        </td>
+        <td>${healthChip}</td>
+        <td><div class="row-inline">${whereHtml}</div></td>
+        <td class="muted">${p.description} (${p.health_detail})</td>
+        <td>
+          <div class="row-inline">
+            <button type="button" class="btn btn-sm" onclick="openResModal('plugin','${encId}',false)" title="Ver manifiesto o archivo del plugin">
+              <svg class="icon" aria-hidden="true"><use href="#ic-eye"/></svg> Info
+            </button>
+            <button type="button" class="btn btn-sm" onclick="openResModal('plugin','${encId}',true)" title="Editar configuración del plugin">
+              <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Editar
+            </button>
+            <button type="button" class="btn btn-sm" onclick="openExplorer('plugin','${encId}')" title="Abrir carpeta en el Explorador">
+              <svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> Explorador
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">Sin plugins que coincidan con el filtro.</td></tr>';
+}
+
+function renderCatalogHygiene() {
+  const hyg = SNAPSHOT?.catalog?.hygiene || { duplicates_count: 0, duplicates: [], cold_count: 0, errors_count: 0 };
+  const subEl = document.getElementById('subCountHygiene');
+  if (subEl) subEl.textContent = hyg.duplicates_count || 0;
+  const kpi = document.getElementById('hygieneKpis');
+  if (kpi) {
+    kpi.innerHTML = `
+      <div class="seam-cell">
+        <div class="muted">Skills en catálogo caliente (global)</div>
+        <div class="metric-big">${(SNAPSHOT?.catalog?.skills || []).filter(s => s.scope === 'global_hot').length}</div>
+        <div class="muted">Disponibles en los 4 IDEs vía Junction NTFS</div>
+      </div>
+      <div class="seam-cell">
+        <div class="muted">Skills en catálogo frío (bajo demanda)</div>
+        <div class="metric-big">${hyg.cold_count || 0}</div>
+        <div class="muted">Ahorran presupuesto de contexto global</div>
+      </div>
+      <div class="seam-cell">
+        <div class="muted">Solapamientos Caliente vs Frío</div>
+        <div class="metric-big" style="color:${hyg.duplicates_count > 0 ? 'var(--color-warn)' : 'var(--color-ok)'};">${hyg.duplicates_count || 0}</div>
+        <div class="muted">Skills presentes en ambos directorios</div>
+      </div>
+      <div class="seam-cell">
+        <div class="muted">Recursos con error de salud</div>
+        <div class="metric-big" style="color:${hyg.errors_count > 0 ? 'var(--color-bad)' : 'var(--color-ok)'};">${hyg.errors_count || 0}</div>
+        <div class="muted">MCPs o skills con binario/SKILL.md faltante</div>
+      </div>`;
+  }
+  const body = document.getElementById('hygieneDuplicatesBody');
+  if (body) {
+    const dups = hyg.duplicates || [];
+    body.innerHTML = dups.length ? dups.map(d => {
+      const encId = encodeURIComponent(d.id);
+      return `
+        <tr>
+          <td><strong class="measured" style="color:var(--color-ink);">${d.id}</strong></td>
+          <td><span class="path-ref">${d.hot_path}</span></td>
+          <td><span class="path-ref">${d.cold_path}</span></td>
+          <td>
+            <div class="row-inline">
+              <button type="button" class="btn btn-sm" onclick="openResModal('skill','${encId}',false)">
+                <svg class="icon" aria-hidden="true"><use href="#ic-eye"/></svg> Info
+              </button>
+              <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('skill','${encId}')">
+                <svg class="icon" aria-hidden="true"><use href="#ic-trash"/></svg> Archivar copia caliente
+              </button>
+            </div>
+          </td>
+        </tr>`;
+    }).join('') : '<tr><td colspan="4" class="muted">Cero duplicados entre el catálogo caliente y el catálogo frío.</td></tr>';
+  }
+}
+
+function findLocalCatalogItem(kind, id) {
+  const cat = SNAPSHOT?.catalog || {};
+  const list = kind === 'mcp' ? (cat.mcps || []) : (kind === 'skill' ? (cat.skills || []) : (cat.plugins || []));
+  return list.find(x => x.id === id) || null;
+}
+
+function renderResModalMeta(kind, id, it) {
+  const fullPath = it?.path || it?.explorer_path || '';
+  const folderPath = it?.folder_path || it?.explorer_path || fullPath;
+  const encId = encodeURIComponent(id);
+  const encPath = fullPath.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const whereHtml = (it?.running_in || []).length
+    ? it.running_in.map(ide => `<span class="chip">${ide}</span>`).join(' ')
+    : '<span class="muted">En espera</span>';
+  const healthBadge = it
+    ? `<span class="chip ${it.health === 'ok' ? 'measured' : 'bad'}">Salud: ${(it.health || 'ok').toUpperCase()} (${it.health_detail || ''})</span>`
+    : '';
+
+  document.getElementById('resModalMeta').innerHTML = `
+    <div class="finding-row" style="margin-top:0;">
+      <div class="row-inline" style="justify-content:space-between;margin-bottom:var(--space-2);">
+        <div class="row-inline">
+          ${healthBadge}
+          <span class="muted">Activo en:</span> ${whereHtml}
+        </div>
+        <div class="row-inline">
+          ${fullPath ? `<button type="button" class="btn btn-sm" onclick="copyText('${encPath}')">Copiar ruta</button>` : ''}
+          <button type="button" class="btn btn-sm" onclick="openExplorer('${kind}','${encId}')">
+            <svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> Abrir en Explorador
+          </button>
+        </div>
+      </div>
+      <div>
+        <span class="muted">Ruta en disco: </span>
+        <span class="path-ref" style="user-select:all;">${fullPath || 'No disponible'}</span>
+      </div>
+      ${folderPath && folderPath !== fullPath ? `<div style="margin-top:var(--space-1);"><span class="muted">Carpeta contenedora: </span><span class="path-ref" style="user-select:all;">${folderPath}</span></div>` : ''}
+    </div>`;
+}
+
+async function openResModal(kind, encodedId, editable) {
+  const id = decodeURIComponent(encodedId);
   lastFocusedEl = document.activeElement;
   CURRENT_RES = { kind, id, editable };
   document.getElementById('resModal').classList.add('open');
-  document.getElementById('resModalTitle').textContent = `${editable ? 'Editar' : 'Inspeccionar'} ${kind.toUpperCase()}: ${id}`;
+  document.getElementById('resModalTitle').textContent = `${editable ? 'Editar' : 'Información de'} ${kind.toUpperCase()}: ${id}`;
   document.getElementById('resSaveBtn').style.display = editable ? 'inline-flex' : 'none';
+
+  const localItem = findLocalCatalogItem(kind, id);
+  renderResModalMeta(kind, id, localItem);
+
+  document.getElementById('resEditorLabel').textContent = editable
+    ? 'Edita el archivo y pulsa Guardar cambios (se creará backup SHA-256 automático):'
+    : 'Contenido del archivo / manifiesto en disco (modo lectura):';
+
   const area = document.getElementById('resEditorArea');
   area.readOnly = !editable;
-  area.value = 'Cargando…';
+  area.value = 'Cargando contenido desde disco…';
 
-  const res = await fetch('/api/resource/info', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ kind, id })
-  });
-  const data = await res.json();
-  if (!data.ok) { area.value = 'Error: ' + data.error; return; }
-  const it = data.result.item;
-  document.getElementById('resModalMeta').innerHTML = `
-    <div class="row-inline">
-      <span class="chip ${it.health === 'ok' ? 'ok' : 'bad'}">Salud: ${it.health.toUpperCase()} (${it.health_detail})</span>
-      <span class="path-ref">${it.path || it.explorer_path}</span>
-    </div>`;
-  document.getElementById('resEditorLabel').textContent = editable
-    ? 'Edita el contenido y pulsa Guardar cambios (se creará backup SHA-256 automático):'
-    : 'Contenido actual (modo lectura):';
-  area.value = data.result.content || '';
+  try {
+    const res = await fetch('/api/resource/info', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ kind, id })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      area.value = (localItem ? JSON.stringify(localItem, null, 2) + '\n\n' : '') + 'Aviso del servidor: ' + data.error;
+      return;
+    }
+    if (data.result?.item) {
+      renderResModalMeta(kind, id, data.result.item);
+    }
+    area.value = data.result?.content || JSON.stringify(localItem || {}, null, 2);
+  } catch (err) {
+    area.value = JSON.stringify(localItem || { kind, id }, null, 2);
+  }
   if (editable) area.focus(); else document.getElementById('closeResBtn').focus();
 }
 
@@ -1385,7 +1680,8 @@ async function saveResEdit() {
   } else toast('Error guardando: ' + data.error, true);
 }
 
-async function openExplorer(kind, id) {
+async function openExplorer(kind, encodedId) {
+  const id = decodeURIComponent(encodedId);
   const res = await fetch('/api/resource/open-explorer', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ kind, id })
@@ -1395,7 +1691,8 @@ async function openExplorer(kind, id) {
   else toast('Error: ' + data.error, true);
 }
 
-async function deleteRes(kind, id) {
+async function deleteRes(kind, encodedId) {
+  const id = decodeURIComponent(encodedId);
   const msg = kind === 'skill'
     ? `¿Archivar y retirar la skill '${id}'? Se moverá íntegramente a un backup privado en %LOCALAPPDATA%\\agent-tooling-backups con rollback.`
     : `¿Desactivar el servidor MCP '${id}' en todos los IDEs globales con backup?`;
