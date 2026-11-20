@@ -1204,22 +1204,52 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
           </div>
         </div>
 
-        <!-- SUBPANEL 4: VERCEL FINDER -->
+        <!-- SUBPANEL 4: INSTALADOR VERCEL + AUTO-REPAIR -->
         <div id="subpanel-vercel" class="subpanel">
+          <div class="panel-surface" style="margin-bottom:var(--space-4);">
+            <div class="panel-head">
+              <div>
+                <h3>Instalador inteligente de skills (Vercel skills + Auto-Reparación)</h3>
+                <span class="muted">Instala vía npx skills add, consolida en la Bóveda Fría, valida/repara frontmatter YAML y detecta hooks o scripts automáticamente</span>
+              </div>
+            </div>
+            <div class="row-inline" style="margin-bottom:var(--space-3);">
+              <div style="flex:1;min-width:260px;">
+                <label for="inputVercelInstall" class="field-label" style="display:none;">Paquete a instalar</label>
+                <input type="text" id="inputVercelInstall" placeholder="Ejemplo: vercel-labs/agent-browser o trailofbits/skills --skill rust-review" />
+              </div>
+              <label class="row-inline muted" style="font-size:13px;cursor:pointer;">
+                <input type="checkbox" id="chkActivateNow" checked style="width:auto;" /> Activar en perfil actual
+              </label>
+              <button type="button" class="btn btn-amber" onclick="runVercelInstall()">
+                <svg class="icon" aria-hidden="true"><use href="#ic-spark"/></svg> Instalar y validar
+              </button>
+            </div>
+            <div class="row-inline" style="margin-bottom:var(--space-3);">
+              <span class="muted">Paquetes curados rápidos:</span>
+              <button type="button" class="btn btn-sm" onclick="quickInstallPack('vercel-labs/skills --skill find-skills')">Buscador Vercel</button>
+              <button type="button" class="btn btn-sm" onclick="quickInstallPack('vercel-labs/agent-browser')">Agent Browser</button>
+              <button type="button" class="btn btn-sm" onclick="quickInstallPack('obra/superpowers')">Superpowers (14)</button>
+              <button type="button" class="btn btn-sm" onclick="quickInstallPack('vercel-labs/agent-skills --skill web-design-guidelines')">Web Guidelines</button>
+              <button type="button" class="btn btn-sm" onclick="quickInstallPack('trailofbits/skills --skill rust-review')">Rust Review</button>
+            </div>
+            <div id="vercelInstallOut"></div>
+          </div>
+
           <div class="panel-surface">
             <div class="panel-head">
               <div>
                 <h3>Buscador externo de skills (Vercel skills.sh)</h3>
-                <span class="muted">Consulta el registro público con npx skills find para descubrir nuevas capacidades</span>
+                <span class="muted">Consulta el registro público con npx skills find e instala con 1 clic</span>
               </div>
             </div>
             <div class="row-inline">
               <div style="flex:1;min-width:240px;">
                 <label for="inputVercelFind" class="field-label" style="display:none;">Buscar en skills.sh</label>
-                <input type="search" id="inputVercelFind" placeholder="Ejemplo: react performance, playwright, tailwind, rust…" />
+                <input type="search" id="inputVercelFind" placeholder="Ejemplo: react performance, playwright, gamedev, expo, rust…" />
               </div>
-              <button type="button" class="btn btn-amber" onclick="runVercelFind()">
-                <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en Vercel Skills
+              <button type="button" class="btn" onclick="runVercelFind()">
+                <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en skills.sh
               </button>
             </div>
             <div id="vercelFindOut" style="margin-top:var(--space-4);"></div>
@@ -2524,6 +2554,58 @@ async function deleteRes(kind, encodedId) {
   } else toast('Error: ' + data.error, true);
 }
 
+function quickInstallPack(spec) {
+  const inp = document.getElementById('inputVercelInstall');
+  if (inp) inp.value = spec;
+  runVercelInstall(spec);
+}
+
+async function runVercelInstall(specOverride = null) {
+  const pkg = (specOverride || document.getElementById('inputVercelInstall')?.value || '').trim();
+  if (!pkg) return;
+  const activateNow = !!document.getElementById('chkActivateNow')?.checked;
+  const out = document.getElementById('vercelInstallOut');
+  out.innerHTML = `<div class="finding-row"><span class="muted">Instalando <code>${pkg}</code> vía npx skills add y ejecutando inspección/auto-reparación…</span></div>`;
+  try {
+    const res = await fetch('/api/skills/vercel-install', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ package: pkg, activate_now: activateNow })
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      out.innerHTML = `<div class="finding-row"><span class="chip bad">Error: ${data.error}</span></div>`;
+      return;
+    }
+    const r = data.result;
+    const cards = (r.inspected || []).map(item => {
+      const repairs = (item.repairs_applied || []).map(x => `<div class="chip ok" style="margin-top:var(--space-1);">Reparado: ${x}</div>`).join('');
+      const hooks = (item.hooks_detected || []).length
+        ? `<div class="chip amber" style="margin-top:var(--space-1);">Hooks detectados (${item.hooks_detected.length}): ${item.hooks_detected.join(', ')}</div>`
+        : '';
+      const scripts = (item.scripts_detected || []).length
+        ? `<div class="chip cool" style="margin-top:var(--space-1);">Scripts (${item.scripts_detected.length}): ${item.scripts_detected.slice(0, 4).join(', ')}</div>`
+        : '';
+      const warns = (item.warnings || []).map(w => `<div class="muted" style="margin-top:var(--space-1);">Aviso: ${w}</div>`).join('');
+      return `
+        <div class="finding-row">
+          <div class="row-inline" style="justify-content:space-between;">
+            <strong class="measured" style="color:var(--color-ink);">${item.skill_id}</strong>
+            <span class="chip ${item.skill_md_ok ? 'ok' : 'bad'}">${item.skill_md_ok ? 'SKILL.md OK' : 'Revisar SKILL.md'}</span>
+          </div>
+          <div style="margin-top:var(--space-1);"><span class="path-ref">${item.path}</span></div>
+          <div class="row-inline" style="margin-top:var(--space-1);">${repairs}${hooks}${scripts}</div>
+          ${warns}
+        </div>`;
+    }).join('');
+
+    out.innerHTML = cards || `<div class="finding-row"><span class="muted">Comando finalizado (código ${r.returncode}). Salida:</span><pre style="white-space:pre-wrap;font-size:12px;margin-top:var(--space-1);">${r.stdout_tail || r.stderr_tail || 'OK'}</pre></div>`;
+    toast(`Instalación y validación completada para ${pkg}`);
+    loadSnapshot();
+  } catch (err) {
+    out.innerHTML = `<div class="finding-row"><span class="chip bad">Error de red: ${err.message}</span></div>`;
+  }
+}
+
 async function runVercelFind() {
   const q = document.getElementById('inputVercelFind').value.trim();
   if (!q) return;
@@ -2536,17 +2618,23 @@ async function runVercelFind() {
   const data = await res.json();
   if (!data.ok) { out.innerHTML = `<span class="chip bad">${data.error}</span>`; return; }
   const list = data.result || [];
-  out.innerHTML = list.length ? list.map(item => `
+  out.innerHTML = list.length ? list.map(item => {
+    const safePkg = (item.package || '').replace(/'/g, "\\'");
+    return `
     <div class="finding-row">
       <div class="row-inline" style="justify-content:space-between;">
-        <strong class="measured">${item.package}</strong>
+        <strong class="measured" style="color:var(--color-ink);">${item.package}</strong>
         <span class="chip cool measured">${item.installs}</span>
       </div>
       <div class="row-inline" style="margin-top:var(--space-1);justify-content:space-between;">
         <span class="path-ref">npx skills add ${item.package}</span>
-        ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener" class="chip amber">Ver en skills.sh</a>` : ''}
+        <div class="row-inline">
+          <button type="button" class="btn btn-sm" onclick="quickInstallPack('${safePkg}')">Instalar y validar</button>
+          ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener" class="chip">Ver en skills.sh</a>` : ''}
+        </div>
       </div>
-    </div>`).join('') : '<span class="muted">Sin resultados para esa búsqueda.</span>';
+    </div>`;
+  }).join('') : '<span class="muted">Sin resultados para esa búsqueda.</span>';
 }
 
 function startIdeEdit(ideKey) {

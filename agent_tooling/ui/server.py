@@ -228,6 +228,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "result": res})
                 return
 
+            if parsed.path == "/api/skills/vercel-install":
+                from agent_tooling.skill_installer import install_vercel_skill
+                res = install_vercel_skill(
+                    package_spec=str(body.get("package", "")),
+                    activate_now=bool(body.get("activate_now", True)),
+                )
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/skills/inspect-repair":
+                from agent_tooling.skill_installer import inspect_and_repair_skill
+                skill_id = str(body.get("skill_id", "")).strip()
+                home = Path.home()
+                cand = home / ".agents" / "catalog" / "skills" / skill_id
+                if not cand.exists():
+                    cand = home / ".agents" / "skills" / skill_id
+                if not cand.exists():
+                    raise FileNotFoundError(f"Skill '{skill_id}' no encontrada en disco.")
+                res = inspect_and_repair_skill(cand, home=home, activate_now=bool(body.get("activate_now", False)))
+                self._send_json({"ok": True, "result": res})
+                return
+
             if parsed.path == "/api/recommend":
                 snap = load_oac_snapshot(tooling_root=tl_root)
                 agent_id = str(body.get("agent", "auto-orchestrator"))

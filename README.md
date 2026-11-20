@@ -134,7 +134,19 @@ El ecosistema **aprende y evoluciona con el tiempo** sin importar qué IDE abras
 
 ## Inicio Rápido
 
-### 1. Clonar e instalar el framework
+### Opción A — Instálalo con tu Agente AI (Recomendado)
+Simplemente dile a **Antigravity, OpenCode/OpenChamber, Codex, GitHub Copilot o Claude**:
+> *"Oye agente, instálame este repo: `https://github.com/matrixelfe/multi-agents-profiles-mcp-skills`"*
+
+El agente leerá automáticamente [INSTALL-WITH-AGENT.md](INSTALL-WITH-AGENT.md) y [manifests/skills-catalog-by-profile.md](manifests/skills-catalog-by-profile.md) y ejecutará el flujo guiado:
+1. Instala el motor `agent-tooling`, las NTFS Junctions y el buscador oficial **Vercel `find-skills`**.
+2. **Te pregunta interactivamente qué paquetes de skills quieres agregar** (puedes elegir uno, varios o todos): *Core & Superpowers*, *Fullstack & UI*, *GameDev & 3D*, *Ingeniería & Seguridad*, *Mobile/Expo* o *Reverse Engineering*.
+3. Descarga cada paquete con **Vercel `skills`**, lo consolida en tu **Bóveda Fría** (`0` tokens en reposo), **inspecciona y auto-repara** frontmatter YAML / hooks / scripts, y deja activo el perfil `core` (**93% de ahorro en tokens**).
+
+> También puedes buscar, instalar y auto-reparar cualquier skill nueva con 1 clic desde el **Control Center Web** → *Skills y MCPs vivos → Vercel `skills.sh`*.
+
+### Opción B — Instalación Manual
+#### 1. Clonar e instalar el framework
 ```powershell
 git clone https://github.com/matrixelfe/multi-agents-profiles-mcp-skills.git
 cd multi-agents-profiles-mcp-skills

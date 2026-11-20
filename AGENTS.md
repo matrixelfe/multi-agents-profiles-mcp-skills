@@ -1,6 +1,8 @@
 # Unified Cross-Agent Environment & Persistence Contract (`~/.agents/AGENTS.md`)
 
 > Single Source of Truth for **OpenCode V2, OpenChamber, Codex CLI, Claude Code, and Google Antigravity**.
+>
+> **Agent-Guided Onboarding:** If a user asks you *"instálame este repo"* or *"configure this framework"*, follow **[INSTALL-WITH-AGENT.md](INSTALL-WITH-AGENT.md)** and **[manifests/skills-catalog-by-profile.md](manifests/skills-catalog-by-profile.md)**: install the base framework + Vercel `find-skills`, ask the user which skill profiles they want (Core/Superpowers, Fullstack/UI, GameDev, Engineering/Security, Mobile, Reverse, or All), install via `npx skills add`, and auto-repair/consolidate into the Cold Vault (`~/.agents/catalog/skills/`).
 
 ## 1. Shared Environment & Paths (Windows)
 - **Active Skills Repository (`~/.agents/skills`):** Linked via NTFS junction to Antigravity (`~/.gemini/config/skills`), GitHub Copilot (`~/.copilot/skills`), Claude (`~/.claude/skills`), and OpenCode. Controlled by the active profile (`core`, `web`, `gamedev`, etc.) to keep sessions fast, un-truncated, and under context token budgets.

@@ -145,3 +145,21 @@ def test_profile_switcher_preserves_catalog_and_reduces_context(tmp_path):
     res_all = switch_active_profile("all", home=tmp_path)
     assert res_all["active_skills_count"] == 5
     assert get_active_profile_state(tmp_path)["active_profile"] == "all"
+
+
+def test_skill_installer_inspects_repairs_frontmatter_and_detects_hooks(tmp_path):
+    from agent_tooling.skill_installer import inspect_and_repair_skill
+
+    hot = tmp_path / ".agents" / "skills" / "demo-hook-skill"
+    (hot / "hooks").mkdir(parents=True)
+    (hot / "SKILL.md").write_text("# Demo Hook Skill\nInstructions without frontmatter.\n", encoding="utf-8")
+    (hot / "hooks" / "hooks.json").write_text('{"PreToolUse": []}', encoding="utf-8")
+
+    report = inspect_and_repair_skill(hot, home=tmp_path, activate_now=True)
+    assert report["skill_md_ok"] is True
+    assert len(report["hooks_detected"]) == 1
+    assert any("Frontmatter YAML" in r for r in report["repairs_applied"])
+    assert any("Bóveda Fría" in r for r in report["repairs_applied"])
+    repaired_md = (tmp_path / ".agents" / "catalog" / "skills" / "demo-hook-skill" / "SKILL.md").read_text(encoding="utf-8")
+    assert repaired_md.startswith("---")
+    assert "name: demo-hook-skill" in repaired_md
