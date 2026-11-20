@@ -1,327 +1,163 @@
 <a id="readme-top"></a>
 
-<!-- PROJECT SHIELDS -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <h1 align="center">⚡ Multi-Agent Profiles, MCP & Skills Manager</h1>
-  <p align="center">
-    <strong>A local, lightweight, reproducible and portable manager for MCP servers, plugins, skills, and per-project profiles across multiple AI coding agents and IDEs.</strong>
-    <br />
-    <br />
-    <a href="https://github.com/matrixelfe/multi-agents-profiles-mcp-skills"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/issues/new?labels=bug">Report Bug</a>
-    &middot;
-    <a href="https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/issues/new?labels=enhancement">Request Feature</a>
-  </p>
+
+# Agent Tooling v3 — Multi-IDE Control Center
+
+**Orquestación unificada de Skills, Servidores MCP, Plugins, Perfiles Declarativos y Gobernanza OAC V3.4 para OpenCode, OpenChamber, Codex, Claude y Google Antigravity.**
+
+[![Release](https://img.shields.io/badge/release-v3.1.0-f59e0b?style=for-the-badge)](https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/releases/tag/v3.1.0)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3b82f6?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![SQLite WAL](https://img.shields.io/badge/registry-SQLite%20WAL-10b981?style=for-the-badge&logo=sqlite&logoColor=white)](#arquitectura)
+[![Spend Guard](https://img.shields.io/badge/OAC%20V3.4-PAYG%20DENY-ef4444?style=for-the-badge)](#gobernanza-oac-v34)
+[![Cross-IDE](https://img.shields.io/badge/IDEs-4%20Sincronizados-8b5cf6?style=for-the-badge)](#clientes-soportados)
+
+[Explorar Características](#características-principales) · [Control Center UI](#control-center-web-ui-v31) · [Inicio Rápido](#inicio-rápido) · [Perfiles](#perfiles-declarativos) · [Comandos CLI](#referencia-cli)
+
 </div>
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#the-problem">The Problem</a></li>
-        <li><a href="#the-architecture">The Architecture</a></li>
-        <li><a href="#supported-clients--surfaces">Supported Clients & Surfaces</a></li>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#usage">Usage</a>
-      <ul>
-        <li><a href="#1-read-only-environment-scan">1. Read-Only Environment Scan</a></li>
-        <li><a href="#2-plan-and-apply-profiles-to-a-project">2. Plan and Apply Profiles to a Project</a></li>
-        <li><a href="#3-atomic-rollback">3. Atomic Rollback</a></li>
-        <li><a href="#4-database-health--backup">4. Database Health & Backup</a></li>
-      </ul>
-    </li>
-    <li><a href="#available-profiles">Available Profiles</a></li>
-    <li><a href="#security--invariants">Security & Invariants</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+---
 
-<!-- ABOUT THE PROJECT -->
-## About The Project
+## Acerca del proyecto
 
-When building modern software with AI coding agents (OpenCode, OpenChamber, OpenAI Codex, Claude Code, Google Antigravity), managing dozens of MCP servers (DirectX, C++, RenderDoc, Database toolboxes, Scrapers, Mobile emulators) and hundreds of specialized skills globally causes critical friction:
+Los ecosistemas agénticos modernos suelen fragmentarse entre múltiples IDEs y CLIs (**OpenCode / OpenChamber**, **Codex**, **Claude Desktop / Code** y **Google Antigravity**), provocando duplicación de skills, sobrecarga de la ventana de contexto por MCPs pesados, falta de visibilidad sobre la RAM consumida y riesgos de facturación accidental (PAYG).
 
-1. **Idle RAM & Process Bloat:** Global MCPs launch background processes on every new session, idling at 300MB–1.5GB+ RAM across multiple processes.
-2. **Context Window & Token Waste:** Every session injects dozens of irrelevant tool schemas and skill descriptions into the system prompt, increasing token costs and causing tool confusion.
-3. **Client Incompatibilities:** Different agents use different config formats (`opencode.jsonc`, `.codex/config.toml`, `.mcp.json`, `.agents/mcp_config.json`).
+**Agent Tooling v3** resuelve esto con un **Contrato Único de Persistencia** y un **Control Center Web interactivo (`http://127.0.0.1:8765`)** diseñado bajo estética *Hallmark Console (graphite)*:
 
-**`agent-tooling` v3** solves this by establishing a **Core Minimal Global + Cold Catalog + Per-Project Profile** system that dynamically generates native configuration for each agent.
+- **Una sola fuente de verdad:** `SQLite` (estado observado e historial) + `YAML` (estado deseado en perfiles y enrutamiento OAC) + `~/.agents/skills` (repositorio central de más de **350 skills** compartido vía NTFS Junction).
+- **Cero desperdicio de contexto:** separación automática entre **catálogo caliente** y **catálogo frío** (0 tokens en sesiones generales) + divulgación progresiva.
+- **Seguridad y reversibilidad total:** cada edición o archivado genera un **backup privado con verificación SHA-256** y comando de rollback instantáneo. **Cero secretos** en Git o SQLite.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
-### The Problem
+## Arquitectura
 
-```text
-BEFORE (Global Bloat):
-Opening a simple web app -> Launches C++ Clangd MCP + DirectX PIX MCP + RenderDoc + ETW + Android MCP
-Result: 15+ irrelevant tool schemas in prompt, hundreds of MB in RAM waste, high token cost.
+```mermaid
+flowchart LR
+    subgraph SSOT["Single Source of Truth (~/.agents)"]
+        DB[("SQLite Registry\nWAL + FK")]
+        YAML["Perfiles Declarativos\nprofiles/*.yaml"]
+        OAC["OAC V3.4 Routing\nPAYG = DENY"]
+        SKILLS["Skills Repository\n356+ Hot & Cold"]
+    end
 
-AFTER (agent-tooling v3):
-Opening web app -> Profile 'web' activates ONLY Scrapling + Chrome DevTools + Web Skills.
-Opening game recomp -> Profile 'gamedev' activates C++ + PIX + Game Player + Gamedev Skills.
-Global Core: ZERO specialized MCPs running idle.
+    UI["Control Center Web UI\n127.0.0.1:8765"]
+    CLI["agent-tooling CLI\nscan · doctor · ui · recommend"]
+
+    subgraph IDES["Clientes Agénticos Sincronizados"]
+        OC["OpenCode / OpenChamber"]
+        CX["Codex CLI"]
+        CL["Claude Desktop / Code"]
+        AG["Google Antigravity\n(NTFS Junction + Plugin)"]
+    end
+
+    SSOT --> CLI
+    SSOT --> UI
+    CLI --> IDES
+    UI --> IDES
 ```
 
-### The Architecture
+---
 
-* **Layer A — Minimal Global Core:** Zero heavy/specialized MCPs enabled globally. Minimal universal skills (5–15).
-* **Layer B — Per-Repository Profiles (`profiles/*.yaml`):** Managed native configs generated on demand (`opencode.jsonc`, `.codex/config.toml`, `.mcp.json`, `.agents/mcp_config.json`). Skills linked via zero-cost NTFS junctions or verified directory copies.
-* **Layer C — Cold Catalog (`~/.agents/catalog/skills/`):** Master storage for specialized skills outside the global discovery scan.
-* **Layer D — Canonical SQLite Registry (`state/registry.sqlite3`):** Observed installations, inventory, capabilities, change history, and metrics.
-* **Layer E — Human Knowledge:** Standard `AGENTS.md`, `.agent-docs/`, and `SKILL.md` rules preserved without duplication.
+## Características principales
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### Control Center Web UI (v3.1)
+Lanza `agent-tooling ui` para abrir la consola local en `http://127.0.0.1:8765` (100% local, sin dependencias CDN externas):
 
-### Supported Clients & Surfaces
+| Apartado | Capacidades clave |
+|---|---|
+| **Overview (Dashboard Interactivo)** | 6 tarjetas KPI clicables, filtro global por IDE, **Donut SVG interactivo** de recursos, huella por IDE, presión de contexto MCP + RAM viva, perfiles OAC y gráfico **Tipos de Skills más usados** agrupable por *Categoría*, *Perfil* o *IDE*. |
+| **IDEs Agénticos** | Vista por cliente con modo **Editar**, alternancia de MCPs, **Guardar** (backup SHA-256), **Restaurar por defecto** y sincronización directa de Antigravity. |
+| **Skills y MCPs vivos** | Sub-pestañas para **MCPs**, **Skills**, **Plugins**, **Vercel `skills.sh`** e **Higiene y duplicados**, con **filtros desplegables** (Estado, IDE, Carga, Categoría), pulso verde animado para recursos activos, rutas en disco y modal **Info / Editar / Explorador / Archivar**. |
+| **Mayor carga y RAM** | Lectura en vivo de procesos AI/MCP residentes en Windows (`MB`) y ranking de servidores por impacto en RAM y tokens. |
+| **Agentes y OAC V3.4** | Matriz de 19 agentes, niveles de privacidad (`zero_retention` vs. `retention_30d`) y bloqueo estricto **Spend Guard (`PAYG = DENY`)**. |
+| **Simulador ECC & Perfiles** | Recomendador contextual de skills/MCPs por tarea y perfil sin contaminar el contexto global. |
+| **SQLite y Rollbacks** | Verificación `PRAGMA integrity_check`, auditoría de cambios y restauración por `change_id`. |
 
-| Client Family | Target Surface | Mode | Native Output Artifact |
+---
+
+## Clientes soportados
+
+| Cliente | Sincronización | Skills Compartidas | MCPs & Plugins |
 |---|---|---|---|
-| **OpenCode V2** | `opencode:local` | Managed | `opencode.jsonc` (`mcp.servers.*`) |
-| **OpenChamber** | `openchamber:opencode-runtime` | Managed | Inherits OpenCode runtime |
-| **OpenAI Codex** | `codex:local` | Managed | `.codex/config.toml` (`[mcp_servers.*]`) |
-| **Claude Desktop / Code** | `claude:code-local` | Managed | `.mcp.json` (`mcpServers`) |
-| **Claude Desktop / Code** | `claude:chat`, `claude:cowork`, `claude:code-cloud` | Observe Only | Documented guidance & recommendations |
-| **Google Antigravity** | `antigravity:app`, `antigravity:ide`, `antigravity:cli` | Managed | `.agents/mcp_config.json` & `.agents/skills/` |
+| **OpenCode / OpenChamber** | Nativa (`opencode.jsonc`) | `~/.agents/skills` | Editable desde UI + Plugins DCP/Supermemory |
+| **Codex** | Nativa (`.codex/config.toml`) | `~/.agents/skills` | Editable desde UI + Plugins Codex |
+| **Google Antigravity** | NTFS Junction + `oac-custom-agents` | `~/.gemini/config/skills → ~/.agents/skills` | 4 agentes primarios + 15 subagentes + `AGENTS.md` unificado |
+| **Claude Desktop / Code** | Observación y perfiles | `~/.agents/skills` | Detección de estado y políticas |
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+---
 
-### Built With
+## Perfiles declarativos
 
-* [![Python][Python.org]][Python-url]
-* [![SQLite][SQLite.org]][SQLite-url]
-* [![YAML][YAML.org]][YAML-url]
-* [![PowerShell][PowerShell.com]][PowerShell-url]
-* [![Bash][Bash.org]][Bash-url]
-* [![Markdown][Markdown.org]][Markdown-url]
+Los perfiles en `profiles/*.yaml` activan solo las herramientas necesarias por tipo de proyecto:
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+| Perfil | Enfoque principal | Herramientas destacadas |
+|---|---|---|
+| `core` | Base ligera para cualquier repo | `computer-use`, `context-engineering`, `project-docs` |
+| `web` | Frontend, Next.js, React, E2E | `chrome-devtools`, `agent-browser`, `hallmark`, `ui-ux-pro-max` |
+| `browser-automation` | Automatización web ahorrando tokens | `agent-browser` (CLI + Skill), escalamiento a DevTools/Playwright |
+| `gamedev` | Motores 3D, shaders, recompilación | `game-player`, catálogo frío `gamedev-*` (28 skills) |
+| `windows-native` | C/C++, Rust, drivers, Win32 | `cpp`, `modern-cpp`, `rust-review`, `kernel-*` |
+| `android` | Gradle, AOSP, Expo, ADB | `android-build`, `expo-native-ui`, `expo-router` |
+| `reverse` | Ingeniería inversa y seguridad | `rea`, `craft-anything`, `reverse-engineering`, `security-review` |
+| `research` | Investigación profunda y evaluación | `advanced-evaluation`, `context-optimization` |
+| `experimental` | Sandbox de nuevas integraciones | Pruebas aisladas con rollback |
 
-<!-- GETTING STARTED -->
-## Getting Started
+---
 
-Follow these steps to set up `agent-tooling` in your local environment.
+## Inicio rápido
 
-### Prerequisites
+### Requisitos
+- **Windows 10/11** (PowerShell 5.1+) o Linux/macOS
+- **Python 3.11+** y **Node.js 20+** (opcional para `agent-browser` / `npx skills`)
 
-* **Python:** 3.11 or newer
-* **PowerShell:** 5.1+ (Windows) or **Bash** (Linux / macOS / WSL2)
-* **Git** installed and configured
-
-### Installation
-
-#### Windows (PowerShell 5.1+)
+### Instalación
 ```powershell
-# Clone the repository
 git clone https://github.com/matrixelfe/multi-agents-profiles-mcp-skills.git
 cd multi-agents-profiles-mcp-skills
-
-# Run automated installer
-.\install.ps1
+pip install -e .
 ```
 
-#### Linux / macOS / WSL2
-```bash
-# Clone the repository
-git clone https://github.com/matrixelfe/multi-agents-profiles-mcp-skills.git
-cd multi-agents-profiles-mcp-skills
-
-# Run automated installer
-chmod +x install.sh && ./install.sh
+### Lanzar el Control Center
+```powershell
+agent-tooling ui
 ```
+Abre automáticamente `http://127.0.0.1:8765` con el Dashboard **Overview** interactivo.
 
-The installer:
-1. Creates `~/.agents/tooling` and cold catalog `~/.agents/catalog/skills`.
-2. Deploys profiles, surface matrixes, policies, and starter `registry.yaml`.
-3. Installs the Python CLI package (`agent-tooling`).
-4. Executes an initial read-only discovery scan and database integrity check.
+---
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Referencia CLI
 
-<!-- USAGE EXAMPLES -->
-## Usage
-
-### 1. Read-Only Environment Scan
-
-Scan all detected clients, MCP servers, and skills into SQLite without starting servers or mutating configurations:
-
-```bash
-# Run multi-client discovery scan
+```powershell
+# Escanear IDEs, MCPs, skills y plugins hacia SQLite
 agent-tooling scan
 
-# View inventory counts (resources, installations, targets)
+# Ver estado general del ecosistema y salud de SQLite
 agent-tooling status
-
-# Verify database integrity (foreign_keys, WAL mode, integrity_check)
 agent-tooling doctor
+
+# Obtener recomendación contextual ECC para una tarea
+agent-tooling recommend --agent openagent --task "auditar seguridad de API" --profile web
+
+# Sincronizar agentes, reglas y junction de skills en Antigravity
+agent-tooling sync-antigravity-agents
+
+# Lanzar la consola web local
+agent-tooling ui
 ```
 
-### 2. Plan and Apply Profiles to a Project
+---
 
-`apply.ps1` operates in **safe `-WhatIf` (dry-run) mode by default**.
+## Gobernanza OAC V3.4
 
-```powershell
-# 1. Preview changes without touching files (Dry-run)
-powershell -File "$env:USERPROFILE\.agents\tooling\scripts\apply.ps1" -RepoPath "C:\path\to\my-project" -Profiles web
+- **`config/oac-routing.yaml`** es la única autoridad para enrutamiento de modelos y fallbacks.
+- **Spend Guard (`PAYG = DENY`)** bloquea asignaciones de modelos de pago por uso no autorizados.
+- **Pruebas automatizadas:** `python -m pytest -v` (13/13 tests pasando: migraciones SQLite idempotentes, integridad de backups, redacción de secretos, reglas ECC y bloqueo Spend Guard).
 
-# 2. Apply profile with automatic SHA-256 backup and junction creation
-powershell -File "$env:USERPROFILE\.agents\tooling\scripts\apply.ps1" -RepoPath "C:\path\to\my-project" -Profiles web -Apply
+---
 
-# 3. Combine multiple profiles (e.g. gamedev + windows-native)
-powershell -File "$env:USERPROFILE\.agents\tooling\scripts\apply.ps1" -RepoPath "C:\path\to\game-recomp" -Profiles gamedev,windows-native -Apply
-```
+<div align="right">
 
-### 3. Atomic Rollback
+[Volver arriba](#readme-top)
 
-Every execution creates an isolated snapshot under `%LOCALAPPDATA%\agent-tooling-backups\<change-id>\` with a `manifest.json`.
-
-```powershell
-# Preview restoration (-WhatIf)
-powershell -File "$env:USERPROFILE\.agents\tooling\scripts\rollback.ps1" -ChangeId "chg-20261118-102222"
-
-# Apply atomic rollback
-powershell -File "$env:USERPROFILE\.agents\tooling\scripts\rollback.ps1" -ChangeId "chg-20261118-102222" -Apply
-```
-
-### 4. Database Health & Backup
-
-```bash
-# Perform live online SQLite backup using sqlite3.Connection.backup()
-agent-tooling backup --dest "C:/path/to/backup.sqlite3"
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- PROFILES -->
-## Available Profiles
-
-Profiles are defined in declarative YAML under `profiles/*.yaml`:
-
-| Profile | Purpose | MCP Servers Included | Skills Included |
-|---|---|---|---|
-| **`core`** | Minimal universal baseline | `computer-use` | Universal guidelines |
-| **`web`** | Frontend, fullstack, APIs | `chrome-devtools`, `scrapling`, `computer-use` | `browser-testing-with-devtools`, `frontend-ui-engineering`, `api-and-interface-design` |
-| **`windows-native`** | Win32, C++, Rust, performance | `cpp`, `etw-trace-analyzer`, `computer-use` | WinDbg, profiling |
-| **`android`** | Android, Flutter, mobile apps | `mobile-mcp`, `rea`, `computer-use` | Android build & debugging |
-| **`gamedev`** | Games, DirectX, RenderDoc | `cpp`, `pix-mcp`, `dcc-mcp-renderdoc`, `etw-trace-analyzer`, `game-player` | 28 `gamedev-*` suite |
-| **`research`** | Code analysis, scraping, PRs | `github`, `scrapling`, `computer-use` | Research workflows |
-| **`reverse`** | Binary reversing, decompilation | `rea`, `craft-anything`, `computer-use` | REA & static analysis |
-| **`experimental`** | Isolated tool testing | None auto-enabled | Sandbox testing |
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- SECURITY -->
-## Security & Invariants
-
-* **No Secrets in Database or Git:** Authentication tokens, PATs, API keys, and Authorization headers are automatically redacted by `agent_tooling/security/redact.py` and are never committed or persisted in SQLite.
-* **Scanning is Not Executing:** Running `agent-tooling scan` never launches background MCP binaries or installs packages.
-* **Safe SQLite Defaults:** Enforces `PRAGMA foreign_keys = ON`, `PRAGMA journal_mode = WAL`, and `PRAGMA busy_timeout = 5000`.
-* **Zero Disruption:** Core configurations, models, API providers, and existing `.agent-docs/` or `CHANGELOG.md` files are strictly preserved.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Initial Phase 0-6 Architecture (OpenCode V2 + OpenChamber + Codex)
-- [x] Phase 7 v3 Multi-Client Engine (Claude Desktop + Google Antigravity + SQLite)
-- [x] Pinned version registry to eliminate runtime `npx` cold-start latency
-- [x] Cross-client `computer-use-for-all-agents` support
-- [ ] Automated GUI tray / TUI for quick profile toggling
-- [ ] Exportable workspace lockfiles (`.agent-profile.lock`)
-
-See the [open issues](https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/issues) for a full list of proposed features and active development.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions make open-source a great place to build tools for the AI agent ecosystem. Any contributions are **greatly appreciated**.
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Run tests (`python -m pytest -v`)
-4. Commit your Changes (`git commit -m 'feat: Add AmazingFeature'`)
-5. Push to the Branch (`git push origin feature/AmazingFeature`)
-6. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTACT -->
-## Contact
-
-Edgar Sánchez — [@matrixelfe](https://github.com/matrixelfe)
-
-Project Link: [https://github.com/matrixelfe/multi-agents-profiles-mcp-skills](https://github.com/matrixelfe/multi-agents-profiles-mcp-skills)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* [othneildrew/Best-README-Template](https://github.com/othneildrew/Best-README-Template) for the README structure and standards.
-* [OpenCode AI](https://opencode.ai) for the V2 MCP server specification.
-* [OpenAI Codex](https://github.com/openai/codex) for the CLI agent platform.
-* [Anthropic Claude Code](https://github.com/anthropics) for project-scoped MCP specifications.
-* [Google Antigravity](https://deepmind.google) for agentic engineering workflows.
-* [Xeakaes/computer-use-for-all-agents](https://github.com/Xeakaes/computer-use-for-all-agents) for cross-client GUI automation.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- MARKDOWN LINKS & IMAGES -->
-[contributors-shield]: https://img.shields.io/github/contributors/matrixelfe/multi-agents-profiles-mcp-skills.svg?style=for-the-badge
-[contributors-url]: https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/matrixelfe/multi-agents-profiles-mcp-skills.svg?style=for-the-badge
-[forks-url]: https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/network/members
-[stars-shield]: https://img.shields.io/github/stars/matrixelfe/multi-agents-profiles-mcp-skills.svg?style=for-the-badge
-[stars-url]: https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/stargazers
-[issues-shield]: https://img.shields.io/github/issues/matrixelfe/multi-agents-profiles-mcp-skills.svg?style=for-the-badge
-[issues-url]: https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/issues
-[license-shield]: https://img.shields.io/github/license/matrixelfe/multi-agents-profiles-mcp-skills.svg?style=for-the-badge
-[license-url]: https://github.com/matrixelfe/multi-agents-profiles-mcp-skills/blob/main/LICENSE
-[Python.org]: https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
-[Python-url]: https://www.python.org/
-[SQLite.org]: https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white
-[SQLite-url]: https://www.sqlite.org/
-[YAML.org]: https://img.shields.io/badge/YAML-CB171E?style=for-the-badge&logo=yaml&logoColor=white
-[YAML-url]: https://yaml.org/
-[PowerShell.com]: https://img.shields.io/badge/PowerShell-5391FE?style=for-the-badge&logo=powershell&logoColor=white
-[PowerShell-url]: https://microsoft.com/powershell
-[Bash.org]: https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white
-[Bash-url]: https://www.gnu.org/software/bash/
-[Markdown.org]: https://img.shields.io/badge/Markdown-000000?style=for-the-badge&logo=markdown&logoColor=white
-[Markdown-url]: https://daringfireball.net/projects/markdown/
+</div>

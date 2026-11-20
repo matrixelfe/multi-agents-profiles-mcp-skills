@@ -1024,9 +1024,32 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
                 <h3>Servidores MCP registrados</h3>
                 <span class="muted">El pulso verde indica que el servidor está habilitado o corriendo; el foco visual se mantiene en el nombre de la herramienta</span>
               </div>
-              <div style="min-width:250px;">
+              <div class="row-inline">
+                <label for="filterMcpState" class="field-label" style="display:none;">Estado MCP</label>
+                <select id="filterMcpState" onchange="renderCatalogMcps()" style="width:auto;">
+                  <option value="all">Estado: Todos</option>
+                  <option value="loaded">Cargados y activos</option>
+                  <option value="idle">En espera (por perfil)</option>
+                  <option value="error">Con error</option>
+                </select>
+                <label for="filterMcpIde" class="field-label" style="display:none;">Filtrar por cliente</label>
+                <select id="filterMcpIde" onchange="renderCatalogMcps()" style="width:auto;">
+                  <option value="all">IDE: Todos</option>
+                  <option value="opencode">OpenCode / OpenChamber</option>
+                  <option value="codex">Codex</option>
+                  <option value="antigravity">Antigravity</option>
+                  <option value="claude">Claude Desktop</option>
+                </select>
+                <label for="filterMcpLoad" class="field-label" style="display:none;">Carga MCP</label>
+                <select id="filterMcpLoad" onchange="renderCatalogMcps()" style="width:auto;">
+                  <option value="all">Carga: Todas</option>
+                  <option value="HIGH">Carga Alta</option>
+                  <option value="MEDIUM">Carga Media</option>
+                  <option value="LOW">Carga Baja</option>
+                </select>
                 <label for="searchMcpCat" class="field-label" style="display:none;">Filtrar MCP</label>
-                <input type="search" id="searchMcpCat" placeholder="Filtrar MCP, ruta o IDE (codex, antigravity…)" oninput="renderCatalogMcps()" />
+                <input type="search" id="searchMcpCat" placeholder="Buscar MCP o ruta…" oninput="renderCatalogMcps()" style="min-width:200px;width:auto;" />
+                <button type="button" class="btn btn-sm" onclick="resetCatalogFilters('mcps')">Limpiar</button>
               </div>
             </div>
             <div style="overflow-x:auto;">
@@ -1057,13 +1080,34 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
               <div class="row-inline">
                 <label for="filterSkillState" class="field-label" style="display:none;">Estado</label>
                 <select id="filterSkillState" onchange="renderCatalogSkills()" style="width:auto;">
-                  <option value="all">Todas las skills</option>
-                  <option value="loaded">Solo cargadas (pulso verde)</option>
-                  <option value="error">Con error</option>
+                  <option value="all">Estado: Todas</option>
+                  <option value="loaded">Solo cargadas</option>
                   <option value="cold">Catálogo frío</option>
+                  <option value="error">Con error</option>
+                </select>
+                <label for="filterSkillDomain" class="field-label" style="display:none;">Categoría</label>
+                <select id="filterSkillDomain" onchange="renderCatalogSkills()" style="width:auto;">
+                  <option value="all">Categoría: Todas</option>
+                  <option value="Frontend, UI y Web">Frontend, UI y Web</option>
+                  <option value="Seguridad y Reverse Engineering">Seguridad y RE</option>
+                  <option value="Sistemas, Kernel y Bajo Nivel">Sistemas y Kernel</option>
+                  <option value="GameDev y 3D">GameDev y 3D</option>
+                  <option value="Mobile (Android / iOS / Expo)">Mobile / Expo</option>
+                  <option value="Testing, QA y DevOps">Testing, QA y DevOps</option>
+                  <option value="Agentes, Contexto y Memoria">Agentes y Contexto</option>
+                  <option value="General y Utilidades">General y Utilidades</option>
+                </select>
+                <label for="filterSkillIde" class="field-label" style="display:none;">IDE</label>
+                <select id="filterSkillIde" onchange="renderCatalogSkills()" style="width:auto;">
+                  <option value="all">IDE: Todos</option>
+                  <option value="opencode">OpenCode / OpenChamber</option>
+                  <option value="codex">Codex</option>
+                  <option value="antigravity">Antigravity</option>
+                  <option value="claude">Claude Code</option>
                 </select>
                 <label for="searchSkillCat" class="field-label" style="display:none;">Buscar skill</label>
-                <input type="search" id="searchSkillCat" placeholder="Buscar skill, ruta, descripción o IDE…" oninput="renderCatalogSkills()" style="min-width:260px;width:auto;" />
+                <input type="search" id="searchSkillCat" placeholder="Buscar skill o ruta…" oninput="renderCatalogSkills()" style="min-width:200px;width:auto;" />
+                <button type="button" class="btn btn-sm" onclick="resetCatalogFilters('skills')">Limpiar</button>
               </div>
             </div>
             <div style="overflow-x:auto;">
@@ -1091,9 +1135,17 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
                 <h3>Plugins instalados por plataforma</h3>
                 <span class="muted">Plugins declarados y locales de OpenCode, plugins nativos de Codex y bundles de Antigravity</span>
               </div>
-              <div style="min-width:240px;">
+              <div class="row-inline">
+                <label for="filterPluginIde" class="field-label" style="display:none;">IDE Plugin</label>
+                <select id="filterPluginIde" onchange="renderCatalogPlugins()" style="width:auto;">
+                  <option value="all">IDE: Todos</option>
+                  <option value="opencode">OpenCode / OpenChamber</option>
+                  <option value="codex">Codex</option>
+                  <option value="antigravity">Antigravity</option>
+                </select>
                 <label for="searchPluginCat" class="field-label" style="display:none;">Filtrar plugin</label>
-                <input type="search" id="searchPluginCat" placeholder="Filtrar plugin o IDE…" oninput="renderCatalogPlugins()" />
+                <input type="search" id="searchPluginCat" placeholder="Filtrar plugin o ruta…" oninput="renderCatalogPlugins()" style="min-width:200px;width:auto;" />
+                <button type="button" class="btn btn-sm" onclick="resetCatalogFilters('plugins')">Limpiar</button>
               </div>
             </div>
             <div style="overflow-x:auto;">
@@ -1943,13 +1995,41 @@ function renderIdes(loadCatalog) {
   });
 }
 
+function resetCatalogFilters(which) {
+  if (which === 'mcps') {
+    ['filterMcpState', 'filterMcpIde', 'filterMcpLoad'].forEach(id => { const el = document.getElementById(id); if (el) el.value = 'all'; });
+    const q = document.getElementById('searchMcpCat'); if (q) q.value = '';
+    renderCatalogMcps();
+  } else if (which === 'skills') {
+    ['filterSkillState', 'filterSkillDomain', 'filterSkillIde'].forEach(id => { const el = document.getElementById(id); if (el) el.value = 'all'; });
+    const q = document.getElementById('searchSkillCat'); if (q) q.value = '';
+    renderCatalogSkills();
+  } else if (which === 'plugins') {
+    const el = document.getElementById('filterPluginIde'); if (el) el.value = 'all';
+    const q = document.getElementById('searchPluginCat'); if (q) q.value = '';
+    renderCatalogPlugins();
+  }
+}
+
 function renderCatalogMcps() {
   const mcps = SNAPSHOT?.catalog?.mcps || [];
   document.getElementById('catMcpCount').textContent = mcps.length;
   const subEl = document.getElementById('subCountMcps');
   if (subEl) subEl.textContent = mcps.length;
   const q = (document.getElementById('searchMcpCat')?.value || '').trim().toLowerCase();
-  const filtered = mcps.filter(m => !q || m.id.toLowerCase().includes(q) || m.running_in.join(' ').toLowerCase().includes(q) || m.profiles.join(' ').toLowerCase().includes(q));
+  const stateF = document.getElementById('filterMcpState')?.value || 'all';
+  const ideF = document.getElementById('filterMcpIde')?.value || 'all';
+  const loadF = document.getElementById('filterMcpLoad')?.value || 'all';
+
+  const filtered = mcps.filter(m => {
+    if (stateF === 'loaded' && !m.is_loaded) return false;
+    if (stateF === 'idle' && (m.is_loaded || m.health === 'error')) return false;
+    if (stateF === 'error' && m.health !== 'error') return false;
+    if (ideF !== 'all' && !(m.running_in || []).some(r => r.toLowerCase().includes(ideF))) return false;
+    if (loadF !== 'all' && (m.load_level || 'LOW') !== loadF) return false;
+    if (!q) return true;
+    return m.id.toLowerCase().includes(q) || m.running_in.join(' ').toLowerCase().includes(q) || m.profiles.join(' ').toLowerCase().includes(q) || (m.explorer_path || '').toLowerCase().includes(q);
+  });
 
   document.getElementById('catalogMcpsBody').innerHTML = filtered.length ? filtered.map(m => {
     const encId = encodeURIComponent(m.id);
@@ -2006,11 +2086,15 @@ function renderCatalogSkills() {
   if (subEl) subEl.textContent = skills.length;
   const q = (document.getElementById('searchSkillCat')?.value || '').trim().toLowerCase();
   const stateFilter = document.getElementById('filterSkillState')?.value || 'all';
+  const domainFilter = document.getElementById('filterSkillDomain')?.value || 'all';
+  const ideFilter = document.getElementById('filterSkillIde')?.value || 'all';
 
   const filtered = skills.filter(s => {
     if (stateFilter === 'loaded' && !s.is_loaded) return false;
     if (stateFilter === 'error' && s.health !== 'error') return false;
     if (stateFilter === 'cold' && s.scope !== 'cold_catalog') return false;
+    if (domainFilter !== 'all' && classifySkillDomain(s).key !== domainFilter) return false;
+    if (ideFilter !== 'all' && !(s.running_in || []).some(r => r.toLowerCase().includes(ideFilter))) return false;
     if (!q) return true;
     return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.running_in.join(' ').toLowerCase().includes(q) || (s.path || '').toLowerCase().includes(q);
   });
@@ -2067,7 +2151,12 @@ function renderCatalogPlugins() {
   const subEl = document.getElementById('subCountPlugins');
   if (subEl) subEl.textContent = plugins.length;
   const q = (document.getElementById('searchPluginCat')?.value || '').trim().toLowerCase();
-  const filtered = plugins.filter(p => !q || p.id.toLowerCase().includes(q) || p.running_in.join(' ').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q));
+  const ideF = document.getElementById('filterPluginIde')?.value || 'all';
+  const filtered = plugins.filter(p => {
+    if (ideF !== 'all' && !(p.running_in || []).some(r => r.toLowerCase().includes(ideF))) return false;
+    if (!q) return true;
+    return p.id.toLowerCase().includes(q) || p.running_in.join(' ').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q) || (p.path || '').toLowerCase().includes(q);
+  });
 
   const body = document.getElementById('catalogPluginsBody');
   if (!body) return;
