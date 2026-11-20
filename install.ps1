@@ -25,8 +25,8 @@ if (Test-Path $bundledSkills) {
   }
 }
 
-# Copy profiles, clients, scripts, and policy if not present
-foreach ($dir in @("profiles", "clients", "scripts")) {
+# Copy profiles, clients, scripts, plugins, and policy if not present
+foreach ($dir in @("profiles", "clients", "scripts", "plugins")) {
   $src = Join-Path $RepoRoot $dir
   $dst = Join-Path $ToolingHome $dir
   if (Test-Path $src) {

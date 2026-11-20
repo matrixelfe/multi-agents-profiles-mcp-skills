@@ -22,6 +22,9 @@ fi
 
 cp -r "${REPO_ROOT}/profiles" "${TOOLING_HOME}/"
 cp -r "${REPO_ROOT}/clients" "${TOOLING_HOME}/"
+if [ -d "${REPO_ROOT}/plugins" ]; then
+  cp -r "${REPO_ROOT}/plugins" "${TOOLING_HOME}/"
+fi
 cp "${REPO_ROOT}/policy.yaml" "${TOOLING_HOME}/policy.yaml"
 
 if [ ! -f "${TOOLING_HOME}/registry.yaml" ]; then
