@@ -958,6 +958,21 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
             </div>
             <div class="ov-bar-list" id="ovProfileBars"></div>
           </div>
+
+          <div class="ov-card" style="grid-column: 1 / -1;">
+            <div class="panel-head" style="margin-bottom:0;">
+              <div>
+                <h3>Tipos de skills más usados</h3>
+                <span class="muted">Distribución interactiva por dominio técnico, perfil asignado o IDE agéntico (clic en una barra para filtrar el catálogo)</span>
+              </div>
+              <div class="ov-pills" id="ovSkillModePills" role="group" aria-label="Agrupación de skills">
+                <button type="button" class="ov-pill" aria-pressed="true" onclick="setOverviewSkillMode('category')">Por categoría</button>
+                <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewSkillMode('profile')">Por perfil</button>
+                <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewSkillMode('ide')">Por IDE</button>
+              </div>
+            </div>
+            <div class="ov-bar-list" id="ovSkillTypesBars"></div>
+          </div>
         </div>
       </section>
 
@@ -1415,6 +1430,7 @@ const IDE_DRAFT_MCPS = {};
 let lastFocusedEl = null;
 let CURRENT_RES = null;
 let OV_IDE_FILTER = 'all';
+let OV_SKILL_MODE = 'category';
 
 const LEVEL_MAP = { HIGH: 'Alta', MEDIUM: 'Media', LOW: 'Baja' };
 
@@ -1502,18 +1518,19 @@ function renderAll() {
   document.getElementById('liveRamBadge').textContent = `RAM viva: ${totalRam.toFixed(1)} MB`;
   document.getElementById('totalLiveRam').textContent = `${totalRam.toFixed(1)} MB`;
 
-  renderOverview();
-  renderIdes(loadCatalog);
-  renderCatalogMcps();
-  renderCatalogSkills();
-  renderCatalogPlugins();
-  renderCatalogHygiene();
-  renderSystemLoad(liveProcs);
-  renderLoadTable();
-  renderOacSummary(oac);
-  renderAgentsTable();
-  renderProfiles();
-  renderHealth(sq);
+  const safeRun = (name, fn) => { try { fn(); } catch (err) { console.error('Render error in ' + name, err); } };
+  safeRun('overview', () => renderOverview());
+  safeRun('ides', () => renderIdes(loadCatalog));
+  safeRun('catalogMcps', () => renderCatalogMcps());
+  safeRun('catalogSkills', () => renderCatalogSkills());
+  safeRun('catalogPlugins', () => renderCatalogPlugins());
+  safeRun('catalogHygiene', () => renderCatalogHygiene());
+  safeRun('systemLoad', () => renderSystemLoad(liveProcs));
+  safeRun('loadTable', () => renderLoadTable());
+  safeRun('oacSummary', () => renderOacSummary(oac));
+  safeRun('agentsTable', () => renderAgentsTable());
+  safeRun('profiles', () => renderProfiles());
+  safeRun('health', () => renderHealth(sq));
 }
 
 function setOverviewIdeFilter(ideKey) {
@@ -1525,9 +1542,40 @@ function setOverviewIdeFilter(ideKey) {
   renderOverview();
 }
 
+function setOverviewSkillMode(mode) {
+  OV_SKILL_MODE = mode;
+  const modes = ['category', 'profile', 'ide'];
+  document.querySelectorAll('#ovSkillModePills .ov-pill').forEach((btn, idx) => {
+    btn.setAttribute('aria-pressed', modes[idx] === mode ? 'true' : 'false');
+  });
+  renderOverview();
+}
+
 function jumpToCatalog(subName) {
   showTab('catalog');
   showCatalogSubtab(subName);
+}
+
+function jumpToSkillsWithFilter(query) {
+  showTab('catalog');
+  showCatalogSubtab('skills');
+  const inp = document.getElementById('searchSkillCat');
+  if (inp) {
+    inp.value = query || '';
+    renderCatalogSkills();
+  }
+}
+
+function classifySkillDomain(s) {
+  const txt = ((s.id || '') + ' ' + (s.description || '')).toLowerCase();
+  if (/gamedev|unreal|unity|godot|shader|3d|game|fable/.test(txt)) return { key: 'GameDev y 3D', filter: 'gamedev', color: '#a78bfa' };
+  if (/frontend|ui|ux|react|vue|css|web|tailwind|hallmark|design|anime|browser|playwright|vite|next/.test(txt)) return { key: 'Frontend, UI y Web', filter: 'ui', color: 'var(--color-accent)' };
+  if (/security|audit|bounty|semgrep|taint|reverse|ghidra|radare|craft-anything|rea-|codeql|sarif|exploit|owasp/.test(txt)) return { key: 'Seguridad y Reverse Engineering', filter: 'security', color: 'var(--color-bad)' };
+  if (/kernel|baremetal|stm32|riscv|arm|llvm|mlir|jit|cuda|dpdk|xdp|uring|hypervisor|qemu|driver|cpp|rust|zig|alloc|dma|spi|i2c|uart/.test(txt)) return { key: 'Sistemas, Kernel y Bajo Nivel', filter: 'kernel', color: 'var(--color-cool)' };
+  if (/expo|android|ios|swift|mobile|lineage|liquid-glass/.test(txt)) return { key: 'Mobile (Android / iOS / Expo)', filter: 'expo', color: '#38bdf8' };
+  if (/test|e2e|qa|debug|regression|ci-cd|devops|docker|deploy|git|commit/.test(txt)) return { key: 'Testing, QA y DevOps', filter: 'test', color: 'var(--color-ok)' };
+  if (/agent|context|memory|pmb|swarm|plan|skill|doc|changelog|eval|harness/.test(txt)) return { key: 'Agentes, Contexto y Memoria', filter: 'context', color: '#f472b6' };
+  return { key: 'General y Utilidades', filter: '', color: '#6b7280' };
 }
 
 function highlightOvDonut(val, label) {
@@ -1720,18 +1768,22 @@ function renderOverview() {
   }
 
   // 5. Declarative Profiles & OAC V3.4 Privacy
+  const profilesList = Array.isArray(profiles)
+    ? profiles
+    : Object.entries(profiles || {}).map(([name, val]) => ({ name, ...(val || {}) }));
+
   const profEl = document.getElementById('ovProfileBars');
   const oacBadge = document.getElementById('ovOacBadge');
   if (oacBadge) {
-    oacBadge.textContent = `PAYG: ${sgState}`;
+    oacBadge.textContent = `Spend Guard: ${sgState}`;
     oacBadge.className = 'chip ' + (sgState === 'DENY' ? 'ok' : 'bad');
   }
   if (profEl) {
-    const maxTools = Math.max(...profiles.map(p => (p.mcps || []).length + (p.skills || []).length), 1);
+    const maxTools = Math.max(...profilesList.map(p => (p.mcp_servers || p.mcps || []).length + (p.skills || []).length), 1);
     const zrCount = (oac.privacy?.zero_retention || []).length;
     const r30Count = (oac.privacy?.retention_30d || []).length;
-    profEl.innerHTML = profiles.slice(0, 6).map(p => {
-      const mCnt = (p.mcps || []).length;
+    profEl.innerHTML = profilesList.slice(0, 6).map(p => {
+      const mCnt = (p.mcp_servers || p.mcps || []).length;
       const sCnt = (p.skills || []).length;
       const wM = Math.round((mCnt / maxTools) * 100);
       const wS = Math.round((sCnt / maxTools) * 100);
@@ -1748,8 +1800,69 @@ function renderOverview() {
         </div>`;
     }).join('') + `
       <div class="muted" style="margin-top:var(--space-1);">
-        Modelos OAC autorizados: ${zrCount} zero-retention · ${r30Count} retención 30d (${profiles.length} perfiles totales)
+        Modelos OAC autorizados: ${zrCount} zero-retention · ${r30Count} retención 30d (${profilesList.length} perfiles totales)
       </div>`;
+  }
+
+  // 6. Most Used Skill Types (by Category, Profile, or IDE)
+  const skillTypesEl = document.getElementById('ovSkillTypesBars');
+  if (skillTypesEl) {
+    const ideNameMap = { opencode: 'OpenCode', codex: 'Codex', antigravity: 'Antigravity', claude_desktop: 'Claude' };
+    const scopedSkills = OV_IDE_FILTER === 'all'
+      ? skills
+      : skills.filter(s => (s.running_in || []).some(r => r.toLowerCase().includes((ideNameMap[OV_IDE_FILTER] || OV_IDE_FILTER).toLowerCase())));
+
+    let rows = [];
+    if (OV_SKILL_MODE === 'category') {
+      const buckets = {};
+      scopedSkills.forEach(s => {
+        const dom = classifySkillDomain(s);
+        if (!buckets[dom.key]) buckets[dom.key] = { label: dom.key, count: 0, loaded: 0, filter: dom.filter, color: dom.color };
+        buckets[dom.key].count += 1;
+        if (s.is_loaded) buckets[dom.key].loaded += 1;
+      });
+      rows = Object.values(buckets).sort((a, b) => b.count - a.count);
+    } else if (OV_SKILL_MODE === 'profile') {
+      rows = profilesList.map(p => {
+        const sList = p.skills || [];
+        return {
+          label: `Perfil: ${p.name}`,
+          count: sList.length,
+          loaded: sList.length,
+          filter: sList[0] || p.name,
+          color: 'var(--color-accent)'
+        };
+      }).sort((a, b) => b.count - a.count);
+    } else {
+      const ideBuckets = {};
+      scopedSkills.forEach(s => {
+        const targets = (s.running_in && s.running_in.length) ? s.running_in : ['Catálogo frío (bajo demanda)'];
+        targets.forEach(t => {
+          if (!ideBuckets[t]) ideBuckets[t] = { label: t, count: 0, loaded: 0, filter: t.includes('frío') ? '' : t, color: t.includes('frío') ? 'var(--color-cool)' : 'var(--color-ok)' };
+          ideBuckets[t].count += 1;
+          if (s.is_loaded) ideBuckets[t].loaded += 1;
+        });
+      });
+      rows = Object.values(ideBuckets).sort((a, b) => b.count - a.count);
+    }
+
+    const maxCnt = Math.max(...rows.map(r => r.count), 1);
+    const totalScope = Math.max(scopedSkills.length, 1);
+    skillTypesEl.innerHTML = rows.length ? rows.map(r => {
+      const pctBar = Math.round((r.count / maxCnt) * 100);
+      const pctShare = OV_SKILL_MODE === 'category' ? ` (${Math.round((r.count / totalScope) * 100)}%)` : '';
+      const safeFilter = (r.filter || '').replace(/'/g, "\\'");
+      return `
+        <div class="ov-bar-row" onclick="jumpToSkillsWithFilter('${safeFilter}')" title="Clic para filtrar skills de ${r.label}">
+          <div class="ov-bar-head">
+            <strong style="color:var(--color-ink);">${r.label}</strong>
+            <span class="measured">${r.count} skills<span class="muted">${pctShare} · ${r.loaded} activas</span></span>
+          </div>
+          <div class="ov-bar-track">
+            <div class="ov-bar-fill" style="width:${pctBar}%;background:${r.color};"></div>
+          </div>
+        </div>`;
+    }).join('') : '<span class="muted">Sin skills asignadas para este filtro.</span>';
   }
 }
 
