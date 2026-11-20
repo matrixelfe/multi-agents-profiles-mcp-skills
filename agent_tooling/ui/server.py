@@ -12,10 +12,14 @@ from urllib.parse import urlparse
 
 import yaml
 
+from agent_tooling.adapters.antigravity_agents import sync_antigravity_agents
 from agent_tooling.db.schema import connect, migrate
 from agent_tooling.oac.reader import (
     _backup_file,
+    generate_ai_config_recommendations,
     load_oac_snapshot,
+    restore_ide_defaults,
+    save_ide_mcps,
     update_oac_assignment,
     update_oac_retry_behavior,
 )
@@ -154,6 +158,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     bool(body["enabled"]),
                     tl_root,
                 )
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/ide/save":
+                res = save_ide_mcps(str(body["ide"]), dict(body["mcps"]))
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/ide/restore":
+                res = restore_ide_defaults(str(body["ide"]))
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/ai-config-recommend":
+                snap = load_oac_snapshot(tooling_root=tl_root)
+                res = generate_ai_config_recommendations(snap)
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/sync-antigravity":
+                res = sync_antigravity_agents(dry_run=False)
                 self._send_json({"ok": True, "result": res})
                 return
 

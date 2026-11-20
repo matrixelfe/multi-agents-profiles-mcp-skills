@@ -18,6 +18,60 @@ from agent_tooling.security.redact import redact_dict
 
 FRONTMATTER_RE = re.compile(r"^---\s*\r?\n(.*?)\r?\n---", re.DOTALL)
 
+# Static + audited load profile for MCPs, plugins, and clients (System RAM vs Agent Context/Tokens)
+RESOURCE_LOAD_CATALOG: dict[str, dict[str, str]] = {
+    "github": {"ram": "~35-100 MB", "tokens": "Alto (~40+ tools)", "level": "HIGH", "note": "Usa gh CLI en tareas simples; activar solo en perfil research."},
+    "rea": {"ram": "~60-180 MB (Node+JADX)", "tokens": "Muy Alto (80+ tools)", "level": "HIGH", "note": "Solo para perfil reverse / android."},
+    "craft-anything": {"ram": "~80-200 MB", "tokens": "Muy Alto (100+ tools)", "level": "HIGH", "note": "Solo para ingeniería inversa / reconstrucción."},
+    "pix-mcp": {"ram": "~25-90 MB (DirectX)", "tokens": "Medio (~15 tools)", "level": "HIGH", "note": "Exclusivo perfil gamedev DirectX."},
+    "cpp": {"ram": "~20-150 MB (clangd)", "tokens": "Medio (~15 tools)", "level": "HIGH", "note": "Solo proyectos C/C++ (windows-native / gamedev)."},
+    "etw-trace-analyzer": {"ram": "~50-120 MB (Python)", "tokens": "Medio (~12 tools)", "level": "HIGH", "note": "Solo profiling ETW bajo demanda."},
+    "dcc-mcp-renderdoc": {"ram": "Externo (RenderDoc)", "tokens": "Medio (~20 tools)", "level": "MEDIUM", "note": "Solo depuración GPU en gamedev."},
+    "game-player": {"ram": "~40-90 MB (Python+Win32)", "tokens": "Medio (~15 tools)", "level": "MEDIUM", "note": "GUI automation exclusivo de gamedev."},
+    "chrome-devtools": {"ram": "~60-150 MB (Chrome)", "tokens": "Alto (~25+ tools)", "level": "HIGH", "note": "Escalar solo para consola/red/perf; usar agent-browser CLI para navegar."},
+    "scrapling": {"ram": "~25-60 MB (Python)", "tokens": "Bajo (~8 tools)", "level": "MEDIUM", "note": "Activar en perfil web / research."},
+    "mcp-toolbox-for-databases": {"ram": "~30-70 MB", "tokens": "Medio (según tools.yaml)", "level": "MEDIUM", "note": "Activar solo en repos con base de datos."},
+    "mobile-mcp": {"ram": "~30-80 MB", "tokens": "Medio (~18 tools)", "level": "MEDIUM", "note": "Activar solo con emulador/dispositivo Android."},
+    "computer-use": {"ram": "~25-55 MB (Python)", "tokens": "Bajo-Medio (~12 tools)", "level": "LOW", "note": "Cross-client activo en todos los perfiles excepto gamedev."},
+    "turbo": {"ram": "~40-80 MB (Node)", "tokens": "Medio (~15 tools)", "level": "MEDIUM", "note": "Desactivado para no duplicar computer-use."},
+    "stitch": {"ram": "0 MB (Remote HTTP)", "tokens": "Bajo (~8 tools)", "level": "LOW", "note": "Activar bajo demanda para diseño UI Stitch."},
+    "node_repl": {"ram": "~10-30 MB (Bundled)", "tokens": "Nativo Codex", "level": "LOW", "note": "Nativo bundled de Codex (do-not-touch)."},
+}
+
+
+def get_live_process_load() -> list[dict[str, Any]]:
+    """Inspect live Windows AI/MCP processes (read-only, zero external deps)."""
+    try:
+        res = subprocess.run(
+            ["tasklist", "/FO", "CSV", "/NH"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        if res.returncode != 0:
+            return []
+        tracked = re.compile(
+            r"(openchamber|opencode|codex|github-mcp|mcp-cpp|pix-mcp|scrapling|node_repl|agent-browser)",
+            re.I,
+        )
+        agg: dict[str, dict[str, Any]] = {}
+        for line in res.stdout.splitlines():
+            parts = [p.strip('"') for p in line.split('","')]
+            if len(parts) < 5:
+                continue
+            pname = parts[0]
+            if not tracked.search(pname):
+                continue
+            mem_digits = re.sub(r"[^\d]", "", parts[4])
+            mem_mb = round(int(mem_digits) / 1024.0, 1) if mem_digits else 0.0
+            entry = agg.setdefault(pname, {"process": pname, "count": 0, "ram_mb": 0.0})
+            entry["count"] += 1
+            entry["ram_mb"] = round(entry["ram_mb"] + mem_mb, 1)
+        return sorted(agg.values(), key=lambda x: x["ram_mb"], reverse=True)
+    except Exception:
+        return []
+
 
 def _strip_jsonc_comments(text: str) -> str:
     """Strip // line comments and /* */ block comments from JSONC safely."""
@@ -267,6 +321,71 @@ def load_oac_snapshot(
         d.name for d in oc_skills_dir.iterdir() if d.is_dir() and (d / "SKILL.md").exists()
     ) if oc_skills_dir.exists() else []
 
+    cx_skills_dir = cx_root / "skills"
+    cx_skills_count = sum(
+        1 for d in cx_skills_dir.iterdir() if d.is_dir() and (d / "SKILL.md").exists()
+    ) if cx_skills_dir.exists() else 0
+
+    # 11. Antigravity & Claude inspection (read-only)
+    ag_mcp_dir = home / ".gemini" / "antigravity" / "mcp"
+    ag_mcps = sorted(d.name for d in ag_mcp_dir.iterdir() if d.is_dir()) if ag_mcp_dir.exists() else []
+    ag_plugins_dir = home / ".gemini" / "config" / "plugins"
+    ag_plugins = sorted(d.name for d in ag_plugins_dir.iterdir() if d.is_dir()) if ag_plugins_dir.exists() else []
+    ag_custom_agents_dir = ag_plugins_dir / "oac-custom-agents" / "agents"
+    ag_custom_agents_count = len(list(ag_custom_agents_dir.glob("*.md"))) if ag_custom_agents_dir.exists() else 0
+
+    claude_dir = home / ".claude"
+    claude_desktop_dir = Path(os.environ.get("APPDATA", home / "AppData" / "Roaming")) / "Claude"
+
+    ides = {
+        "opencode": {
+            "title": "OpenCode V2 & OpenChamber",
+            "editable": True,
+            "config_path": str(oc_json_path),
+            "status": "available" if oc_json_path.exists() else "not_installed",
+            "mcps": oc_mcps,
+            "plugins_active": oc_plugins_declared + oc_plugins_local,
+            "skills_count": len(oc_skills),
+            "agents_count": len(agents),
+        },
+        "codex": {
+            "title": "OpenAI Codex CLI",
+            "editable": True,
+            "config_path": str(cx_toml_path),
+            "status": "available" if cx_toml_path.exists() else "not_installed",
+            "mcps": codex_mcps,
+            "plugins_active": [k for k, v in codex_plugins.items() if v],
+            "skills_count": cx_skills_count,
+            "agents_count": 0,
+        },
+        "antigravity": {
+            "title": "Google Antigravity (App / IDE / CLI)",
+            "editable": False,
+            "sync_supported": True,
+            "config_path": str(home / ".gemini" / "config"),
+            "status": "available" if (home / ".gemini" / "antigravity").exists() else "not_installed",
+            "mcps": {m: {"enabled": True, "managed_externally": True} for m in ag_mcps},
+            "plugins_active": ag_plugins,
+            "skills_count": len(shared_skills),
+            "agents_count": ag_custom_agents_count,
+        },
+        "claude": {
+            "title": "Claude Desktop / Claude Code",
+            "editable": False,
+            "config_path": str(claude_dir),
+            "status": "available" if claude_dir.exists() else "not_installed",
+            "surfaces": {
+                "code-local": "available" if claude_dir.exists() else "not_installed",
+                "cowork": "available" if claude_desktop_dir.exists() else "not_installed",
+                "chat": "observe_only",
+            },
+            "mcps": {},
+            "plugins_active": [],
+            "skills_count": len(shared_skills),
+            "agents_count": 0,
+        },
+    }
+
     return redact_dict({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "oac": {
@@ -282,6 +401,11 @@ def load_oac_snapshot(
                 "blocked_by_policy": spend_guard.get("blocked_by_policy", []),
             },
             "quota_summary": quota_summary,
+        },
+        "ides": ides,
+        "system_load": {
+            "live_processes": get_live_process_load(),
+            "resource_catalog": RESOURCE_LOAD_CATALOG,
         },
         "agents": agents,
         "mcps": {
@@ -398,3 +522,213 @@ def update_oac_retry_behavior(
         synced = res.returncode == 0
 
     return {"change_id": change_id, "sha256_before": pre_hash, "synced_jsonc": synced}
+
+
+def save_ide_mcps(
+    ide: str,
+    mcp_states: dict[str, bool],
+    opencode_root: Path | None = None,
+    codex_root: Path | None = None,
+) -> dict[str, Any]:
+    """Safely save edited MCP enabled/disabled states for OpenCode or Codex with SHA-256 backup."""
+    home = Path.home()
+    if ide == "opencode":
+        oc_path = (opencode_root or (home / ".config" / "opencode")) / "opencode.json"
+        if not oc_path.exists():
+            raise FileNotFoundError(f"opencode.json not found: {oc_path}")
+        change_id, pre_hash = _backup_file(oc_path, "ui-ide-opencode")
+        data = json.loads(oc_path.read_text(encoding="utf-8-sig"))
+        servers = data.setdefault("mcp", {}).setdefault("servers", {})
+        updated = []
+        for name, enabled in mcp_states.items():
+            if name in servers and isinstance(servers[name], dict):
+                servers[name]["disabled"] = not bool(enabled)
+                updated.append(f"{name}={'ON' if enabled else 'OFF'}")
+        tmp = oc_path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        json.loads(tmp.read_text(encoding="utf-8"))
+        tmp.replace(oc_path)
+        return {"ide": ide, "change_id": change_id, "sha256_before": pre_hash, "updated": updated}
+
+    if ide == "codex":
+        cx_path = (codex_root or (home / ".codex")) / "config.toml"
+        if not cx_path.exists():
+            raise FileNotFoundError(f"config.toml not found: {cx_path}")
+        change_id, pre_hash = _backup_file(cx_path, "ui-ide-codex")
+        lines = cx_path.read_text(encoding="utf-8-sig").splitlines()
+        out_lines: list[str] = []
+        current_server: str | None = None
+        wrote_enabled = False
+        updated = []
+
+        for line in lines:
+            m = re.match(r"^\[mcp_servers\.([^\]\.]+)\]\s*$", line.strip())
+            if m:
+                if current_server and current_server in mcp_states and not wrote_enabled:
+                    val = "true" if mcp_states[current_server] else "false"
+                    out_lines.append(f"enabled = {val}")
+                current_server = m.group(1)
+                if current_server == "node_repl":
+                    current_server = None  # Protect bundled node_repl
+                wrote_enabled = False
+                out_lines.append(line)
+                continue
+            if line.strip().startswith("["):
+                if current_server and current_server in mcp_states and not wrote_enabled:
+                    val = "true" if mcp_states[current_server] else "false"
+                    out_lines.append(f"enabled = {val}")
+                current_server = None
+                wrote_enabled = False
+                out_lines.append(line)
+                continue
+            if current_server and current_server in mcp_states and re.match(r"^\s*enabled\s*=", line):
+                val = "true" if mcp_states[current_server] else "false"
+                out_lines.append(f"enabled = {val}")
+                wrote_enabled = True
+                updated.append(f"{current_server}={'ON' if mcp_states[current_server] else 'OFF'}")
+                continue
+            out_lines.append(line)
+
+        if current_server and current_server in mcp_states and not wrote_enabled:
+            val = "true" if mcp_states[current_server] else "false"
+            out_lines.append(f"enabled = {val}")
+            updated.append(f"{current_server}={'ON' if mcp_states[current_server] else 'OFF'}")
+
+        new_text = "\n".join(out_lines) + "\n"
+        tomllib.loads(new_text)  # Validate TOML before atomic write
+        tmp = cx_path.with_suffix(".toml.tmp")
+        tmp.write_text(new_text, encoding="utf-8")
+        tmp.replace(cx_path)
+        return {"ide": ide, "change_id": change_id, "sha256_before": pre_hash, "updated": updated}
+
+    raise ValueError(f"IDE '{ide}' is observe-only or unsupported for direct MCP edits.")
+
+
+def restore_ide_defaults(
+    ide: str,
+    opencode_root: Path | None = None,
+    codex_root: Path | None = None,
+) -> dict[str, Any]:
+    """Restore safe Core Minimal defaults for an IDE (computer-use ON, all specialized MCPs OFF)."""
+    snap = load_oac_snapshot(opencode_root=opencode_root, codex_root=codex_root)
+    if ide not in ("opencode", "codex"):
+        raise ValueError(f"IDE '{ide}' does not support automatic restore.")
+    mcps = snap["ides"][ide]["mcps"]
+    defaults = {name: (name == "computer-use") for name in mcps.keys() if name != "node_repl"}
+    return save_ide_mcps(ide, defaults, opencode_root=opencode_root, codex_root=codex_root)
+
+
+def generate_ai_config_recommendations(snapshot: dict[str, Any]) -> dict[str, Any]:
+    """Deterministic AI Config Optimizer: audits all IDEs, load, OAC safety, and returns prioritized advice."""
+    findings: list[dict[str, Any]] = []
+    score = 100
+
+    # 1. Check OpenCode global MCP bloat
+    oc_mcps = snapshot.get("ides", {}).get("opencode", {}).get("mcps", {})
+    oc_heavy_on = [
+        k for k, v in oc_mcps.items()
+        if v.get("enabled") and k != "computer-use"
+    ]
+    if oc_heavy_on:
+        score -= min(30, len(oc_heavy_on) * 8)
+        findings.append({
+            "severity": "HIGH",
+            "category": "OpenCode RAM & Tokens",
+            "title": f"{len(oc_heavy_on)} MCP(s) especializados activos globalmente en OpenCode",
+            "detail": f"Activos en global: {', '.join(oc_heavy_on)}. Moverlos a perfiles por proyecto libera RAM y reduce schemas en el prompt.",
+            "action": "restore_opencode_core",
+            "action_label": "Optimizar OpenCode a Core Mínimo",
+        })
+    else:
+        findings.append({
+            "severity": "OPTIMAL",
+            "category": "OpenCode Core",
+            "title": "OpenCode V2 en estado Core Mínimo óptimo",
+            "detail": "Solo computer-use activo globalmente; 0 MCPs pesados de GameDev/Reversing/C++ en reposo.",
+        })
+
+    # 2. Check Codex global MCP bloat
+    cx_mcps = snapshot.get("ides", {}).get("codex", {}).get("mcps", {})
+    cx_heavy_on = [
+        k for k, v in cx_mcps.items()
+        if v.get("enabled") and k not in ("computer-use", "node_repl")
+    ]
+    if cx_heavy_on:
+        score -= min(25, len(cx_heavy_on) * 8)
+        findings.append({
+            "severity": "HIGH",
+            "category": "Codex Cold-Start & Tokens",
+            "title": f"{len(cx_heavy_on)} MCP(s) especializados activos globalmente en Codex",
+            "detail": f"Activos en global: {', '.join(cx_heavy_on)}. Desactivarlos en global evita procesos ociosos y latencia de arranque.",
+            "action": "restore_codex_core",
+            "action_label": "Optimizar Codex a Core Mínimo",
+        })
+    else:
+        findings.append({
+            "severity": "OPTIMAL",
+            "category": "Codex Core",
+            "title": "Codex CLI en estado Core Mínimo óptimo",
+            "detail": "Solo node_repl (bundled) y computer-use activos; servidores especializados desactivados globalmente.",
+        })
+
+    # 3. Check Spend Guard
+    sg = snapshot.get("oac", {}).get("spend_guard", {}).get("state", "UNKNOWN")
+    if sg != "DENY":
+        score -= 30
+        findings.append({
+            "severity": "CRITICAL",
+            "category": "OAC Spend Guard",
+            "title": f"PAYG Spend Guard está en estado '{sg}' (debería ser DENY)",
+            "detail": "Revisa config/oac-spend-guard.jsonc y opencode.json para evitar cargos PAYG accidentales.",
+        })
+    else:
+        findings.append({
+            "severity": "OPTIMAL",
+            "category": "OAC Spend Guard",
+            "title": "Barrera PAYG activa (DENY)",
+            "detail": "Proveedores facturables bloqueados por política; cero riesgo de fallback de pago automático.",
+        })
+
+    # 4. Check Antigravity Custom Agents sync
+    ag_agents = snapshot.get("ides", {}).get("antigravity", {}).get("agents_count", 0)
+    if ag_agents == 0:
+        score -= 10
+        findings.append({
+            "severity": "MEDIUM",
+            "category": "Antigravity Sync",
+            "title": "Agentes OAC no sincronizados con Antigravity",
+            "detail": "Sincroniza los 4 agentes primarios y 15 subagentes ocultos en ~/.gemini/config/plugins/oac-custom-agents.",
+            "action": "sync_antigravity_agents",
+            "action_label": "Sincronizar Agentes a Antigravity",
+        })
+    else:
+        findings.append({
+            "severity": "OPTIMAL",
+            "category": "Antigravity Custom Agents",
+            "title": f"{ag_agents} agentes proyectados en Antigravity (4 primarios + 15 subagentes ocultos)",
+            "detail": "Plugin oac-custom-agents activo sin saturar el selector principal.",
+        })
+
+    # 5. Check OpenCode global skills count
+    oc_sk = snapshot.get("skills", {}).get("opencode_global_count", 0)
+    if oc_sk > 15:
+        score -= 10
+        findings.append({
+            "severity": "MEDIUM",
+            "category": "Contexto de Skills",
+            "title": f"{oc_sk} skills globales en OpenCode (objetivo: 5–15)",
+            "detail": "Mueve skills especializadas al catálogo frío ~/.agents/catalog/skills/ para reducir tokens de sistema.",
+        })
+    else:
+        findings.append({
+            "severity": "OPTIMAL",
+            "category": "Contexto de Skills",
+            "title": f"Catálogo global compacto ({oc_sk} skills en OpenCode)",
+            "detail": "Divulgación progresiva y catálogo frío funcionando correctamente.",
+        })
+
+    return {
+        "score": max(0, score),
+        "grade": "A" if score >= 90 else ("B" if score >= 75 else ("C" if score >= 60 else "D")),
+        "findings": findings,
+    }

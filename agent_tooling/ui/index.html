@@ -3,306 +3,448 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agent Tooling v3 + OAC V3.4 Control Center</title>
+<title>Agent Tooling v3 — Multi-IDE Control Center</title>
 <style>
   :root {
-    --bg: #0b0f17;
-    --panel: #131a26;
-    --panel-2: #192232;
-    --border: #263248;
-    --text: #e6edf7;
-    --muted: #8ea0bc;
-    --accent: #38bdf8;
-    --accent-2: #818cf8;
-    --ok: #22c55e;
-    --warn: #f59e0b;
-    --danger: #ef4444;
-    --radius: 10px;
+    --bg-0: #060911;
+    --bg-1: #0c1220;
+    --glass: rgba(17, 24, 39, 0.72);
+    --glass-2: rgba(24, 34, 54, 0.85);
+    --border: rgba(148, 163, 184, 0.16);
+    --border-strong: rgba(56, 189, 248, 0.4);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --sky: #38bdf8;
+    --indigo: #818cf8;
+    --emerald: #10b981;
+    --amber: #f59e0b;
+    --rose: #f43f5e;
+    --radius: 14px;
+    --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
   }
   * { box-sizing: border-box; }
   body {
-    margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg); color: var(--text); line-height: 1.45;
+    margin: 0;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.12), transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, rgba(129, 140, 248, 0.12), transparent 55%),
+      var(--bg-0);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.5;
   }
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 24px; background: var(--panel); border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 20;
+
+  /* Layout */
+  .app-shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
+  @media (max-width: 960px) { .app-shell { grid-template-columns: 1fr; } aside { display: none; } }
+
+  aside {
+    background: rgba(10, 15, 28, 0.9);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    display: flex; flex-direction: column; gap: 6px;
+    position: sticky; top: 0; height: 100vh;
   }
-  header h1 { margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px; }
+  .brand {
+    padding: 8px 12px 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .brand h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+  .brand p { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+
+  .nav-btn {
+    width: 100%; text-align: left; background: transparent; color: var(--muted);
+    border: 1px solid transparent; padding: 10px 12px; border-radius: 10px;
+    cursor: pointer; font-weight: 600; font-size: 13px;
+    display: flex; align-items: center; gap: 10px; transition: all .16s ease;
+  }
+  .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+  .nav-btn.active {
+    color: var(--sky); background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.28);
+  }
+  .sidebar-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+
+  /* Topbar */
+  .content-col { display: flex; flex-direction: column; min-width: 0; }
+  header.topbar {
+    position: sticky; top: 0; z-index: 30;
+    backdrop-filter: blur(16px); background: rgba(6, 9, 17, 0.78);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  /* Buttons */
+  .btn {
+    border: none; border-radius: 9px; padding: 8px 14px; font-weight: 700; font-size: 12px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s ease;
+  }
+  .btn-ai {
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    color: #030712; box-shadow: 0 4px 18px rgba(56, 189, 248, 0.3);
+  }
+  .btn-ai:hover { transform: translateY(-1px); filter: brightness(1.08); }
+  .btn-primary { background: var(--sky); color: #04131c; }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-save { background: var(--emerald); color: #022c22; }
+  .btn-save:hover { filter: brightness(1.1); }
+  .btn-ghost { background: var(--glass-2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--border-strong); }
+  .btn-warn { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.35); }
+  .btn-warn:hover { background: rgba(245, 158, 11, 0.24); }
+  .btn-sm { padding: 5px 10px; font-size: 11.5px; border-radius: 7px; }
+
+  /* Badges */
   .badge {
-    display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
-    background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; border: 1px solid var(--border); background: var(--glass-2); color: var(--muted);
   }
-  .badge.ok { color: #86efac; border-color: #166534; background: #052e16; }
-  .badge.warn { color: #fde68a; border-color: #854d0e; background: #422006; }
-  .badge.danger { color: #fca5a5; border-color: #991b1b; background: #450a0a; }
-  .badge.info { color: #7dd3fc; border-color: #075985; background: #082f49; }
+  .badge.ok { color: #6ee7b7; border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.12); }
+  .badge.warn { color: #fcd34d; border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.12); }
+  .badge.danger { color: #fda4af; border-color: rgba(244,63,94,.45); background: rgba(244,63,94,.14); }
+  .badge.info { color: #7dd3fc; border-color: rgba(56,189,248,.4); background: rgba(56,189,248,.12); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
 
-  nav {
-    display: flex; gap: 8px; padding: 12px 24px; background: var(--panel); border-bottom: 1px solid var(--border);
-    flex-wrap: wrap;
-  }
-  nav button {
-    background: transparent; color: var(--muted); border: 1px solid transparent;
-    padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px;
-  }
-  nav button.active { background: var(--panel-2); color: var(--accent); border-color: var(--border); }
-  nav button:hover { color: var(--text); }
-
-  main { max-width: 1440px; margin: 0 auto; padding: 20px 24px 60px; }
-  .tab { display: none; }
+  /* Main & Cards */
+  main { padding: 22px 24px 64px; max-width: 1480px; width: 100%; margin: 0 auto; }
+  .tab { display: none; animation: fadeIn .18s ease; }
   .tab.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
+  .section-title { margin: 0 0 14px; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   .grid { display: grid; gap: 16px; }
-  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
-  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
-  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
 
   .card {
-    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 16px;
+    background: var(--glass); backdrop-filter: blur(14px);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px; box-shadow: var(--shadow); transition: border-color .18s ease;
   }
-  .card h2, .card h3 { margin: 0 0 10px; font-size: 15px; color: var(--text); }
-  .kpi { font-size: 26px; font-weight: 700; color: var(--accent); margin: 4px 0; }
+  .card.editing { border-color: var(--sky); box-shadow: 0 0 0 1px rgba(56,189,248,.35), var(--shadow); }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+  .card h2, .card h3 { margin: 0; font-size: 15px; font-weight: 700; }
   .muted { color: var(--muted); font-size: 12px; }
+  .kpi { font-size: 28px; font-weight: 800; color: var(--sky); margin: 4px 0; letter-spacing: -.02em; }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  /* IDE MCP Pills */
+  .mcp-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+  .mcp-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
+    border-radius: 8px; font-size: 12px; font-family: ui-monospace, Consolas, monospace;
+    border: 1px solid var(--border); background: rgba(15, 23, 42, 0.7); color: var(--muted);
+    transition: all .14s ease;
+  }
+  .mcp-chip.on { color: #a7f3d0; border-color: rgba(16,185,129,.45); background: rgba(6, 78, 59, 0.45); }
+  .mcp-chip.bundled { color: #bae6fd; border-color: rgba(56,189,248,.4); background: rgba(12, 74, 110, 0.4); }
+  .mcp-chip.editable { cursor: pointer; }
+  .mcp-chip.editable:hover { transform: translateY(-1px); border-color: var(--sky); }
+  .load-tag { font-family: system-ui, sans-serif; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
+  .load-HIGH { background: rgba(244,63,94,.2); color: #fda4af; }
+  .load-MEDIUM { background: rgba(245,158,11,.2); color: #fcd34d; }
+  .load-LOW { background: rgba(16,185,129,.2); color: #6ee7b7; }
+
+  /* Progress Bars */
+  .bar-track { height: 8px; border-radius: 999px; background: rgba(148,163,184,.14); overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--sky), var(--indigo)); }
+  .bar-fill.high { background: linear-gradient(90deg, #f59e0b, #f43f5e); }
+
+  /* Tables & Inputs */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
   th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
   tr:hover td { background: rgba(56, 189, 248, 0.04); }
 
-  select, input[type="text"], textarea {
-    background: var(--bg); color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; padding: 6px 10px; font-size: 13px; width: 100%;
+  select, input[type="text"] {
+    background: rgba(6, 9, 17, 0.85); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px; font-size: 12.5px; width: 100%;
   }
-  button.btn {
-    background: var(--accent); color: #04131c; border: none; border-radius: 6px;
-    padding: 7px 12px; font-weight: 700; font-size: 12px; cursor: pointer;
-  }
-  button.btn:hover { filter: brightness(1.1); }
-  button.btn-sec {
-    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
-    border-radius: 6px; padding: 6px 12px; font-weight: 600; font-size: 12px; cursor: pointer;
-  }
-
+  select:disabled, input:disabled { opacity: 0.55; cursor: not-allowed; }
   .pill-list { display: flex; flex-wrap: wrap; gap: 5px; }
-  .pill {
-    font-size: 11px; padding: 2px 7px; border-radius: 6px;
-    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
-    font-family: ui-monospace, Consolas, monospace;
+  .pill { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--glass-2); border: 1px solid var(--border); font-family: ui-monospace, Consolas, monospace; }
+  .pill.allow { border-color: rgba(16,185,129,.45); color: #6ee7b7; }
+  .pill.deny { border-color: rgba(244,63,94,.45); color: #fda4af; }
+  .pill.chain { border-color: rgba(56,189,248,.35); color: #7dd3fc; }
+  .row-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* Modal (AI Config Recommendation) */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(2, 6, 23, 0.78); backdrop-filter: blur(8px);
+    display: none; align-items: center; justify-content: center; z-index: 90; padding: 20px;
   }
-  .pill.deny { border-color: #7f1d1d; color: #fca5a5; }
-  .pill.allow { border-color: #14532d; color: #86efac; }
-  .pill.chain { border-color: #1e3a5f; color: #93c5fd; }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #0f172a; border: 1px solid var(--border-strong); border-radius: 16px;
+    max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 22px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+  }
+  .finding {
+    padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.75); margin-bottom: 10px;
+  }
 
   #toast {
-    position: fixed; bottom: 20px; right: 20px; background: var(--panel-2);
-    border: 1px solid var(--accent); color: var(--text); padding: 12px 16px;
-    border-radius: 8px; font-size: 13px; display: none; z-index: 100; max-width: 420px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    position: fixed; bottom: 22px; right: 22px; background: #0f172a;
+    border: 1px solid var(--sky); color: var(--text); padding: 12px 16px;
+    border-radius: 10px; font-size: 13px; display: none; z-index: 120; max-width: 440px;
+    box-shadow: var(--shadow);
   }
-  .row-inline { display: flex; gap: 8px; align-items: center; }
-  .mcp-toggle {
-    display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px;
-    border-radius: 6px; border: 1px solid var(--border); background: var(--bg);
-    font-size: 12px; cursor: pointer; user-select: none;
-  }
-  .mcp-toggle.on { border-color: #166534; background: #052e16; color: #86efac; }
 </style>
 </head>
 <body>
-<header>
-  <h1>⚡ Agent Tooling v3 <span class="badge info">OAC V3.4 + ECC</span></h1>
-  <div class="row-inline">
-    <span id="spendGuardBadge" class="badge ok">PAYG: ...</span>
-    <span id="sqliteBadge" class="badge">SQLite: ...</span>
-    <button class="btn-sec" onclick="loadSnapshot()">↻ Recargar</button>
+<div class="app-shell">
+  <aside>
+    <div class="brand">
+      <h1>⚡ Agent Tooling <span class="badge info">v3</span></h1>
+      <p>OAC V3.4 · Multi-IDE · ECC</p>
+    </div>
+    <button class="nav-btn active" onclick="showTab('ides', this)">🖥️ IDEs Agénticos</button>
+    <button class="nav-btn" onclick="showTab('load', this)">🔥 Mayor Carga (RAM/Tokens)</button>
+    <button class="nav-btn" onclick="showTab('agents', this)">🤖 Agentes, Modelos y OAC</button>
+    <button class="nav-btn" onclick="showTab('profiles', this)">🗂️ Perfiles por Proyecto</button>
+    <button class="nav-btn" onclick="showTab('ecc', this)">🧠 Simulador ECC</button>
+    <button class="nav-btn" onclick="showTab('health', this)">🗄️ SQLite y Rollbacks</button>
+    <div class="sidebar-footer">
+      <div>Respaldo SHA-256 en cada cambio</div>
+      <div id="lastUpdated">Sincronizando...</div>
+    </div>
+  </aside>
+
+  <div class="content-col">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span id="spendGuardBadge" class="badge ok"><span class="dot"></span> PAYG: ...</span>
+        <span id="sqliteBadge" class="badge"><span class="dot"></span> SQLite: ...</span>
+        <span id="liveRamBadge" class="badge info">RAM Viva: ...</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-ai" onclick="openAiRecommend()">✨ Recomendación por IA Config</button>
+        <button class="btn btn-ghost" onclick="loadSnapshot()">↻ Recargar</button>
+      </div>
+    </header>
+
+    <main>
+      <!-- TAB 1: IDES AGÉNTICOS -->
+      <section id="tab-ides" class="tab active">
+        <div class="section-title">
+          <span>🖥️ Configuración por IDE Agéntico</span>
+          <span class="muted">Usa ✏️ Editar → activa/desactiva MCPs → 💾 Guardar (backup automático) o ↺ Restaurar por defecto</span>
+        </div>
+        <div class="grid grid-2" id="idesGrid"></div>
+      </section>
+
+      <!-- TAB 2: MAYOR CARGA -->
+      <section id="tab-load" class="tab">
+        <div class="section-title">
+          <span>🔥 Análisis de Carga: Sistema (RAM) y Agente (Tokens/Contexto)</span>
+        </div>
+        <div class="grid grid-2" style="margin-bottom: 18px;">
+          <div class="card">
+            <div class="card-head">
+              <h3>💻 Procesos AI / MCP Activos Ahora en Windows</h3>
+              <span class="badge info" id="totalLiveRam">0 MB</span>
+            </div>
+            <div id="liveProcessBars" class="muted">Escaneando procesos...</div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h3>📊 Resumen de Presión de Contexto</h3>
+              <span class="badge ok">Divulgación Progresiva</span>
+            </div>
+            <div class="grid grid-2" style="margin-top:8px;">
+              <div>
+                <div class="muted">MCPs Activos Global (OpenCode)</div>
+                <div class="kpi" id="kpiOcActive">-</div>
+              </div>
+              <div>
+                <div class="muted">MCPs Activos Global (Codex)</div>
+                <div class="kpi" id="kpiCxActive">-</div>
+              </div>
+              <div>
+                <div class="muted">Skills Globales OpenCode</div>
+                <div class="kpi" id="kpiOcSkills">-</div>
+              </div>
+              <div>
+                <div class="muted">Skills Compartidas (~/.agents)</div>
+                <div class="kpi" id="kpiSharedSkills">-</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>⚠️ Ranking de Recursos con Mayor Carga (Sistema y Agente)</h3>
+            <span class="muted">Ordenado de mayor impacto (ALTA) a menor impacto (BAJA)</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Recurso / MCP</th>
+                  <th>Impacto</th>
+                  <th>Carga Sistema (RAM)</th>
+                  <th>Carga Agente (Tokens)</th>
+                  <th>Estado Global</th>
+                  <th>Recomendación</th>
+                </tr>
+              </thead>
+              <tbody id="heavyLoadTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: AGENTES, MODELOS Y OAC -->
+      <section id="tab-agents" class="tab">
+        <div class="grid grid-4" style="margin-bottom: 16px;">
+          <div class="card"><div class="muted">Agentes Detectados</div><div class="kpi" id="kpiAgents">-</div><div class="muted">OAC + Code Mode</div></div>
+          <div class="card"><div class="muted">Routing OAC</div><div class="kpi" id="kpiRoutingVer">-</div><div class="muted" id="kpiLine2">Line 2 Fallback</div></div>
+          <div class="card"><div class="muted">Spend Guard (PAYG)</div><div class="kpi" id="kpiSpendGuard" style="color:var(--emerald);">-</div><div class="muted">Solo lectura</div></div>
+          <div class="card"><div class="muted">Cooldowns Cuota</div><div class="kpi" id="kpiCooldowns">-</div><div class="muted" id="kpiTracked">quota-state.json</div></div>
+        </div>
+
+        <div class="card" id="retryCard" style="margin-bottom: 16px;">
+          <div class="card-head">
+            <h3>⚙️ Comportamiento de Reintentos y Fallback (oac-routing.yaml)</h3>
+            <div class="row-inline">
+              <button class="btn btn-ghost btn-sm" id="btnEditRetry" onclick="toggleRetryEdit(true)">✏️ Editar</button>
+              <button class="btn btn-save btn-sm" id="btnSaveRetry" style="display:none;" onclick="saveRetryBehavior()">💾 Guardar</button>
+              <button class="btn btn-warn btn-sm" onclick="restoreRetryDefaults()">↺ Restaurar por defecto</button>
+            </div>
+          </div>
+          <div class="grid grid-2" style="align-items: end;">
+            <div>
+              <label class="muted">Cadena Go-Free permitida (Iceman bloqueado por política)</label>
+              <input type="text" id="inputGoFree" disabled />
+            </div>
+            <div class="row-inline">
+              <label class="row-inline" style="cursor:pointer;">
+                <input type="checkbox" id="chkLine2" disabled />
+                <span>Habilitar Line 2 Fallback (OpenAI OAuth)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>🤖 Agentes, Modelos Asignados, Cadenas y Permisos</h3>
+            <span class="muted">Edita el modelo asignado de cualquier agente OAC y guarda con backup SHA-256</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Agente</th>
+                  <th>Grupo / Rol</th>
+                  <th>Modelo Asignado</th>
+                  <th>Cadena Preferred → Fallback</th>
+                  <th>Delegación / Restricciones</th>
+                </tr>
+              </thead>
+              <tbody id="agentsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: PERFILES -->
+      <section id="tab-profiles" class="tab">
+        <div class="section-title">
+          <span>🗂️ Perfiles Especializados por Proyecto</span>
+          <span class="muted">Click en cualquier MCP para activarlo/desactivarlo en el perfil (backup SHA-256 automático)</span>
+        </div>
+        <div class="grid grid-3" id="profilesGrid"></div>
+      </section>
+
+      <!-- TAB 5: SIMULADOR ECC -->
+      <section id="tab-ecc" class="tab">
+        <div class="card" style="margin-bottom: 16px;">
+          <div class="card-head"><h3>🧠 Simulador Determinista de Recomendación ECC (0 llamadas LLM)</h3></div>
+          <div class="grid grid-3" style="margin-bottom: 12px;">
+            <div><label class="muted">Agente</label><select id="recAgent"></select></div>
+            <div>
+              <label class="muted">Superficie Cliente</label>
+              <select id="recClient">
+                <option value="openchamber:opencode-runtime">openchamber:opencode-runtime</option>
+                <option value="opencode:local">opencode:local</option>
+                <option value="codex:local">codex:local</option>
+                <option value="claude:code-local">claude:code-local</option>
+                <option value="claude:chat">claude:chat (MANUAL_ONLY)</option>
+                <option value="claude:code-cloud">claude:code-cloud (UNSUPPORTED)</option>
+                <option value="antigravity:ide">antigravity:ide</option>
+              </select>
+            </div>
+            <div><label class="muted">Perfil</label><select id="recProfile"></select></div>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label class="muted">Descripción de la tarea</label>
+            <input type="text" id="recTask" value="navegar a una página dinámica y llenar un formulario" />
+          </div>
+          <button class="btn btn-primary" onclick="runRecommend()">Evaluar Recomendaciones</button>
+        </div>
+        <div class="grid grid-2">
+          <div class="card"><h3>📚 Skills Recomendadas (carga bajo demanda)</h3><div id="recSkillsOut" class="muted">Ejecuta una evaluación.</div></div>
+          <div class="card"><h3>🤝 Subagentes Sugeridos (Allowlist Real)</h3><div id="recSubagentsOut" class="muted">Ejecuta una evaluación.</div></div>
+        </div>
+      </section>
+
+      <!-- TAB 6: SQLITE & ROLLBACKS -->
+      <section id="tab-health" class="tab">
+        <div class="grid grid-2">
+          <div class="card">
+            <div class="card-head"><h3>🗄️ Superficies Multicliente (SQLite)</h3></div>
+            <table>
+              <thead><tr><th>Target ID</th><th>Familia</th><th>Alcance</th><th>Estado</th></tr></thead>
+              <tbody id="targetsTableBody"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>⏪ Backups y Rollbacks Privados</h3></div>
+            <p class="muted">Restaurar: <code>rollback.ps1 -ChangeId &lt;id&gt; -Apply</code></p>
+            <div id="backupsList" class="pill-list" style="flex-direction:column;"></div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
-</header>
+</div>
 
-<nav>
-  <button class="active" onclick="showTab('agents', this)">1. Agentes, Modelos y Reintentos (OAC)</button>
-  <button onclick="showTab('relations', this)">2. Relaciones: Perfiles ↔ MCPs ↔ Plugins ↔ Skills</button>
-  <button onclick="showTab('ecc', this)">3. Simulador ECC (Recomendación Contextual)</button>
-  <button onclick="showTab('health', this)">4. Salud SQLite, Superficies y Rollbacks</button>
-</nav>
-
-<main>
-  <!-- TAB 1: AGENTS, MODELS, RETRIES & OAC BEHAVIOR -->
-  <section id="tab-agents" class="tab active">
-    <div class="grid grid-4" style="margin-bottom: 16px;">
-      <div class="card">
-        <div class="muted">Agentes Detectados</div>
-        <div class="kpi" id="kpiAgents">-</div>
-        <div class="muted" id="kpiAgentsSub">OAC + Code Mode</div>
-      </div>
-      <div class="card">
-        <div class="muted">Routing OAC</div>
-        <div class="kpi" id="kpiRoutingVer">-</div>
-        <div class="muted" id="kpiLine2">Line 2 Fallback</div>
-      </div>
-      <div class="card">
-        <div class="muted">Spend Guard (PAYG)</div>
-        <div class="kpi" id="kpiSpendGuard" style="color: var(--ok);">-</div>
-        <div class="muted">Protegido (Solo lectura)</div>
-      </div>
-      <div class="card">
-        <div class="muted">Quota Cooldowns Activos</div>
-        <div class="kpi" id="kpiCooldowns">-</div>
-        <div class="muted" id="kpiTracked">Modelos monitoreados</div>
-      </div>
+<!-- MODAL: AI CONFIG RECOMMENDATION -->
+<div id="aiModal" class="modal-backdrop" onclick="if(event.target===this) closeAiModal()">
+  <div class="modal">
+    <div class="card-head">
+      <h2>✨ Recomendación por IA Config</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeAiModal()">✕ Cerrar</button>
     </div>
-
-    <div class="card" style="margin-bottom: 16px;">
-      <h3>⚙️ Comportamiento de Reintentos y Fallback (oac-routing.yaml)</h3>
-      <div class="grid grid-2" style="align-items: end;">
-        <div>
-          <label class="muted">Cadena Go-Free permitida (separada por comas, Iceman bloqueado por política)</label>
-          <input type="text" id="inputGoFree" placeholder="longcat-2.5-free, crouton-alpha-free, beam-free" />
-        </div>
-        <div class="row-inline" style="justify-content: space-between;">
-          <label class="row-inline" style="cursor:pointer;">
-            <input type="checkbox" id="chkLine2" />
-            <span>Habilitar Line 2 Fallback (OpenAI OAuth)</span>
-          </label>
-          <button class="btn" onclick="saveRetryBehavior()">Guardar Reintentos (con Backup)</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🤖 Configuración de Agentes, Modelos Asignados, Cadenas y Permisos</h3>
-      <div style="overflow-x:auto;">
-        <table>
-          <thead>
-            <tr>
-              <th>Agente</th>
-              <th>Grupo / Rol</th>
-              <th>Modelo Asignado (Edición Rápida)</th>
-              <th>Cadena Preferred → Fallback</th>
-              <th>Delegación / Restricciones</th>
-            </tr>
-          </thead>
-          <tbody id="agentsTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- TAB 2: RELATIONSHIPS -->
-  <section id="tab-relations" class="tab">
-    <div class="grid grid-2" style="margin-bottom: 16px;">
-      <div class="card">
-        <h3>🔌 Estado Global de MCPs (OpenCode V2 vs Codex)</h3>
-        <table>
-          <thead><tr><th>Servidor MCP</th><th>OpenCode Global</th><th>Codex Global</th></tr></thead>
-          <tbody id="mcpMatrixBody"></tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>🧩 Plugins Activos y Skills Globales</h3>
-        <div style="margin-bottom: 12px;">
-          <div class="muted" style="margin-bottom:4px;">OpenCode Plugins Declarados</div>
-          <div class="pill-list" id="ocPluginsDeclared"></div>
-        </div>
-        <div style="margin-bottom: 12px;">
-          <div class="muted" style="margin-bottom:4px;">OpenCode Plugins Locales (~/.config/opencode/plugins)</div>
-          <div class="pill-list" id="ocPluginsLocal"></div>
-        </div>
-        <div>
-          <div class="muted" style="margin-bottom:4px;">Skills Globales OpenCode (<span id="ocSkillsCount">0</span>) · Compartidas (<span id="sharedSkillsCount">0</span>)</div>
-          <div class="pill-list" id="ocGlobalSkills"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🗂️ Perfiles Especializados (Click en un MCP para activar/desactivar en ese perfil con Backup SHA-256)</h3>
-      <div class="grid grid-3" id="profilesGrid"></div>
-    </div>
-  </section>
-
-  <!-- TAB 3: ECC RECOMMENDER -->
-  <section id="tab-ecc" class="tab">
-    <div class="card" style="margin-bottom: 16px;">
-      <h3>🧠 Simulador Determinista de Recomendación ECC (0 llamadas LLM)</h3>
-      <div class="grid grid-3" style="margin-bottom: 12px;">
-        <div>
-          <label class="muted">Agente Activo</label>
-          <select id="recAgent"></select>
-        </div>
-        <div>
-          <label class="muted">Cliente / Superficie</label>
-          <select id="recClient">
-            <option value="openchamber:opencode-runtime">openchamber:opencode-runtime</option>
-            <option value="opencode:local">opencode:local</option>
-            <option value="codex:local">codex:local</option>
-            <option value="claude:code-local">claude:code-local</option>
-            <option value="claude:chat">claude:chat (MANUAL_ONLY)</option>
-            <option value="claude:code-cloud">claude:code-cloud (UNSUPPORTED)</option>
-            <option value="antigravity:ide">antigravity:ide</option>
-          </select>
-        </div>
-        <div>
-          <label class="muted">Perfil del Proyecto</label>
-          <select id="recProfile"></select>
-        </div>
-      </div>
-      <div style="margin-bottom: 12px;">
-        <label class="muted">Descripción de la tarea (señales detectadas localmente)</label>
-        <input type="text" id="recTask" value="Explore the codebase, debug repeated failing tests and review security before implementing" />
-      </div>
-      <button class="btn" onclick="runRecommend()">Evaluar Recomendaciones</button>
-    </div>
-
-    <div class="grid grid-2">
-      <div class="card">
-        <h3>📚 Skills Recomendadas (Máx 3, carga bajo demanda)</h3>
-        <div id="recSkillsOut" class="muted">Ejecuta una evaluación para ver resultados.</div>
-      </div>
-      <div class="card">
-        <h3>🤝 Subagentes Sugeridos (Filtrados por Allowlist Real)</h3>
-        <div id="recSubagentsOut" class="muted">Ejecuta una evaluación para ver resultados.</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TAB 4: SQLITE & ROLLBACKS -->
-  <section id="tab-health" class="tab">
-    <div class="grid grid-2">
-      <div class="card">
-        <h3>🗄️ Superficies Multicliente (SQLite `client_targets`)</h3>
-        <table>
-          <thead><tr><th>Target ID</th><th>Familia</th><th>Alcance</th><th>Estado</th></tr></thead>
-          <tbody id="targetsTableBody"></tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h3>⏪ Historial de Backups / Rollbacks Privados</h3>
-        <p class="muted">Para restaurar cualquier cambio: <code>rollback.ps1 -ChangeId &lt;id&gt; -Apply</code></p>
-        <div id="backupsList" class="pill-list" style="flex-direction: column;"></div>
-      </div>
-    </div>
-  </section>
-</main>
+    <div id="aiModalBody" class="muted">Analizando configuración de todos tus IDEs...</div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
 <script>
 let SNAPSHOT = null;
+const IDE_EDIT_MODE = {};
+const IDE_DRAFT_MCPS = {};
 
 function toast(msg, isErr = false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.style.borderColor = isErr ? 'var(--danger)' : 'var(--accent)';
+  el.style.borderColor = isErr ? 'var(--rose)' : 'var(--sky)';
   el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4500);
+  setTimeout(() => { el.style.display = 'none'; }, 4800);
 }
 
 function showTab(name, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + name).classList.add('active');
   if (btn) btn.classList.add('active');
 }
@@ -311,6 +453,7 @@ async function loadSnapshot() {
   try {
     const res = await fetch('/api/snapshot');
     SNAPSHOT = await res.json();
+    document.getElementById('lastUpdated').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
     renderAll();
   } catch (e) {
     toast('Error cargando snapshot: ' + e, true);
@@ -333,151 +476,236 @@ function getAllSafeModels() {
 function renderAll() {
   const oac = SNAPSHOT.oac || {};
   const sq = SNAPSHOT.sqlite || {};
+  const loadCatalog = SNAPSHOT.system_load?.resource_catalog || {};
+  const liveProcs = SNAPSHOT.system_load?.live_processes || [];
 
   // Header badges
   const sgState = oac.spend_guard?.state || 'UNKNOWN';
   const sgEl = document.getElementById('spendGuardBadge');
-  sgEl.textContent = 'PAYG: ' + sgState;
+  sgEl.innerHTML = `<span class="dot"></span> PAYG: ${sgState}`;
   sgEl.className = 'badge ' + (sgState === 'DENY' ? 'ok' : 'danger');
 
   const sqEl = document.getElementById('sqliteBadge');
-  sqEl.textContent = sq.exists ? `SQLite: ${sq.integrity_check} (${sq.resources} res)` : 'SQLite: no DB';
+  sqEl.innerHTML = `<span class="dot"></span> SQLite: ${sq.integrity_check || 'N/A'} (${sq.resources || 0} res)`;
   sqEl.className = 'badge ' + (sq.integrity_check === 'ok' ? 'ok' : 'warn');
 
-  // KPIs
-  document.getElementById('kpiAgents').textContent = (SNAPSHOT.agents || []).length;
-  document.getElementById('kpiRoutingVer').textContent = 'v' + (oac.routing_version ?? '?');
-  document.getElementById('kpiLine2').textContent = 'Line 2 Fallback: ' + (oac.routing?.line2_fallback_enabled ? 'ON' : 'OFF');
-  document.getElementById('kpiSpendGuard').textContent = sgState;
-  document.getElementById('kpiCooldowns').textContent = (oac.quota_summary?.cooldowns || []).length;
-  document.getElementById('kpiTracked').textContent = `${oac.quota_summary?.models_tracked || 0} modelos en quota-state.json`;
+  const totalRam = liveProcs.reduce((acc, p) => acc + (p.ram_mb || 0), 0);
+  document.getElementById('liveRamBadge').textContent = `RAM Viva AI: ${totalRam.toFixed(1)} MB`;
+  document.getElementById('totalLiveRam').textContent = `${totalRam.toFixed(1)} MB`;
 
-  // Retry inputs
-  document.getElementById('inputGoFree').value = (oac.routing?.go_free_allowed || []).join(', ');
-  document.getElementById('chkLine2').checked = !!oac.routing?.line2_fallback_enabled;
-
-  // Agents table
-  const models = getAllSafeModels();
-  const tbody = document.getElementById('agentsTableBody');
-  tbody.innerHTML = '';
-  const recAgentSel = document.getElementById('recAgent');
-  recAgentSel.innerHTML = '';
-
-  (SNAPSHOT.agents || []).forEach(ag => {
-    const opt = document.createElement('option');
-    opt.value = ag.id;
-    opt.textContent = `${ag.id} (${ag.group})`;
-    recAgentSel.appendChild(opt);
-
-    const isOacAssigned = !!(oac.assignments && oac.assignments[ag.rel_path]);
-    const tr = document.createElement('tr');
-
-    let modelCell = `<span class="pill">${ag.oac_assigned_model || ag.model || 'heredado'}</span>`;
-    if (isOacAssigned) {
-      const selId = 'sel_' + ag.rel_path.replace(/[^a-z0-9]/gi, '_');
-      const optionsHtml = models.map(m => `<option value="${m}" ${m === ag.oac_assigned_model ? 'selected' : ''}>${m}</option>`).join('');
-      modelCell = `
-        <div class="row-inline">
-          <select id="${selId}" style="min-width:210px;">${optionsHtml}</select>
-          <button class="btn-sec" onclick="saveAgentModel('${ag.rel_path}', '${selId}')">Guardar</button>
-        </div>`;
-    }
-
-    const chains = [
-      ...(ag.preferred_chain || []).map(m => `<span class="pill chain">${m}</span>`),
-      ...(ag.fallback_chain || []).map(m => `<span class="pill">↳ ${m}</span>`)
-    ].join('');
-
-    const permsHtml = [
-      ...(ag.allowed_subagents || []).map(s => `<span class="pill allow">allow:${s}</span>`),
-      ...(ag.denied_tools || []).map(d => `<span class="pill deny">deny:${d}</span>`)
-    ].join('') || '<span class="muted">Por defecto</span>';
-
-    tr.innerHTML = `
-      <td><strong>${ag.id}</strong><div class="muted">${ag.rel_path}</div></td>
-      <td><span class="badge ${ag.group === 'oac' ? 'info' : 'warn'}">${ag.group}</span> <span class="badge">${ag.oac_role || ag.mode}</span></td>
-      <td>${modelCell}</td>
-      <td><div class="pill-list">${chains || '<span class="muted">Sin cadena OAC</span>'}</div></td>
-      <td><div class="pill-list">${permsHtml}</div></td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  // MCP Matrix
-  const ocMcps = SNAPSHOT.mcps?.opencode || {};
-  const cxMcps = SNAPSHOT.mcps?.codex || {};
-  const allMcpNames = Array.from(new Set([...Object.keys(ocMcps), ...Object.keys(cxMcps)])).sort();
-  const mcpBody = document.getElementById('mcpMatrixBody');
-  mcpBody.innerHTML = allMcpNames.map(name => {
-    const oc = ocMcps[name];
-    const cx = cxMcps[name];
-    const ocBadge = !oc ? '<span class="muted">—</span>' : (oc.enabled ? '<span class="badge ok">ENABLED</span>' : '<span class="badge">disabled</span>');
-    const cxBadge = !cx ? '<span class="muted">—</span>' : (cx.bundled ? '<span class="badge info">BUNDLED</span>' : (cx.enabled ? '<span class="badge ok">ENABLED</span>' : '<span class="badge">disabled</span>'));
-    return `<tr><td><code>${name}</code></td><td>${ocBadge}</td><td>${cxBadge}</td></tr>`;
-  }).join('');
-
-  // Plugins & Skills
-  document.getElementById('ocPluginsDeclared').innerHTML = (SNAPSHOT.plugins?.opencode_declared || []).map(p => `<span class="pill">${p}</span>`).join('');
-  document.getElementById('ocPluginsLocal').innerHTML = (SNAPSHOT.plugins?.opencode_local || []).map(p => `<span class="pill allow">${p}</span>`).join('');
-  document.getElementById('ocSkillsCount').textContent = SNAPSHOT.skills?.opencode_global_count || 0;
-  document.getElementById('sharedSkillsCount').textContent = SNAPSHOT.skills?.shared_count || 0;
-  document.getElementById('ocGlobalSkills').innerHTML = (SNAPSHOT.skills?.opencode_global || []).map(s => `<span class="pill">${s}</span>`).join('');
-
-  // Profiles Grid + Rec Profile Select
-  const pGrid = document.getElementById('profilesGrid');
-  const recProfSel = document.getElementById('recProfile');
-  pGrid.innerHTML = '';
-  recProfSel.innerHTML = '';
-  const allToggleableMcps = allMcpNames.filter(m => m !== 'node_repl');
-
-  Object.entries(SNAPSHOT.profiles || {}).forEach(([pname, pdata]) => {
-    const opt = document.createElement('option');
-    opt.value = pname;
-    opt.textContent = pname;
-    recProfSel.appendChild(opt);
-
-    const activeMcps = new Set(pdata.mcp_servers || []);
-    const skills = pdata.skills || [];
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.background = 'var(--panel-2)';
-    const togglesHtml = allToggleableMcps.map(m => {
-      const isOn = activeMcps.has(m);
-      return `<span class="mcp-toggle ${isOn ? 'on' : ''}" onclick="toggleMcp('${pname}','${m}',${!isOn})">${isOn ? '✓' : '+'} ${m}</span>`;
-    }).join('');
-    card.innerHTML = `
-      <h3>${pname} <span class="badge">${activeMcps.size} MCPs · ${skills.length} skills</span></h3>
-      <div class="muted" style="margin-bottom:8px;">${pdata.description || ''}</div>
-      <div class="pill-list">${togglesHtml}</div>
-    `;
-    pGrid.appendChild(card);
-  });
-
-  // Client Targets
-  document.getElementById('targetsTableBody').innerHTML = (sq.client_targets || []).map(t => {
-    const cls = t.availability === 'available' ? 'ok' : (t.availability === 'observe_only' ? 'warn' : '');
-    return `<tr><td><code>${t.target_id}</code></td><td>${t.family}</td><td>${t.scope}</td><td><span class="badge ${cls}">${t.availability}</span></td></tr>`;
-  }).join('');
-
-  // Backups
-  document.getElementById('backupsList').innerHTML = (SNAPSHOT.backups || []).map(b =>
-    `<div class="pill" style="display:flex;justify-content:space-between;"><span>${b.change_id}</span><span class="muted">${b.has_manifest ? 'manifest.json ✓' : 'baseline'}</span></div>`
-  ).join('');
+  renderIdes(loadCatalog);
+  renderSystemLoad(liveProcs, loadCatalog);
+  renderAgentsAndOac(oac);
+  renderProfiles();
+  renderHealth(sq);
 }
 
-async function saveAgentModel(agentRelPath, selectId) {
-  const model = document.getElementById(selectId).value;
-  const res = await fetch('/api/oac/assignment', {
+function renderIdes(loadCatalog) {
+  const grid = document.getElementById('idesGrid');
+  grid.innerHTML = '';
+  const ides = SNAPSHOT.ides || {};
+
+  Object.entries(ides).forEach(([ideKey, ide]) => {
+    const isEditing = !!IDE_EDIT_MODE[ideKey];
+    const mcps = isEditing && IDE_DRAFT_MCPS[ideKey] ? IDE_DRAFT_MCPS[ideKey] : ide.mcps || {};
+    const activeCount = Object.values(mcps).filter(v => (typeof v === 'boolean' ? v : v.enabled)).length;
+    const totalCount = Object.keys(mcps).length;
+
+    const card = document.createElement('div');
+    card.className = 'card' + (isEditing ? ' editing' : '');
+
+    let actionsHtml = '';
+    if (ide.editable) {
+      if (!isEditing) {
+        actionsHtml = `
+          <button class="btn btn-ghost btn-sm" onclick="startIdeEdit('${ideKey}')">✏️ Editar</button>
+          <button class="btn btn-warn btn-sm" onclick="restoreIde('${ideKey}')">↺ Restaurar</button>`;
+      } else {
+        actionsHtml = `
+          <button class="btn btn-save btn-sm" onclick="saveIde('${ideKey}')">💾 Guardar</button>
+          <button class="btn btn-ghost btn-sm" onclick="cancelIdeEdit('${ideKey}')">Cancelar</button>`;
+      }
+    } else if (ide.sync_supported) {
+      actionsHtml = `<button class="btn btn-primary btn-sm" onclick="syncAntigravity()">🔄 Sincronizar Agentes OAC</button>`;
+    } else {
+      actionsHtml = `<span class="badge warn">Solo Observación</span>`;
+    }
+
+    const mcpChips = Object.entries(mcps).map(([name, val]) => {
+      const isOn = typeof val === 'boolean' ? val : !!val.enabled;
+      const isBundled = typeof val === 'object' && !!val.bundled;
+      const info = loadCatalog[name] || { level: 'LOW', ram: 'N/A' };
+      const cls = isBundled ? 'bundled' : (isOn ? 'on' : '');
+      const clickAttr = (isEditing && !isBundled) ? `onclick="toggleDraftMcp('${ideKey}','${name}')"` : '';
+      return `
+        <span class="mcp-chip ${cls} ${isEditing && !isBundled ? 'editable' : ''}" ${clickAttr} title="${info.ram} · ${info.tokens || ''}">
+          ${isBundled ? '🔒' : (isOn ? '●' : '○')} ${name}
+          <span class="load-tag load-${info.level}">${info.level}</span>
+        </span>`;
+    }).join('') || '<span class="muted">Sin MCPs locales configurados (usa perfiles por proyecto)</span>';
+
+    const pluginsHtml = (ide.plugins_active || []).slice(0, 8).map(p => `<span class="pill">${p}</span>`).join('') || '<span class="muted">Ninguno</span>';
+
+    card.innerHTML = `
+      <div class="card-head">
+        <div>
+          <h3>${ide.title}</h3>
+          <div class="muted" style="margin-top:2px;"><code>${ide.config_path}</code></div>
+        </div>
+        <div class="row-inline">${actionsHtml}</div>
+      </div>
+      <div class="row-inline" style="margin-bottom:10px;">
+        <span class="badge ${ide.status === 'available' ? 'ok' : ''}">${ide.status}</span>
+        <span class="badge info">MCPs activos: ${activeCount}/${totalCount}</span>
+        <span class="badge">Skills: ${ide.skills_count}</span>
+        ${ide.agents_count ? `<span class="badge">Agentes: ${ide.agents_count}</span>` : ''}
+      </div>
+      <div class="muted">Servidores MCP ${isEditing ? '(Click para activar/desactivar)' : ''}:</div>
+      <div class="mcp-grid">${mcpChips}</div>
+      <div class="muted" style="margin-top:12px;margin-bottom:4px;">Plugins Activos (${(ide.plugins_active || []).length}):</div>
+      <div class="pill-list">${pluginsHtml}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function startIdeEdit(ideKey) {
+  const mcps = SNAPSHOT.ides[ideKey].mcps || {};
+  const draft = {};
+  Object.entries(mcps).forEach(([k, v]) => {
+    draft[k] = { ...v, enabled: !!v.enabled };
+  });
+  IDE_DRAFT_MCPS[ideKey] = draft;
+  IDE_EDIT_MODE[ideKey] = true;
+  renderIdes(SNAPSHOT.system_load?.resource_catalog || {});
+}
+
+function cancelIdeEdit(ideKey) {
+  IDE_EDIT_MODE[ideKey] = false;
+  delete IDE_DRAFT_MCPS[ideKey];
+  renderIdes(SNAPSHOT.system_load?.resource_catalog || {});
+}
+
+function toggleDraftMcp(ideKey, mcpName) {
+  const entry = IDE_DRAFT_MCPS[ideKey][mcpName];
+  if (!entry || entry.bundled) return;
+  entry.enabled = !entry.enabled;
+  renderIdes(SNAPSHOT.system_load?.resource_catalog || {});
+}
+
+async function saveIde(ideKey) {
+  const draft = IDE_DRAFT_MCPS[ideKey] || {};
+  const payload = {};
+  Object.entries(draft).forEach(([k, v]) => { if (!v.bundled) payload[k] = !!v.enabled; });
+  const res = await fetch('/api/ide/save', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ agent: agentRelPath, model })
+    body: JSON.stringify({ ide: ideKey, mcps: payload })
   });
   const data = await res.json();
   if (data.ok) {
-    toast(`Guardado ${agentRelPath} → ${model} (Backup: ${data.result.change_id}, Sync JSONC: ${data.result.synced_jsonc})`);
+    IDE_EDIT_MODE[ideKey] = false;
+    delete IDE_DRAFT_MCPS[ideKey];
+    toast(`Guardado ${ideKey} con backup SHA-256 (${data.result.change_id})`);
     loadSnapshot();
   } else {
     toast('Error: ' + data.error, true);
   }
+}
+
+async function restoreIde(ideKey) {
+  if (!confirm(`¿Restaurar ${ideKey} a Core Mínimo por defecto (solo computer-use activo, MCPs pesados desactivados)? Se creará backup automático.`)) return;
+  const res = await fetch('/api/ide/restore', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ ide: ideKey })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    IDE_EDIT_MODE[ideKey] = false;
+    toast(`${ideKey} restaurado a Core Mínimo (Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else {
+    toast('Error: ' + data.error, true);
+  }
+}
+
+async function syncAntigravity() {
+  const res = await fetch('/api/sync-antigravity', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`Sincronizados ${data.result.total} agentes OAC a Antigravity (4 primarios + 15 subagentes ocultos).`);
+    loadSnapshot();
+  } else {
+    toast('Error: ' + data.error, true);
+  }
+}
+
+function renderSystemLoad(liveProcs, loadCatalog) {
+  const container = document.getElementById('liveProcessBars');
+  if (!liveProcs.length) {
+    container.innerHTML = '<div class="badge ok">0 procesos pesados activos en reposo</div>';
+  } else {
+    const maxRam = Math.max(...liveProcs.map(p => p.ram_mb), 100);
+    container.innerHTML = liveProcs.map(p => {
+      const pct = Math.min(100, Math.round((p.ram_mb / maxRam) * 100));
+      const isHigh = p.ram_mb > 200;
+      return `
+        <div style="margin-bottom:10px;">
+          <div class="row-inline" style="justify-content:space-between;">
+            <span><strong>${p.process}</strong> <span class="muted">(${p.count} proc)</span></span>
+            <span class="badge ${isHigh ? 'danger' : 'info'}">${p.ram_mb} MB</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill ${isHigh ? 'high' : ''}" style="width:${pct}%"></div></div>
+        </div>`;
+    }).join('');
+  }
+
+  const ocMcps = SNAPSHOT.mcps?.opencode || {};
+  const cxMcps = SNAPSHOT.mcps?.codex || {};
+  document.getElementById('kpiOcActive').textContent = Object.values(ocMcps).filter(v => v.enabled).length;
+  document.getElementById('kpiCxActive').textContent = Object.values(cxMcps).filter(v => v.enabled).length;
+  document.getElementById('kpiOcSkills').textContent = SNAPSHOT.skills?.opencode_global_count || 0;
+  document.getElementById('kpiSharedSkills').textContent = SNAPSHOT.skills?.shared_count || 0;
+
+  const order = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+  const rows = Object.entries(loadCatalog).sort((a, b) => (order[a[1].level] ?? 9) - (order[b[1].level] ?? 9));
+  document.getElementById('heavyLoadTableBody').innerHTML = rows.map(([name, info]) => {
+    const ocOn = ocMcps[name]?.enabled;
+    const cxOn = cxMcps[name]?.enabled;
+    const state = (ocOn || cxOn)
+      ? `<span class="badge ${info.level === 'HIGH' ? 'danger' : 'ok'}">ACTIVO (${[ocOn ? 'OC' : '', cxOn ? 'Codex' : ''].filter(Boolean).join('+')})</span>`
+      : `<span class="badge">Desactivado global</span>`;
+    return `
+      <tr>
+        <td><code>${name}</code></td>
+        <td><span class="load-tag load-${info.level}">${info.level}</span></td>
+        <td>${info.ram}</td>
+        <td>${info.tokens}</td>
+        <td>${state}</td>
+        <td class="muted">${info.note}</td>
+      </tr>`;
+  }).join('');
+}
+
+function toggleRetryEdit(editing) {
+  document.getElementById('inputGoFree').disabled = !editing;
+  document.getElementById('chkLine2').disabled = !editing;
+  document.getElementById('btnEditRetry').style.display = editing ? 'none' : 'inline-flex';
+  document.getElementById('btnSaveRetry').style.display = editing ? 'inline-flex' : 'none';
+  document.getElementById('retryCard').classList.toggle('editing', editing);
+}
+
+async function restoreRetryDefaults() {
+  if (!confirm('¿Restaurar la cadena de reintentos OAC a los valores seguros por defecto?')) return;
+  const res = await fetch('/api/oac/retry', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ line2_fallback_enabled: true, go_free_allowed: ['longcat-2.5-free', 'crouton-alpha-free', 'beam-free'] })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toggleRetryEdit(false);
+    toast(`Reintentos restaurados (Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else toast('Error: ' + data.error, true);
 }
 
 async function saveRetryBehavior() {
@@ -489,11 +717,96 @@ async function saveRetryBehavior() {
   });
   const data = await res.json();
   if (data.ok) {
-    toast(`Comportamiento de reintentos actualizado (Backup: ${data.result.change_id})`);
+    toggleRetryEdit(false);
+    toast(`Reintentos guardados (Backup: ${data.result.change_id}, Sync JSONC: ${data.result.synced_jsonc})`);
     loadSnapshot();
-  } else {
-    toast('Error: ' + data.error, true);
-  }
+  } else toast('Error: ' + data.error, true);
+}
+
+function renderAgentsAndOac(oac) {
+  document.getElementById('kpiAgents').textContent = (SNAPSHOT.agents || []).length;
+  document.getElementById('kpiRoutingVer').textContent = 'v' + (oac.routing_version ?? '?');
+  document.getElementById('kpiLine2').textContent = 'Line 2 Fallback: ' + (oac.routing?.line2_fallback_enabled ? 'ON' : 'OFF');
+  document.getElementById('kpiSpendGuard').textContent = oac.spend_guard?.state || 'UNKNOWN';
+  document.getElementById('kpiCooldowns').textContent = (oac.quota_summary?.cooldowns || []).length;
+  document.getElementById('kpiTracked').textContent = `${oac.quota_summary?.models_tracked || 0} modelos monitoreados`;
+
+  document.getElementById('inputGoFree').value = (oac.routing?.go_free_allowed || []).join(', ');
+  document.getElementById('chkLine2').checked = !!oac.routing?.line2_fallback_enabled;
+
+  const models = getAllSafeModels();
+  const tbody = document.getElementById('agentsTableBody');
+  tbody.innerHTML = '';
+  const recAgentSel = document.getElementById('recAgent');
+  recAgentSel.innerHTML = '';
+
+  (SNAPSHOT.agents || []).forEach(ag => {
+    const opt = document.createElement('option');
+    opt.value = ag.id; opt.textContent = `${ag.id} (${ag.group})`;
+    recAgentSel.appendChild(opt);
+
+    const isOacAssigned = !!(oac.assignments && oac.assignments[ag.rel_path]);
+    let modelCell = `<span class="pill">${ag.oac_assigned_model || ag.model || 'heredado'}</span>`;
+    if (isOacAssigned) {
+      const selId = 'sel_' + ag.rel_path.replace(/[^a-z0-9]/gi, '_');
+      const optionsHtml = models.map(m => `<option value="${m}" ${m === ag.oac_assigned_model ? 'selected' : ''}>${m}</option>`).join('');
+      modelCell = `<div class="row-inline"><select id="${selId}" style="min-width:205px;">${optionsHtml}</select><button class="btn btn-save btn-sm" onclick="saveAgentModel('${ag.rel_path}','${selId}')">💾</button></div>`;
+    }
+    const chains = [...(ag.preferred_chain || []).map(m => `<span class="pill chain">${m}</span>`), ...(ag.fallback_chain || []).map(m => `<span class="pill">↳ ${m}</span>`)].join('');
+    const perms = [...(ag.allowed_subagents || []).map(s => `<span class="pill allow">allow:${s}</span>`), ...(ag.denied_tools || []).map(d => `<span class="pill deny">deny:${d}</span>`)].join('') || '<span class="muted">Estándar</span>';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${ag.id}</strong><div class="muted">${ag.rel_path}</div></td>
+      <td><span class="badge ${ag.group === 'oac' ? 'info' : 'warn'}">${ag.group}</span> <span class="badge">${ag.oac_role || ag.mode}</span></td>
+      <td>${modelCell}</td>
+      <td><div class="pill-list">${chains || '<span class="muted">—</span>'}</div></td>
+      <td><div class="pill-list">${perms}</div></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+async function saveAgentModel(agentRelPath, selectId) {
+  const model = document.getElementById(selectId).value;
+  const res = await fetch('/api/oac/assignment', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ agent: agentRelPath, model })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`Guardado ${agentRelPath} → ${model} (Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else toast('Error: ' + data.error, true);
+}
+
+function renderProfiles() {
+  const pGrid = document.getElementById('profilesGrid');
+  const recProfSel = document.getElementById('recProfile');
+  pGrid.innerHTML = ''; recProfSel.innerHTML = '';
+  const allMcps = Array.from(new Set([...Object.keys(SNAPSHOT.mcps?.opencode || {}), ...Object.keys(SNAPSHOT.mcps?.codex || {})])).filter(m => m !== 'node_repl').sort();
+
+  Object.entries(SNAPSHOT.profiles || {}).forEach(([pname, pdata]) => {
+    const opt = document.createElement('option');
+    opt.value = pname; opt.textContent = pname;
+    recProfSel.appendChild(opt);
+
+    const active = new Set(pdata.mcp_servers || []);
+    const skills = pdata.skills || [];
+    const card = document.createElement('div');
+    card.className = 'card';
+    const toggles = allMcps.map(m => {
+      const on = active.has(m);
+      return `<span class="mcp-chip editable ${on ? 'on' : ''}" onclick="toggleMcp('${pname}','${m}',${!on})">${on ? '✓' : '+'} ${m}</span>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="card-head">
+        <h3>${pname}</h3>
+        <span class="badge info">${active.size} MCPs · ${skills.length} skills</span>
+      </div>
+      <div class="muted" style="margin-bottom:10px;">${pdata.description || ''}</div>
+      <div class="mcp-grid">${toggles}</div>`;
+    pGrid.appendChild(card);
+  });
 }
 
 async function toggleMcp(profile, mcp, enabled) {
@@ -505,9 +818,7 @@ async function toggleMcp(profile, mcp, enabled) {
   if (data.ok) {
     toast(`Perfil ${profile}: ${mcp} ${enabled ? 'activado' : 'desactivado'} (Backup: ${data.result.change_id})`);
     loadSnapshot();
-  } else {
-    toast('Error: ' + data.error, true);
-  }
+  } else toast('Error: ' + data.error, true);
 }
 
 async function runRecommend() {
@@ -524,36 +835,59 @@ async function runRecommend() {
   const data = await res.json();
   if (!data.ok) { toast('Error: ' + data.error, true); return; }
   const r = data.result;
+  document.getElementById('recSkillsOut').innerHTML = r.skills.length
+    ? r.skills.map(s => `<div class="finding"><div class="row-inline" style="justify-content:space-between;"><strong>${s.resource_id}</strong><span class="badge ${s.decision==='RECOMMENDED'?'ok':(s.decision==='BLOCKED'?'danger':'warn')}">${s.decision}</span></div><div class="muted">Razón: <code>${s.reason_code}</code> · Instalada: <b>${s.available?'Sí':'No'}</b> · load_now: <code>${s.load_now}</code></div></div>`).join('')
+    : `<p class="muted">${r.note || 'Sin skills sugeridas.'}</p>`;
+  document.getElementById('recSubagentsOut').innerHTML = r.subagents.length
+    ? r.subagents.map(s => `<div class="finding"><div class="row-inline" style="justify-content:space-between;"><strong>${s.recommended_agent}</strong><span class="badge ${s.invocation_allowed?'ok':'danger'}">${s.invocation_allowed?'ALLOWLIST OK':'BLOCKED'}</span></div><div class="muted">Razón: <code>${s.reason_code}</code></div></div>`).join('')
+    : '<p class="muted">Sin subagentes sugeridos.</p>';
+}
 
-  const skOut = document.getElementById('recSkillsOut');
-  if (!r.skills.length) {
-    skOut.innerHTML = `<p class="muted">${r.note || 'Sin skills recomendadas para esta tarea.'}</p>`;
-  } else {
-    skOut.innerHTML = r.skills.map(s => `
-      <div style="padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
-        <div class="row-inline" style="justify-content:space-between;">
-          <strong>${s.resource_id}</strong>
-          <span class="badge ${s.decision === 'RECOMMENDED' ? 'ok' : (s.decision === 'BLOCKED' ? 'danger' : 'warn')}">${s.decision}</span>
-        </div>
-        <div class="muted">Razón: <code>${s.reason_code}</code> · Instalada: <b>${s.available ? 'Sí' : 'No (pendiente)'}</b> · Permiso: <code>${s.permission}</code> · load_now: <code>${s.load_now}</code></div>
-      </div>
-    `).join('');
-  }
+function renderHealth(sq) {
+  document.getElementById('targetsTableBody').innerHTML = (sq.client_targets || []).map(t => {
+    const cls = t.availability === 'available' ? 'ok' : (t.availability === 'observe_only' ? 'warn' : '');
+    return `<tr><td><code>${t.target_id}</code></td><td>${t.family}</td><td>${t.scope}</td><td><span class="badge ${cls}">${t.availability}</span></td></tr>`;
+  }).join('');
+  document.getElementById('backupsList').innerHTML = (SNAPSHOT.backups || []).map(b =>
+    `<div class="pill" style="display:flex;justify-content:space-between;"><span>${b.change_id}</span><span class="muted">${b.has_manifest ? 'manifest.json ✓' : 'baseline'}</span></div>`
+  ).join('');
+}
 
-  const saOut = document.getElementById('recSubagentsOut');
-  if (!r.subagents.length) {
-    saOut.innerHTML = '<p class="muted">Sin subagentes sugeridos.</p>';
-  } else {
-    saOut.innerHTML = r.subagents.map(s => `
-      <div style="padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;">
-        <div class="row-inline" style="justify-content:space-between;">
-          <strong>${s.recommended_agent}</strong>
-          <span class="badge ${s.invocation_allowed ? 'ok' : 'danger'}">${s.invocation_allowed ? 'ALLOWLIST OK' : 'BLOCKED'}</span>
+async function openAiRecommend() {
+  document.getElementById('aiModal').classList.add('open');
+  const body = document.getElementById('aiModalBody');
+  body.innerHTML = 'Ejecutando auditoría inteligente de configuración...';
+  const res = await fetch('/api/ai-config-recommend', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
+  const data = await res.json();
+  if (!data.ok) { body.innerHTML = `<span class="badge danger">${data.error}</span>`; return; }
+  const r = data.result;
+  const sevBadge = s => s === 'OPTIMAL' ? 'ok' : (s === 'CRITICAL' || s === 'HIGH' ? 'danger' : 'warn');
+  body.innerHTML = `
+    <div class="row-inline" style="margin-bottom:14px;">
+      <span class="kpi" style="margin:0;">${r.score}/100</span>
+      <span class="badge ${r.score >= 90 ? 'ok' : 'warn'}" style="font-size:14px;">Grado ${r.grade}</span>
+      <span class="muted">Diagnóstico determinista (0 costo LLM)</span>
+    </div>
+    ${r.findings.map(f => `
+      <div class="finding">
+        <div class="row-inline" style="justify-content:space-between;margin-bottom:4px;">
+          <strong>${f.title}</strong>
+          <span class="badge ${sevBadge(f.severity)}">${f.severity}</span>
         </div>
-        <div class="muted">Razón: <code>${s.reason_code}</code> · Superficie: <code>${r.surface_status}</code></div>
+        <div class="muted">${f.detail}</div>
+        ${f.action ? `<div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="runAiAction('${f.action}')">⚡ ${f.action_label}</button></div>` : ''}
       </div>
-    `).join('');
-  }
+    `).join('')}
+  `;
+}
+
+function closeAiModal() { document.getElementById('aiModal').classList.remove('open'); }
+
+async function runAiAction(action) {
+  if (action === 'restore_opencode_core') await restoreIde('opencode');
+  else if (action === 'restore_codex_core') await restoreIde('codex');
+  else if (action === 'sync_antigravity_agents') await syncAntigravity();
+  openAiRecommend();
 }
 
 loadSnapshot();
