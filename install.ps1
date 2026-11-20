@@ -7,10 +7,23 @@ $ErrorActionPreference = 'Stop'
 
 $RepoRoot = $PSScriptRoot
 $ToolingHome = Join-Path $env:USERPROFILE ".agents\tooling"
+$SkillsHome = Join-Path $env:USERPROFILE ".agents\skills"
 $CatalogHome = Join-Path $env:USERPROFILE ".agents\catalog\skills"
 
 Write-Output "=== Installing agent-tooling v3 ==="
-New-Item -ItemType Directory -Path $ToolingHome, $CatalogHome -Force | Out-Null
+New-Item -ItemType Directory -Path $ToolingHome, $SkillsHome, $CatalogHome -Force | Out-Null
+
+# Install bundled core skills (e.g., project-docs, project-changelog) into ~/.agents/skills
+$bundledSkills = Join-Path $RepoRoot "skills"
+if (Test-Path $bundledSkills) {
+  Get-ChildItem -Path $bundledSkills -Directory | ForEach-Object {
+    $targetSkill = Join-Path $SkillsHome $_.Name
+    if (-not (Test-Path $targetSkill)) {
+      Copy-Item $_.FullName $targetSkill -Recurse -Force
+      Write-Output "Installed bundled skill: $($_.Name) -> $targetSkill"
+    }
+  }
+}
 
 # Copy profiles, clients, scripts, and policy if not present
 foreach ($dir in @("profiles", "clients", "scripts")) {

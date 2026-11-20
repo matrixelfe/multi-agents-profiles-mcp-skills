@@ -3,10 +3,22 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLING_HOME="${HOME}/.agents/tooling"
+SKILLS_HOME="${HOME}/.agents/skills"
 CATALOG_HOME="${HOME}/.agents/catalog/skills"
 
 echo "=== Installing agent-tooling v3 ==="
-mkdir -p "${TOOLING_HOME}" "${CATALOG_HOME}"
+mkdir -p "${TOOLING_HOME}" "${SKILLS_HOME}" "${CATALOG_HOME}"
+
+if [ -d "${REPO_ROOT}/skills" ]; then
+  for skill_dir in "${REPO_ROOT}/skills"/*; do
+    [ -d "${skill_dir}" ] || continue
+    skill_name="$(basename "${skill_dir}")"
+    if [ ! -d "${SKILLS_HOME}/${skill_name}" ]; then
+      cp -r "${skill_dir}" "${SKILLS_HOME}/${skill_name}"
+      echo "Installed bundled skill: ${skill_name} -> ${SKILLS_HOME}/${skill_name}"
+    fi
+  done
+fi
 
 cp -r "${REPO_ROOT}/profiles" "${TOOLING_HOME}/"
 cp -r "${REPO_ROOT}/clients" "${TOOLING_HOME}/"

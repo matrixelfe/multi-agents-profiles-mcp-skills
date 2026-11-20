@@ -1,4 +1,6 @@
 name: core
-description: Minimal baseline profile with no specialized MCPs
+description: Minimal baseline profile with cross-agent project documentation and changelog skills
 mcp_servers: []
-skills: []
+skills:
+  - project-docs
+  - project-changelog

@@ -6,6 +6,13 @@
 - **Verification:** Always run `python -m pytest -v` and `agent-tooling doctor` before committing changes.
 - **Safe Defaults:** `apply.ps1` and `rollback.ps1` must always default to `-WhatIf` (dry-run). Real application requires explicit `-Apply`.
 
+## Cross-Agent Project Documentation & Changelog (`.agent-docs/` + `AGENTS.md`)
+Applies to **every evolving project** (web, desktop, Windows, mobile app, CLI, library, etc.) across all supported agents, **whether or not Git is initialized yet**:
+- **One-Time Consent (Missing Docs):** If a project has no `.agent-docs/` directory or repo `AGENTS.md`, ask the user **once** whether to generate them and keep them updated as the project evolves.
+- **One-Time Consent (Incomplete Docs):** If `.agent-docs/` exists but is incomplete, ask the user **once** whether to complete the missing documents and keep them updated.
+- **Continuous Sync:** Once approved (or once `.agent-docs/` is established), automatically maintain `.agent-docs/`, `.agent-docs/CHANGELOG.md` (via `project-changelog`), and the repo `AGENTS.md` (via `project-docs`) as the project progresses.
+- **Mandatory Git / GitHub Inclusion:** Every commit or push to Git / GitHub **MUST** stage and include updated `.agent-docs/` (including `CHANGELOG.md`) and `AGENTS.md`. If the project does not have Git initialized yet, continue maintaining `.agent-docs/` normally on disk; as soon as Git is initialized, `.agent-docs/` and `AGENTS.md` **MUST** be tracked and included from the first commit onward.
+
 ## README & Documentation Standard (Mandatory for All Agents)
 All project README files created or updated across repositories managed by this tooling must follow the **Best-README-Template** standard (`https://github.com/othneildrew/Best-README-Template`):
 1. **Top Anchor & Shields:** `<a id="readme-top"></a>` anchor with relevant badges (contributors, forks, stars, issues, license, tech stack).
