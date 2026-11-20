@@ -116,3 +116,32 @@ def test_parse_agent_markdown_permissions(tmp_path: Path) -> None:
     parsed = parse_agent_markdown(md, tmp_path)
     assert parsed["allowed_subagents"] == ["code-explorer"]
     assert "bash:*" in parsed["denied_tools"]
+
+
+def test_profile_switcher_preserves_catalog_and_reduces_context(tmp_path):
+    from agent_tooling.profile_switcher import get_active_profile_state, switch_active_profile
+
+    hot = tmp_path / ".agents" / "skills"
+    profiles_dir = tmp_path / ".agents" / "tooling" / "profiles"
+    hot.mkdir(parents=True)
+    profiles_dir.mkdir(parents=True)
+
+    for sk in ("pmb-memory", "project-docs", "hallmark", "gamedev-unreal", "kernel-internals"):
+        d = hot / sk
+        d.mkdir()
+        (d / "SKILL.md").write_text(f"# {sk}\n", encoding="utf-8")
+
+    (profiles_dir / "web.yaml").write_text("name: web\nskills:\n  - hallmark\n", encoding="utf-8")
+
+    res = switch_active_profile("web", home=tmp_path)
+    assert res["active_profile"] == "web"
+    assert res["catalog_skills_count"] == 5
+    assert res["active_skills_count"] == 3  # pmb-memory, project-docs (core) + hallmark (web)
+    assert res["context_reduction_pct"] == 40
+    assert (tmp_path / ".agents" / "catalog" / "skills" / "kernel-internals" / "SKILL.md").exists()
+    assert not (hot / "kernel-internals").exists()
+
+    # Restore all
+    res_all = switch_active_profile("all", home=tmp_path)
+    assert res_all["active_skills_count"] == 5
+    assert get_active_profile_state(tmp_path)["active_profile"] == "all"

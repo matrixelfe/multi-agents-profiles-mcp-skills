@@ -863,6 +863,19 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         <span id="liveRamBadge" class="chip cool measured">RAM viva: …</span>
       </div>
       <div class="row-inline">
+        <label for="activeProfileSelect" class="field-label" style="display:none;">Perfil activo de skills</label>
+        <select id="activeProfileSelect" onchange="switchActiveProfile(this.value)" style="width:auto;" title="Cambia las skills activas vía NTFS Junctions para ahorrar tokens de contexto">
+          <option value="all">Perfil: Todas</option>
+          <option value="core">Perfil: core</option>
+          <option value="web">Perfil: web</option>
+          <option value="browser-automation">Perfil: browser-automation</option>
+          <option value="gamedev">Perfil: gamedev</option>
+          <option value="android">Perfil: android</option>
+          <option value="windows-native">Perfil: windows-native</option>
+          <option value="reverse">Perfil: reverse</option>
+          <option value="research">Perfil: research</option>
+          <option value="experimental">Perfil: experimental</option>
+        </select>
         <button type="button" class="btn btn-amber" onclick="openAiRecommend()">
           <svg class="icon" aria-hidden="true"><use href="#ic-spark"/></svg> Recomendación IA Config
         </button>
@@ -1573,6 +1586,11 @@ function renderAll() {
   document.getElementById('liveRamBadge').textContent = `RAM viva: ${totalRam.toFixed(1)} MB`;
   document.getElementById('totalLiveRam').textContent = `${totalRam.toFixed(1)} MB`;
 
+  const apSel = document.getElementById('activeProfileSelect');
+  if (apSel && SNAPSHOT.active_profile?.active_profile) {
+    apSel.value = SNAPSHOT.active_profile.active_profile;
+  }
+
   const safeRun = (name, fn) => { try { fn(); } catch (err) { console.error('Render error in ' + name, err); } };
   safeRun('overview', () => renderOverview());
   safeRun('ides', () => renderIdes(loadCatalog));
@@ -1586,6 +1604,28 @@ function renderAll() {
   safeRun('agentsTable', () => renderAgentsTable());
   safeRun('profiles', () => renderProfiles());
   safeRun('health', () => renderHealth(sq));
+}
+
+async function switchActiveProfile(profileName) {
+  const label = profileName === 'all' ? 'Todas las skills' : `Core + ${profileName}`;
+  toast(`Cambiando perfil activo a ${label}…`);
+  try {
+    const res = await fetch('/api/profile/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile: profileName })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      const r = data.result;
+      toast(`Perfil '${r.active_profile}' activo: ${r.active_skills_count}/${r.catalog_skills_count} skills (${r.context_reduction_pct}% ahorro de contexto)`);
+      loadSnapshot();
+    } else {
+      toast('Error cambiando perfil: ' + data.error, true);
+    }
+  } catch (err) {
+    toast('Error de red cambiando perfil: ' + err.message, true);
+  }
 }
 
 function setOverviewIdeFilter(ideKey) {

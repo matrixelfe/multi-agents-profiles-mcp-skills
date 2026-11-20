@@ -166,6 +166,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "result": res})
                 return
 
+            if parsed.path == "/api/profile/switch":
+                from agent_tooling.profile_switcher import switch_active_profile
+                res = switch_active_profile(
+                    profile_name=str(body.get("profile", "all")),
+                    dry_run=bool(body.get("dry_run", False)),
+                )
+                self._send_json({"ok": True, "result": res})
+                return
+
             if parsed.path == "/api/ide/save":
                 res = save_ide_mcps(str(body["ide"]), dict(body["mcps"]))
                 self._send_json({"ok": True, "result": res})

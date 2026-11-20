@@ -444,8 +444,11 @@ def load_oac_snapshot(
         live_procs=live_procs,
     )
 
+    from agent_tooling.profile_switcher import get_active_profile_state
+
     return redact_dict({
         "generated_at": datetime.now(timezone.utc).isoformat(),
+        "active_profile": get_active_profile_state(home),
         "oac": {
             "routing_version": routing.get("routing_version"),
             "routing": routing.get("routing", {}),
