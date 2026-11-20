@@ -29,6 +29,12 @@ if [ ! -f "${TOOLING_HOME}/registry.yaml" ]; then
   echo "Created starter registry at ${TOOLING_HOME}/registry.yaml"
 fi
 
+GLOBAL_AGENTS="${HOME}/.agents/AGENTS.md"
+if [ -f "${REPO_ROOT}/templates/AGENTS.global.md" ] && [ ! -f "${GLOBAL_AGENTS}" ]; then
+  cp "${REPO_ROOT}/templates/AGENTS.global.md" "${GLOBAL_AGENTS}"
+  echo "Created starter global AGENTS.md at ${GLOBAL_AGENTS}"
+fi
+
 python3 -m pip install --quiet --upgrade PyYAML
 python3 -m pip install --quiet -e "${REPO_ROOT}"
 

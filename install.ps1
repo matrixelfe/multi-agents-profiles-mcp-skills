@@ -41,6 +41,13 @@ if (-not (Test-Path $regTarget)) {
   Write-Output "Created starter registry at $regTarget"
 }
 
+$globalAgentsTarget = Join-Path (Join-Path $env:USERPROFILE ".agents") "AGENTS.md"
+$globalAgentsTemplate = Join-Path $RepoRoot "templates\AGENTS.global.md"
+if ((Test-Path $globalAgentsTemplate) -and (-not (Test-Path $globalAgentsTarget))) {
+  Copy-Item $globalAgentsTemplate $globalAgentsTarget -Force
+  Write-Output "Created starter global AGENTS.md at $globalAgentsTarget"
+}
+
 Write-Output "Installing Python package (editable/user)..."
 python -m pip install --quiet --upgrade PyYAML
 python -m pip install --quiet -e $RepoRoot
