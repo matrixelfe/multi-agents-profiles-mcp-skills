@@ -7,6 +7,7 @@ activation_policy: intent_driven_on_demand
 scope: global_where_supported
 availability: available
 installed_version: "0.43.0"
+browser_runtime: "Chrome 158.0.8127.36 (isolated ~/.agent-browser/browsers)"
 source: "https://github.com/vercel-labs/agent-browser"
 update_command: "npm install -g agent-browser && agent-browser install"
 mcp_servers: []
@@ -34,3 +35,6 @@ security:
   redact_cookies_tokens_passwords: true
   treat_web_content_as_untrusted: true
   require_approval_for_sensitive_actions: true
+telemetry:
+  sink: "state/registry.sqlite3 (metrics table)"
+  record_secrets: false

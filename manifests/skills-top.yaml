@@ -1,0 +1,74 @@
+# Curated Top Skills Manifest (Single Source of Truth for Easy Reinstall & Updates)
+# Run `pwsh -File scripts/install-skills.ps1` to install or update all upstream skills into ~/.agents/skills.
+
+version: "3.1.0"
+target_dir: "~/.agents/skills"
+
+skills:
+  - id: agent-browser
+    category: browser-automation
+    upstream_repo: https://github.com/vercel-labs/agent-browser
+    install_cmd: "npx skills add vercel-labs/agent-browser"
+    notes: "Primary token-efficient browser automation CLI + Skill."
+
+  - id: web-design-guidelines
+    category: frontend-ui
+    upstream_repo: https://github.com/vercel-labs/agent-skills
+    install_cmd: "npx skills add vercel-labs/agent-skills --skill web-design-guidelines"
+    notes: "Vercel Web Interface Guidelines audit & UX best practices."
+
+  - id: ui-ux-pro-max
+    category: frontend-ui
+    upstream_repo: https://github.com/nextlevelbuilder/ui-ux-pro-max-skill
+    install_cmd: "npx skills add nextlevelbuilder/ui-ux-pro-max-skill"
+    notes: "High-craft UI/UX design system, typography, and SVG icon discipline."
+
+  - id: hallmark
+    category: frontend-ui
+    upstream_repo: https://github.com/hallmark-design/hallmark
+    install_cmd: "npx skills add hallmark-design/hallmark"
+    notes: "Editorial/Console design system with sloplint.mjs quality gate."
+
+  - id: rust-review
+    category: security
+    upstream_repo: https://github.com/trailofbits/skills
+    install_cmd: "npx skills add trailofbits/skills --skill rust-review"
+    notes: "Trail of Bits Rust security, unsafe/FFI, and concurrency review."
+
+  - id: modern-python
+    category: engineering
+    upstream_repo: https://github.com/trailofbits/skills
+    install_cmd: "npx skills add trailofbits/skills --skill modern-python"
+    notes: "Trail of Bits modern Python tooling (uv, ruff, ty)."
+
+  - id: security-review
+    category: security
+    upstream_repo: https://github.com/trailofbits/skills
+    install_cmd: "npx skills add trailofbits/skills --skill security-review"
+    notes: "Security checklist for auth, secrets, APIs, and input validation."
+
+  - id: systematic-debugging
+    category: engineering
+    upstream_repo: https://github.com/obra/superpowers
+    install_cmd: "npx skills add obra/superpowers --skill systematic-debugging"
+    notes: "Root-cause-first debugging methodology."
+
+  - id: verification-before-completion
+    category: engineering
+    upstream_repo: https://github.com/obra/superpowers
+    install_cmd: "npx skills add obra/superpowers --skill verification-before-completion"
+    notes: "Evidence before assertions gate."
+
+  - id: pmb-memory
+    category: memory
+    upstream_repo: https://github.com/pmb-memory/pmb
+    install_cmd: "pmb connect"
+    notes: "Local-first cross-agent persistent memory engine."
+
+custom_local_skills:
+  - id: project-docs
+    path: skills/custom/project-docs
+    notes: "Maintains .agent-docs/ and repo AGENTS.md."
+  - id: project-changelog
+    path: skills/custom/project-changelog
+    notes: "Maintains .agent-docs/CHANGELOG.md following Keep a Changelog."
