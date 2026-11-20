@@ -113,6 +113,14 @@ def sync_antigravity_agents(
         )
         for path, content in files_to_write.items():
             path.write_text(content, encoding="utf-8")
+        # Also sync unified cross-agent AGENTS.md into plugin rules/ so Antigravity always sees ~/.agents/
+        unified_agents_md = home / ".agents" / "AGENTS.md"
+        if unified_agents_md.exists():
+            rules_out = pl_root / "rules"
+            rules_out.mkdir(parents=True, exist_ok=True)
+            (rules_out / "AGENTS.md").write_text(
+                unified_agents_md.read_text(encoding="utf-8-sig"), encoding="utf-8"
+            )
 
     return {
         "plugin_root": str(pl_root),
