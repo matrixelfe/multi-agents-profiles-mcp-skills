@@ -638,10 +638,164 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   transition: opacity var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
 }
 #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* Overview Dashboard */
+.ov-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+.ov-kpi {
+  background: var(--color-paper-2);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  text-align: left;
+  transition: border-color var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
+}
+.ov-kpi:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+.ov-kpi-label {
+  font-size: 12.5px;
+  color: var(--color-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ov-kpi-val {
+  font-family: var(--font-outlier);
+  font-size: 26px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.ov-kpi-sub {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+.ov-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.ov-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.ov-pill {
+  background: var(--color-paper-2);
+  color: var(--color-ink-2);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), background var(--dur-short) var(--ease-out);
+}
+.ov-pill:hover { border-color: var(--color-rule-2); color: var(--color-ink); }
+.ov-pill[aria-pressed="true"] {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.ov-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+@media (max-width: 980px) { .ov-charts-grid { grid-template-columns: 1fr; } }
+.ov-card {
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border: var(--rule-hair) solid var(--color-rule);
+  border-radius: var(--radius-card);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ov-donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+.ov-donut-svg { width: 168px; height: 168px; flex-shrink: 0; }
+.ov-donut-slice {
+  cursor: pointer;
+  transition: opacity var(--dur-short) var(--ease-out), stroke-width var(--dur-short) var(--ease-out);
+}
+.ov-donut-slice:hover { opacity: 0.85; stroke-width: 24; }
+.ov-legend {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ov-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background var(--dur-short) var(--ease-out);
+}
+.ov-legend-item:hover { background: var(--color-paper-3); }
+.ov-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.ov-bar-list { display: flex; flex-direction: column; gap: var(--space-3); }
+.ov-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--dur-short) var(--ease-out);
+}
+.ov-bar-row:hover { background: var(--color-paper-3); }
+.ov-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 13px;
+}
+.ov-bar-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-3);
+  overflow: hidden;
+  display: flex;
+}
+.ov-bar-fill {
+  height: 100%;
+  transition: opacity var(--dur-short) var(--ease-out);
+}
 </style>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
   <symbol id="ic-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
   <symbol id="ic-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
   <symbol id="ic-gauge" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
@@ -670,7 +824,10 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <p>OAC V3.4, Multi-IDE y ECC</p>
     </div>
     <div class="nav-list" role="tablist" aria-orientation="vertical">
-      <button type="button" class="nav-btn" role="tab" id="nav-ides" aria-selected="true" aria-controls="tab-ides" onclick="showTab('ides')">
+      <button type="button" class="nav-btn" role="tab" id="nav-overview" aria-selected="true" aria-controls="tab-overview" onclick="showTab('overview')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-grid"/></svg> Overview
+      </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-ides" aria-selected="false" aria-controls="tab-ides" onclick="showTab('ides')">
         <svg class="icon" aria-hidden="true"><use href="#ic-terminal"/></svg> IDEs agénticos
       </button>
       <button type="button" class="nav-btn" role="tab" id="nav-catalog" aria-selected="false" aria-controls="tab-catalog" onclick="showTab('catalog')">
@@ -716,6 +873,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     </header>
 
     <nav class="mobile-nav" aria-label="Navegación móvil">
+      <button type="button" class="btn btn-sm" onclick="showTab('overview')">Overview</button>
       <button type="button" class="btn btn-sm" onclick="showTab('ides')">IDEs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('catalog')">Skills y MCPs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('load')">Carga</button>
@@ -731,8 +889,80 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         <button type="button" class="btn btn-sm" onclick="loadSnapshot()">Reintentar</button>
       </div>
 
+      <!-- TAB 0: OVERVIEW DASHBOARD -->
+      <section id="tab-overview" class="tabpanel active" role="tabpanel" aria-labelledby="nav-overview">
+        <div class="section-bar">
+          <h2>Overview del ecosistema agéntico</h2>
+          <span class="muted">Indicadores en vivo, gráficos interactivos y acceso directo a cada subsistema</span>
+        </div>
+
+        <div class="ov-kpi-grid" id="ovKpiGrid">
+          <div class="ov-kpi"><span class="muted">Cargando métricas…</span></div>
+        </div>
+
+        <div class="ov-filter-bar">
+          <div class="ov-pills" id="ovIdeFilterPills" role="group" aria-label="Filtrar gráficos por IDE">
+            <button type="button" class="ov-pill" aria-pressed="true" onclick="setOverviewIdeFilter('all')">Todos los IDEs</button>
+            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('opencode')">OpenCode / OpenChamber</button>
+            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('codex')">Codex</button>
+            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('antigravity')">Antigravity</button>
+            <button type="button" class="ov-pill" aria-pressed="false" onclick="setOverviewIdeFilter('claude_desktop')">Claude Desktop</button>
+          </div>
+          <span class="muted" id="ovFilterHint">Pulsa cualquier tarjeta, porción o barra para navegar al detalle</span>
+        </div>
+
+        <div class="ov-charts-grid">
+          <div class="ov-card">
+            <div class="panel-head" style="margin-bottom:0;">
+              <div>
+                <h3>Distribución de recursos</h3>
+                <span class="muted">Skills calientes, catálogo frío, MCPs y plugins</span>
+              </div>
+              <span class="chip measured" id="ovTotalResourcesBadge">0 total</span>
+            </div>
+            <div class="ov-donut-wrap">
+              <svg class="ov-donut-svg" viewBox="0 0 180 180" id="ovDonutSvg" role="img" aria-label="Gráfico circular de recursos"></svg>
+              <div class="ov-legend" id="ovDonutLegend"></div>
+            </div>
+          </div>
+
+          <div class="ov-card">
+            <div class="panel-head" style="margin-bottom:0;">
+              <div>
+                <h3>Huella por IDE agéntico</h3>
+                <span class="muted">MCPs activos, plugins y agentes por cliente</span>
+              </div>
+              <span class="chip cool measured" id="ovIdeSyncBadge">4 IDEs</span>
+            </div>
+            <div class="ov-bar-list" id="ovIdeBars"></div>
+          </div>
+
+          <div class="ov-card">
+            <div class="panel-head" style="margin-bottom:0;">
+              <div>
+                <h3>Presión de contexto e impacto MCP</h3>
+                <span class="muted">Clasificación por carga (Alta / Media / Baja) y RAM viva</span>
+              </div>
+              <span class="chip measured" id="ovRamSummaryBadge">0.0 MB</span>
+            </div>
+            <div class="ov-bar-list" id="ovImpactBars"></div>
+          </div>
+
+          <div class="ov-card">
+            <div class="panel-head" style="margin-bottom:0;">
+              <div>
+                <h3>Perfiles declarativos y gobernanza OAC</h3>
+                <span class="muted">Densidad de herramientas por perfil y privacidad de modelos</span>
+              </div>
+              <span class="chip ok" id="ovOacBadge">Spend Guard: …</span>
+            </div>
+            <div class="ov-bar-list" id="ovProfileBars"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 1: IDES AGÉNTICOS -->
-      <section id="tab-ides" class="tabpanel active" role="tabpanel" aria-labelledby="nav-ides">
+      <section id="tab-ides" class="tabpanel" role="tabpanel" aria-labelledby="nav-ides">
         <div class="section-bar">
           <h2>Estado y servidores activos por IDE agéntico</h2>
           <span class="muted">Desbloquea con Editar, alterna servidores MCP, y confirma con Guardar (backup SHA-256) o Restaurar por defecto</span>
@@ -1184,6 +1414,7 @@ const IDE_EDIT_MODE = {};
 const IDE_DRAFT_MCPS = {};
 let lastFocusedEl = null;
 let CURRENT_RES = null;
+let OV_IDE_FILTER = 'all';
 
 const LEVEL_MAP = { HIGH: 'Alta', MEDIUM: 'Media', LOW: 'Baja' };
 
@@ -1271,6 +1502,7 @@ function renderAll() {
   document.getElementById('liveRamBadge').textContent = `RAM viva: ${totalRam.toFixed(1)} MB`;
   document.getElementById('totalLiveRam').textContent = `${totalRam.toFixed(1)} MB`;
 
+  renderOverview();
   renderIdes(loadCatalog);
   renderCatalogMcps();
   renderCatalogSkills();
@@ -1282,6 +1514,243 @@ function renderAll() {
   renderAgentsTable();
   renderProfiles();
   renderHealth(sq);
+}
+
+function setOverviewIdeFilter(ideKey) {
+  OV_IDE_FILTER = ideKey;
+  const keys = ['all', 'opencode', 'codex', 'antigravity', 'claude_desktop'];
+  document.querySelectorAll('#ovIdeFilterPills .ov-pill').forEach((btn, idx) => {
+    btn.setAttribute('aria-pressed', keys[idx] === ideKey ? 'true' : 'false');
+  });
+  renderOverview();
+}
+
+function jumpToCatalog(subName) {
+  showTab('catalog');
+  showCatalogSubtab(subName);
+}
+
+function highlightOvDonut(val, label) {
+  const numEl = document.getElementById('ovDonutCenterNum');
+  const lblEl = document.getElementById('ovDonutCenterLbl');
+  if (numEl) numEl.textContent = val;
+  if (lblEl) lblEl.textContent = label;
+}
+
+function renderOverview() {
+  if (!SNAPSHOT) return;
+  const ides = SNAPSHOT.ides || {};
+  const cat = SNAPSHOT.catalog || {};
+  const mcps = cat.mcps || [];
+  const skills = cat.skills || [];
+  const plugins = cat.plugins || [];
+  const hyg = cat.hygiene || { duplicates_count: 0, cold_count: 0, errors_count: 0 };
+  const liveProcs = SNAPSHOT.system_load?.live_processes || [];
+  const oac = SNAPSHOT.oac || {};
+  const profiles = SNAPSHOT.profiles || [];
+
+  const ideEntries = Object.entries(ides);
+  const availIdes = ideEntries.filter(([, v]) => v.status === 'available').length;
+  const hotSkills = skills.filter(s => s.scope === 'global_hot').length;
+  const coldSkills = skills.filter(s => s.scope === 'cold_catalog').length;
+  const activeMcps = mcps.filter(m => m.is_loaded).length;
+  const idleMcps = mcps.length - activeMcps;
+  const totalRam = liveProcs.reduce((acc, p) => acc + (p.ram_mb || 0), 0);
+  const agentsCount = Object.keys(oac.assignments || {}).length;
+  const sgState = oac.spend_guard?.state || 'UNKNOWN';
+  const totalItems = mcps.length + skills.length + plugins.length;
+  const healthPct = totalItems ? Math.round(((totalItems - (hyg.errors_count || 0)) / totalItems) * 100) : 100;
+
+  // 1. KPI Strip (clickable)
+  const kpiGrid = document.getElementById('ovKpiGrid');
+  if (kpiGrid) {
+    kpiGrid.innerHTML = `
+      <button type="button" class="ov-kpi" onclick="showTab('ides')">
+        <span class="ov-kpi-label"><span>IDEs sincronizados</span><span class="live-beacon" role="status" aria-label="Activo"></span></span>
+        <span class="ov-kpi-val">${availIdes}/${ideEntries.length}</span>
+        <span class="ov-kpi-sub">Contrato unificado ~/.agents</span>
+      </button>
+      <button type="button" class="ov-kpi" onclick="jumpToCatalog('skills')">
+        <span class="ov-kpi-label"><span>Skills totales</span><span class="chip measured">${hotSkills} hot</span></span>
+        <span class="ov-kpi-val">${skills.length}</span>
+        <span class="ov-kpi-sub">${coldSkills} en catálogo frío (0 tokens)</span>
+      </button>
+      <button type="button" class="ov-kpi" onclick="jumpToCatalog('mcps')">
+        <span class="ov-kpi-label"><span>Servidores MCP</span><span class="chip measured">${activeMcps} vivos</span></span>
+        <span class="ov-kpi-val">${mcps.length}</span>
+        <span class="ov-kpi-sub">${idleMcps} en espera por perfil</span>
+      </button>
+      <button type="button" class="ov-kpi" onclick="showTab('load')">
+        <span class="ov-kpi-label"><span>RAM viva AI / MCP</span><span class="chip cool measured">${liveProcs.length} proc</span></span>
+        <span class="ov-kpi-val">${totalRam.toFixed(1)} MB</span>
+        <span class="ov-kpi-sub">Procesos residentes en Windows</span>
+      </button>
+      <button type="button" class="ov-kpi" onclick="showTab('agents')">
+        <span class="ov-kpi-label"><span>Agentes OAC V3.4</span><span class="chip ${sgState === 'DENY' ? 'ok' : 'bad'}">${sgState}</span></span>
+        <span class="ov-kpi-val">${agentsCount}</span>
+        <span class="ov-kpi-sub">Spend Guard PAYG bloqueado</span>
+      </button>
+      <button type="button" class="ov-kpi" onclick="jumpToCatalog('hygiene')">
+        <span class="ov-kpi-label"><span>Salud del catálogo</span><span class="chip measured">${hyg.errors_count || 0} err</span></span>
+        <span class="ov-kpi-val">${healthPct}%</span>
+        <span class="ov-kpi-sub">${hyg.duplicates_count || 0} solapamientos hot/cold</span>
+      </button>`;
+  }
+
+  // 2. Interactive SVG Donut Chart (Resource distribution)
+  const slices = [
+    { label: 'Skills calientes', val: hotSkills, color: 'var(--color-accent)', subtab: 'skills' },
+    { label: 'Skills frías', val: coldSkills, color: 'var(--color-cool)', subtab: 'skills' },
+    { label: 'MCPs activos', val: activeMcps, color: 'var(--color-ok)', subtab: 'mcps' },
+    { label: 'MCPs en espera', val: idleMcps, color: '#6b7280', subtab: 'mcps' },
+    { label: 'Plugins activos', val: plugins.length, color: '#a78bfa', subtab: 'plugins' }
+  ].filter(s => s.val > 0);
+
+  const badgeTot = document.getElementById('ovTotalResourcesBadge');
+  if (badgeTot) badgeTot.textContent = `${totalItems} recursos`;
+
+  const svg = document.getElementById('ovDonutSvg');
+  const legend = document.getElementById('ovDonutLegend');
+  if (svg && legend) {
+    const r = 64;
+    const cx = 90;
+    const cy = 90;
+    const circ = 2 * Math.PI * r;
+    let offset = 0;
+    const paths = slices.map(s => {
+      const frac = totalItems ? (s.val / totalItems) : 0;
+      const len = Math.max(frac * circ, 4);
+      const seg = `<circle class="ov-donut-slice" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="20"
+        stroke-dasharray="${len.toFixed(2)} ${(circ - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}"
+        transform="rotate(-90 ${cx} ${cy})"
+        onmouseenter="highlightOvDonut('${s.val}','${s.label}')"
+        onmouseleave="highlightOvDonut('${totalItems}','Recursos')"
+        onclick="jumpToCatalog('${s.subtab}')"></circle>`;
+      offset += len;
+      return seg;
+    }).join('');
+
+    svg.innerHTML = `
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--color-paper-3)" stroke-width="20"></circle>
+      ${paths}
+      <text id="ovDonutCenterNum" x="${cx}" y="${cy - 4}" text-anchor="middle" fill="var(--color-ink)" font-size="24" font-weight="600" font-family="var(--font-outlier)">${totalItems}</text>
+      <text id="ovDonutCenterLbl" x="${cx}" y="${cy + 16}" text-anchor="middle" fill="var(--color-muted)" font-size="11">Recursos</text>`;
+
+    legend.innerHTML = slices.map(s => {
+      const pct = totalItems ? Math.round((s.val / totalItems) * 100) : 0;
+      return `
+        <div class="ov-legend-item" onmouseenter="highlightOvDonut('${s.val}','${s.label}')" onmouseleave="highlightOvDonut('${totalItems}','Recursos')" onclick="jumpToCatalog('${s.subtab}')">
+          <span class="row-inline"><span class="ov-dot" style="background:${s.color};"></span><span>${s.label}</span></span>
+          <span class="measured" style="color:var(--color-ink);">${s.val} <span class="muted">(${pct}%)</span></span>
+        </div>`;
+    }).join('');
+  }
+
+  // 3. Footprint by IDE (Interactive horizontal bars)
+  const ideBarsEl = document.getElementById('ovIdeBars');
+  const ideSyncBadge = document.getElementById('ovIdeSyncBadge');
+  if (ideSyncBadge) ideSyncBadge.textContent = OV_IDE_FILTER === 'all' ? `${availIdes} IDEs` : OV_IDE_FILTER;
+  if (ideBarsEl) {
+    const filteredIdes = OV_IDE_FILTER === 'all' ? ideEntries : ideEntries.filter(([k]) => k === OV_IDE_FILTER);
+    const maxWeight = Math.max(...filteredIdes.map(([, ide]) => {
+      const mOn = Object.values(ide.mcps || {}).filter(v => (typeof v === 'boolean' ? v : v.enabled)).length;
+      return mOn + (ide.plugins_active || []).length + (ide.agents_count || 0);
+    }), 1);
+
+    ideBarsEl.innerHTML = filteredIdes.map(([k, ide]) => {
+      const mOn = Object.values(ide.mcps || {}).filter(v => (typeof v === 'boolean' ? v : v.enabled)).length;
+      const pCount = (ide.plugins_active || []).length;
+      const aCount = ide.agents_count || 0;
+      const wM = Math.round((mOn / maxWeight) * 100);
+      const wP = Math.round((pCount / maxWeight) * 100);
+      const wA = Math.round((aCount / maxWeight) * 100);
+      return `
+        <div class="ov-bar-row" onclick="showTab('ides')" title="Ir a configuración de ${ide.title}">
+          <div class="ov-bar-head">
+            <strong style="color:var(--color-ink);">${ide.title}</strong>
+            <span class="muted measured">${mOn} MCPs · ${pCount} plugins · ${aCount} agentes · ${ide.skills_count} skills</span>
+          </div>
+          <div class="ov-bar-track">
+            <div class="ov-bar-fill" style="width:${wM}%;background:var(--color-ok);" title="MCPs activos: ${mOn}"></div>
+            <div class="ov-bar-fill" style="width:${wP}%;background:var(--color-cool);" title="Plugins: ${pCount}"></div>
+            <div class="ov-bar-fill" style="width:${wA}%;background:var(--color-accent);" title="Agentes: ${aCount}"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // 4. Context Pressure & MCP Impact + Live RAM
+  const impactEl = document.getElementById('ovImpactBars');
+  const ramBadge = document.getElementById('ovRamSummaryBadge');
+  if (ramBadge) ramBadge.textContent = `${totalRam.toFixed(1)} MB`;
+  if (impactEl) {
+    const ideNameMap = { opencode: 'OpenCode', codex: 'Codex', antigravity: 'Antigravity', claude_desktop: 'Claude' };
+    const scopedMcps = OV_IDE_FILTER === 'all'
+      ? mcps
+      : mcps.filter(m => m.running_in.some(r => r.toLowerCase().includes((ideNameMap[OV_IDE_FILTER] || OV_IDE_FILTER).toLowerCase())));
+
+    const high = scopedMcps.filter(m => m.load_level === 'HIGH');
+    const med = scopedMcps.filter(m => m.load_level === 'MEDIUM');
+    const low = scopedMcps.filter(m => m.load_level !== 'HIGH' && m.load_level !== 'MEDIUM');
+    const denom = Math.max(scopedMcps.length, 1);
+
+    const groups = [
+      { label: 'Carga Alta (binarios pesados / browser / C++)', list: high, color: 'var(--color-bad)' },
+      { label: 'Carga Media (indexadores / memoria)', list: med, color: 'var(--color-accent)' },
+      { label: 'Carga Baja (ligeros / stdio)', list: low, color: 'var(--color-cool)' }
+    ];
+
+    impactEl.innerHTML = groups.map(g => {
+      const activeInGroup = g.list.filter(m => m.is_loaded).length;
+      const pct = Math.round((g.list.length / denom) * 100);
+      return `
+        <div class="ov-bar-row" onclick="showTab('load')">
+          <div class="ov-bar-head">
+            <span style="color:var(--color-ink);">${g.label}</span>
+            <span class="measured">${g.list.length} <span class="muted">(${activeInGroup} activos)</span></span>
+          </div>
+          <div class="ov-bar-track">
+            <div class="ov-bar-fill" style="width:${pct}%;background:${g.color};"></div>
+          </div>
+        </div>`;
+    }).join('') + `
+      <div class="muted" style="margin-top:var(--space-1);">
+        Procesos residentes detectados: ${liveProcs.length ? liveProcs.slice(0, 4).map(p => `${p.name} (${p.ram_mb} MB)`).join(' · ') : 'Ninguno residente ahora'}
+      </div>`;
+  }
+
+  // 5. Declarative Profiles & OAC V3.4 Privacy
+  const profEl = document.getElementById('ovProfileBars');
+  const oacBadge = document.getElementById('ovOacBadge');
+  if (oacBadge) {
+    oacBadge.textContent = `PAYG: ${sgState}`;
+    oacBadge.className = 'chip ' + (sgState === 'DENY' ? 'ok' : 'bad');
+  }
+  if (profEl) {
+    const maxTools = Math.max(...profiles.map(p => (p.mcps || []).length + (p.skills || []).length), 1);
+    const zrCount = (oac.privacy?.zero_retention || []).length;
+    const r30Count = (oac.privacy?.retention_30d || []).length;
+    profEl.innerHTML = profiles.slice(0, 6).map(p => {
+      const mCnt = (p.mcps || []).length;
+      const sCnt = (p.skills || []).length;
+      const wM = Math.round((mCnt / maxTools) * 100);
+      const wS = Math.round((sCnt / maxTools) * 100);
+      return `
+        <div class="ov-bar-row" onclick="showTab('profiles')">
+          <div class="ov-bar-head">
+            <strong class="measured" style="color:var(--color-ink);">${p.name}</strong>
+            <span class="muted measured">${mCnt} MCPs · ${sCnt} skills</span>
+          </div>
+          <div class="ov-bar-track">
+            <div class="ov-bar-fill" style="width:${wM}%;background:var(--color-cool);"></div>
+            <div class="ov-bar-fill" style="width:${wS}%;background:var(--color-accent);"></div>
+          </div>
+        </div>`;
+    }).join('') + `
+      <div class="muted" style="margin-top:var(--space-1);">
+        Modelos OAC autorizados: ${zrCount} zero-retention · ${r30Count} retención 30d (${profiles.length} perfiles totales)
+      </div>`;
+  }
 }
 
 function renderIdes(loadCatalog) {
