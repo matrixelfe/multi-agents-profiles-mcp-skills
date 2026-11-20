@@ -394,7 +394,7 @@ def load_oac_snapshot(
         "antigravity": {
             "title": "Google Antigravity (App / IDE / CLI)",
             "editable": False,
-            "sync_supported": True,
+            "sync_supported": False,
             "config_path": str(home / ".gemini" / "config"),
             "status": "available" if (home / ".gemini" / "antigravity").exists() else "not_installed",
             "mcps": {m: {"enabled": True, "managed_externally": True} for m in ag_mcps},
@@ -751,25 +751,13 @@ def generate_ai_config_recommendations(snapshot: dict[str, Any]) -> dict[str, An
             "detail": "Proveedores facturables bloqueados por política; cero riesgo de fallback de pago automático.",
         })
 
-    # 4. Check Antigravity Custom Agents sync
-    ag_agents = snapshot.get("ides", {}).get("antigravity", {}).get("agents_count", 0)
-    if ag_agents == 0:
-        score -= 10
-        findings.append({
-            "severity": "MEDIUM",
-            "category": "Antigravity Sync",
-            "title": "Agentes OAC no sincronizados con Antigravity",
-            "detail": "Sincroniza los 4 agentes primarios y 15 subagentes ocultos en ~/.gemini/config/plugins/oac-custom-agents.",
-            "action": "sync_antigravity_agents",
-            "action_label": "Sincronizar Agentes a Antigravity",
-        })
-    else:
-        findings.append({
-            "severity": "OPTIMAL",
-            "category": "Antigravity Custom Agents",
-            "title": f"{ag_agents} agentes proyectados en Antigravity (4 primarios + 15 subagentes ocultos)",
-            "detail": "Plugin oac-custom-agents activo sin saturar el selector principal.",
-        })
+    # 4. OAC Multimodel Isolation Check
+    findings.append({
+        "severity": "OPTIMAL",
+        "category": "Aislamiento de Agentes",
+        "title": "Agentes multimodelo OAC exclusivos de OpenCode / OpenChamber",
+        "detail": "Antigravity, Codex, Copilot y Claude operan con sus propios modelos y agentes nativos, compartiendo únicamente Skills por perfil, PMB y AGENTS.md.",
+    })
 
     # 5. Check OpenCode global skills count
     oc_sk = snapshot.get("skills", {}).get("opencode_global_count", 0)
