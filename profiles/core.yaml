@@ -1,5 +1,5 @@
 name: core
-description: Minimal baseline profile with cross-agent project documentation, changelog, and conventional-commits skills
+description: Universal baseline profile with full Superpowers suite, PMB memory, agent-browser, docs, and quality gates
 mcp_servers: []
 skills:
   - project-docs
@@ -11,3 +11,17 @@ skills:
   - using-agent-skills
   - harness-engineering
   - modern-python
+  # Complete Superpowers suite (14 skills)
+  - using-superpowers
+  - brainstorming
+  - writing-plans
+  - executing-plans
+  - subagent-driven-development
+  - dispatching-parallel-agents
+  - systematic-debugging
+  - verification-before-completion
+  - using-git-worktrees
+  - finishing-a-development-branch
+  - requesting-code-review
+  - receiving-code-review
+  - writing-skills
