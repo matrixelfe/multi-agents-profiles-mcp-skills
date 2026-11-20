@@ -16,12 +16,17 @@ from agent_tooling.adapters.antigravity_agents import sync_antigravity_agents
 from agent_tooling.db.schema import connect, migrate
 from agent_tooling.oac.reader import (
     _backup_file,
+    delete_or_archive_resource,
+    edit_resource,
     generate_ai_config_recommendations,
+    get_resource_info,
     load_oac_snapshot,
+    open_in_explorer,
     restore_ide_defaults,
     save_ide_mcps,
     update_oac_assignment,
     update_oac_retry_behavior,
+    vercel_find_skills,
 )
 from agent_tooling.resolver.recommend import recommend
 
@@ -179,6 +184,31 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             if parsed.path == "/api/sync-antigravity":
                 res = sync_antigravity_agents(dry_run=False)
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/resource/info":
+                res = get_resource_info(str(body["kind"]), str(body["id"]), tooling_root=tl_root)
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/resource/edit":
+                res = edit_resource(str(body["kind"]), str(body["id"]), str(body["content"]), tooling_root=tl_root)
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/resource/open-explorer":
+                res = open_in_explorer(str(body["kind"]), str(body["id"]), tooling_root=tl_root)
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/resource/delete":
+                res = delete_or_archive_resource(str(body["kind"]), str(body["id"]), tooling_root=tl_root)
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/skills/vercel-find":
+                res = vercel_find_skills(str(body.get("query", "")))
                 self._send_json({"ok": True, "result": res})
                 return
 

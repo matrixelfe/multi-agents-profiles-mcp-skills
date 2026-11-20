@@ -249,6 +249,7 @@ def load_oac_snapshot(
     # 6. OpenCode opencode.json (redacted!)
     oc_json_path = oc_root / "opencode.json"
     oc_mcps: dict[str, Any] = {}
+    oc_mcps_raw: dict[str, Any] = {}
     oc_plugins_declared: list[str] = []
     if oc_json_path.exists():
         try:
@@ -257,6 +258,7 @@ def load_oac_snapshot(
             servers = mcp_sec.get("servers", {}) if isinstance(mcp_sec, dict) else {}
             for k, v in servers.items():
                 if isinstance(v, dict):
+                    oc_mcps_raw[k] = v
                     oc_mcps[k] = {
                         "type": v.get("type", "local"),
                         "disabled": bool(v.get("disabled", False)),
@@ -275,12 +277,14 @@ def load_oac_snapshot(
     # 7. Codex config.toml (redacted!)
     cx_toml_path = cx_root / "config.toml"
     codex_mcps: dict[str, Any] = {}
+    codex_mcps_raw: dict[str, Any] = {}
     codex_plugins: dict[str, bool] = {}
     if cx_toml_path.exists():
         try:
             cx_data = tomllib.loads(cx_toml_path.read_text(encoding="utf-8-sig"))
             for k, v in cx_data.get("mcp_servers", {}).items():
                 if isinstance(v, dict):
+                    codex_mcps_raw[k] = v
                     codex_mcps[k] = {
                         "enabled": bool(v.get("enabled", True)),
                         "bundled": k == "node_repl",
@@ -386,6 +390,21 @@ def load_oac_snapshot(
         },
     }
 
+    live_procs = get_live_process_load()
+    catalog = build_catalog_lists(
+        home=home,
+        oc_root=oc_root,
+        cx_root=cx_root,
+        tl_root=tl_root,
+        oc_mcps=oc_mcps,
+        oc_mcps_raw=oc_mcps_raw,
+        codex_mcps=codex_mcps,
+        codex_mcps_raw=codex_mcps_raw,
+        ag_mcps=ag_mcps,
+        profiles=profiles,
+        live_procs=live_procs,
+    )
+
     return redact_dict({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "oac": {
@@ -403,8 +422,9 @@ def load_oac_snapshot(
             "quota_summary": quota_summary,
         },
         "ides": ides,
+        "catalog": catalog,
         "system_load": {
-            "live_processes": get_live_process_load(),
+            "live_processes": live_procs,
             "resource_catalog": RESOURCE_LOAD_CATALOG,
         },
         "agents": agents,
@@ -732,3 +752,341 @@ def generate_ai_config_recommendations(snapshot: dict[str, Any]) -> dict[str, An
         "grade": "A" if score >= 90 else ("B" if score >= 75 else ("C" if score >= 60 else "D")),
         "findings": findings,
     }
+
+
+def _check_executable_health(exe: str) -> tuple[str, str]:
+    """Verify if an MCP executable exists on disk or in PATH."""
+    if not exe:
+        return "ok", "Servidor remoto HTTP / URL"
+    clean = exe.replace("\\\\?\\", "")
+    p = Path(clean)
+    if p.is_absolute():
+        if p.exists():
+            return "ok", f"Binario verificado: {p.name}"
+        return "error", f"No existe el binario: {clean}"
+    found = shutil.which(clean)
+    if found:
+        return "ok", f"En PATH: {Path(found).name}"
+    return "error", f"Comando no encontrado en PATH: {clean}"
+
+
+def build_catalog_lists(
+    home: Path,
+    oc_root: Path,
+    cx_root: Path,
+    tl_root: Path,
+    oc_mcps: dict[str, Any],
+    oc_mcps_raw: dict[str, Any],
+    codex_mcps: dict[str, Any],
+    codex_mcps_raw: dict[str, Any],
+    ag_mcps: list[str],
+    profiles: dict[str, Any],
+    live_procs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build complete MCP and Skill inventory with health status, active IDEs, and paths."""
+    reg_path = tl_root / "registry.yaml"
+    reg_servers: dict[str, Any] = {}
+    if reg_path.exists():
+        try:
+            reg_servers = (yaml.safe_load(reg_path.read_text(encoding="utf-8-sig")) or {}).get("servers", {})
+        except Exception:
+            pass
+
+    all_mcp_names = sorted(
+        set(oc_mcps.keys()) | set(codex_mcps.keys()) | set(ag_mcps) | set(reg_servers.keys())
+    )
+    mcps_list: list[dict[str, Any]] = []
+
+    for name in all_mcp_names:
+        running_in: list[str] = []
+        if oc_mcps.get(name, {}).get("enabled"):
+            running_in.append("OpenCode / OpenChamber")
+        if codex_mcps.get(name, {}).get("enabled"):
+            running_in.append("Codex")
+        if name in ag_mcps:
+            running_in.append("Antigravity")
+
+        # Resolve executable / command for health check
+        exe = ""
+        args: list[str] = []
+        transport = "stdio"
+        explorer_path = str(oc_root / "opencode.json")
+
+        if name in reg_servers and isinstance(reg_servers[name], dict):
+            rc = reg_servers[name]
+            transport = str(rc.get("transport", "stdio"))
+            exe = str(rc.get("executable", ""))
+            args = [str(a) for a in rc.get("args", [])]
+            explorer_path = str(reg_path)
+        elif name in oc_mcps_raw:
+            raw_oc = oc_mcps_raw[name]
+            cmd_arr = raw_oc.get("command") or []
+            if isinstance(cmd_arr, list) and cmd_arr:
+                exe = str(cmd_arr[0])
+                args = [str(a) for a in cmd_arr[1:]]
+            transport = str(raw_oc.get("type", "local"))
+            explorer_path = str(oc_root / "opencode.json")
+        elif name in codex_mcps_raw:
+            raw_cx = codex_mcps_raw[name]
+            exe = str(raw_cx.get("command", ""))
+            args = [str(a) for a in raw_cx.get("args", [])]
+            transport = "http" if raw_cx.get("url") else "stdio"
+            explorer_path = str(cx_root / "config.toml")
+        elif name in ag_mcps:
+            ag_p = home / ".gemini" / "antigravity" / "mcp" / name
+            explorer_path = str(ag_p)
+
+        if exe and Path(exe.replace("\\\\?\\", "")).exists():
+            explorer_path = str(Path(exe.replace("\\\\?\\", "")))
+
+        health, health_detail = ("ok", "Esquema MCP en Antigravity") if (name in ag_mcps and not exe) else _check_executable_health(exe)
+        used_in_profiles = [pname for pname, pdata in profiles.items() if name in (pdata.get("mcp_servers") or [])]
+
+        # Match live process RAM if running
+        live_ram = 0.0
+        for lp in live_procs:
+            pname_low = lp["process"].lower()
+            if name.lower().replace("-mcp", "") in pname_low or (name == "node_repl" and "node_repl" in pname_low):
+                live_ram = lp["ram_mb"]
+                break
+
+        load_info = RESOURCE_LOAD_CATALOG.get(name, {"level": "LOW", "ram": "Bajo", "tokens": "Bajo", "note": ""})
+        mcps_list.append({
+            "id": name,
+            "kind": "mcp",
+            "transport": transport,
+            "executable": exe,
+            "args": args,
+            "explorer_path": explorer_path,
+            "health": health,
+            "health_detail": health_detail,
+            "is_loaded": len(running_in) > 0 or live_ram > 0,
+            "running_in": running_in,
+            "live_ram_mb": live_ram,
+            "profiles": used_in_profiles,
+            "load_level": load_info["level"],
+            "ram_est": load_info["ram"],
+            "tokens_est": load_info["tokens"],
+            "note": load_info["note"],
+            "bundled": name == "node_repl",
+        })
+
+    # Build Skills list across shared (~/.agents/skills), opencode, codex, and cold catalog
+    shared_dir = home / ".agents" / "skills"
+    oc_sk_dir = oc_root / "skills"
+    cx_sk_dir = cx_root / "skills"
+    cold_dir = home / ".agents" / "catalog" / "skills"
+
+    skill_sources: dict[str, dict[str, Any]] = {}
+    for label, sdir, is_active, ides_where in [
+        ("shared", shared_dir, True, ["Antigravity", "OpenCode", "Codex", "Claude Code"]),
+        ("opencode", oc_sk_dir, True, ["OpenCode / OpenChamber"]),
+        ("codex", cx_sk_dir, True, ["Codex"]),
+        ("cold_catalog", cold_dir, False, ["Catálogo Frío"]),
+    ]:
+        if not sdir.exists():
+            continue
+        for entry in sorted(sdir.iterdir()):
+            if not entry.is_dir() or entry.name.startswith("."):
+                continue
+            sk_md = entry / "SKILL.md"
+            rec = skill_sources.get(entry.name)
+            if not rec:
+                desc = ""
+                health = "ok"
+                health_detail = "SKILL.md válido"
+                if not sk_md.exists():
+                    health = "error"
+                    health_detail = "Falta archivo SKILL.md"
+                else:
+                    try:
+                        txt = sk_md.read_text(encoding="utf-8-sig", errors="replace")
+                        if not txt.strip():
+                            health = "error"
+                            health_detail = "SKILL.md está vacío"
+                        else:
+                            m = FRONTMATTER_RE.match(txt)
+                            if m:
+                                fm = yaml.safe_load(m.group(1)) or {}
+                                desc = str(fm.get("description", "")).strip()[:180]
+                            else:
+                                desc = txt.strip().splitlines()[0][:160]
+                    except Exception as exc:
+                        health = "error"
+                        health_detail = f"Frontmatter YAML inválido: {exc}"
+
+                used_profs = [pname for pname, pdata in profiles.items() if entry.name in (pdata.get("skills") or [])]
+                skill_sources[entry.name] = {
+                    "id": entry.name,
+                    "kind": "skill",
+                    "description": desc or f"Skill {entry.name}",
+                    "scope": label,
+                    "path": str(sk_md if sk_md.exists() else entry),
+                    "folder_path": str(entry),
+                    "health": health,
+                    "health_detail": health_detail,
+                    "is_loaded": is_active and health == "ok",
+                    "running_in": list(ides_where),
+                    "profiles": used_profs,
+                }
+            else:
+                for ide_lbl in ides_where:
+                    if ide_lbl not in rec["running_in"] and ide_lbl != "Catálogo Frío":
+                        rec["running_in"].append(ide_lbl)
+
+    skills_list = sorted(
+        skill_sources.values(),
+        key=lambda x: (x["health"] != "error", not x["is_loaded"], x["id"]),
+    )
+    return {"mcps": mcps_list, "skills": skills_list}
+
+
+def get_resource_info(kind: str, res_id: str, tooling_root: Path | None = None) -> dict[str, Any]:
+    """Return full details and editable text content for a skill or MCP."""
+    snap = load_oac_snapshot(tooling_root=tooling_root)
+    cat = snap.get("catalog", {})
+    if kind == "skill":
+        item = next((s for s in cat.get("skills", []) if s["id"] == res_id), None)
+        if not item:
+            raise FileNotFoundError(f"Skill no encontrada: {res_id}")
+        p = Path(item["path"])
+        content = p.read_text(encoding="utf-8-sig", errors="replace") if (p.exists() and p.is_file()) else ""
+        return {"item": item, "content": content}
+
+    if kind == "mcp":
+        item = next((m for m in cat.get("mcps", []) if m["id"] == res_id), None)
+        if not item:
+            raise FileNotFoundError(f"MCP no encontrado: {res_id}")
+        editable_obj = {
+            "executable": item["executable"],
+            "args": item["args"],
+            "transport": item["transport"],
+            "opencode_enabled": "OpenCode / OpenChamber" in item["running_in"],
+            "codex_enabled": "Codex" in item["running_in"],
+        }
+        return {"item": item, "content": yaml.safe_dump(editable_obj, sort_keys=False, allow_unicode=True)}
+
+    raise ValueError(f"Tipo inválido: {kind}")
+
+
+def edit_resource(kind: str, res_id: str, content: str, tooling_root: Path | None = None) -> dict[str, Any]:
+    """Save edited SKILL.md or MCP YAML definition with automatic SHA-256 backup."""
+    home = Path.home()
+    tl_root = tooling_root or (home / ".agents" / "tooling")
+    info = get_resource_info(kind, res_id, tooling_root=tl_root)["item"]
+
+    if kind == "skill":
+        target = Path(info["path"])
+        if target.is_dir():
+            target = target / "SKILL.md"
+        change_id, pre_hash = _backup_file(target, f"ui-edit-skill-{res_id}") if target.exists() else ("chg-new", "")
+        m = FRONTMATTER_RE.match(content)
+        if m:
+            yaml.safe_load(m.group(1))  # Validate frontmatter YAML before saving
+        tmp = target.with_suffix(".md.tmp")
+        tmp.write_text(content, encoding="utf-8")
+        tmp.replace(target)
+        return {"change_id": change_id, "sha256_before": pre_hash, "target": str(target)}
+
+    if kind == "mcp":
+        parsed = yaml.safe_load(content) or {}
+        reg_path = tl_root / "registry.yaml"
+        change_id = "chg-mcp-edit"
+        if reg_path.exists():
+            change_id, _ = _backup_file(reg_path, f"ui-edit-mcp-{res_id}")
+            reg_data = yaml.safe_load(reg_path.read_text(encoding="utf-8-sig")) or {}
+            servers = reg_data.setdefault("servers", {})
+            entry = servers.setdefault(res_id, {})
+            if "executable" in parsed:
+                entry["executable"] = str(parsed["executable"])
+            if "args" in parsed and isinstance(parsed["args"], list):
+                entry["args"] = [str(a) for a in parsed["args"]]
+            if "transport" in parsed:
+                entry["transport"] = str(parsed["transport"])
+            tmp = reg_path.with_suffix(".yaml.tmp")
+            tmp.write_text(yaml.safe_dump(reg_data, sort_keys=False, allow_unicode=True), encoding="utf-8")
+            tmp.replace(reg_path)
+
+        if "opencode_enabled" in parsed and res_id in (load_oac_snapshot(tooling_root=tl_root)["mcps"]["opencode"]):
+            save_ide_mcps("opencode", {res_id: bool(parsed["opencode_enabled"])})
+        if "codex_enabled" in parsed and res_id != "node_repl" and res_id in (load_oac_snapshot(tooling_root=tl_root)["mcps"]["codex"]):
+            save_ide_mcps("codex", {res_id: bool(parsed["codex_enabled"])})
+        return {"change_id": change_id, "target": str(reg_path)}
+
+    raise ValueError(f"Tipo inválido: {kind}")
+
+
+def open_in_explorer(kind: str, res_id: str, tooling_root: Path | None = None) -> dict[str, Any]:
+    """Open Windows Explorer selecting the skill's SKILL.md or MCP binary/config."""
+    info = get_resource_info(kind, res_id, tooling_root=tooling_root)["item"]
+    raw_path = info.get("path") if kind == "skill" else info.get("explorer_path")
+    target = Path(str(raw_path)).resolve()
+    if not target.exists():
+        target = target.parent
+    subprocess.Popen(["explorer.exe", f"/select,{target}"])
+    return {"opened": str(target)}
+
+
+def delete_or_archive_resource(kind: str, res_id: str, tooling_root: Path | None = None) -> dict[str, Any]:
+    """Safely archive a skill to private backup folder or disable/archive an MCP (never permanently destroys bytes)."""
+    home = Path.home()
+    tl_root = tooling_root or (home / ".agents" / "tooling")
+    local_app = Path(os.environ.get("LOCALAPPDATA", home / ".local" / "share"))
+    change_id = f"chg-{datetime.now().strftime('%Y%m%d-%H%M%S')}-archive-{kind}-{res_id}"
+    bdir = local_app / "agent-tooling-backups" / change_id
+    bdir.mkdir(parents=True, exist_ok=True)
+
+    info = get_resource_info(kind, res_id, tooling_root=tl_root)["item"]
+    if kind == "skill":
+        folder = Path(info["folder_path"])
+        if not folder.exists():
+            raise FileNotFoundError(f"Carpeta no existe: {folder}")
+        dest_bak = bdir / folder.name
+        shutil.copytree(folder, dest_bak, dirs_exist_ok=True)
+        (bdir / "manifest.json").write_text(
+            json.dumps([{"SkillName": res_id, "OriginalPath": str(folder), "BackupPath": str(dest_bak)}], indent=2),
+            encoding="utf-8",
+        )
+        shutil.rmtree(folder)
+        return {"change_id": change_id, "archived_from": str(folder), "backup": str(dest_bak)}
+
+    if kind == "mcp":
+        if res_id == "node_repl":
+            raise ValueError("node_repl es una herramienta nativa bundled de Codex y no debe eliminarse.")
+        snap = load_oac_snapshot(tooling_root=tl_root)
+        if res_id in snap["mcps"]["opencode"]:
+            save_ide_mcps("opencode", {res_id: False})
+        if res_id in snap["mcps"]["codex"]:
+            save_ide_mcps("codex", {res_id: False})
+        return {"change_id": change_id, "disabled_mcp": res_id}
+
+    raise ValueError(f"Tipo inválido: {kind}")
+
+
+ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
+
+
+def vercel_find_skills(query: str) -> list[dict[str, str]]:
+    """Search Vercel skills registry via `npx -y skills find <query>`."""
+    q = query.strip()
+    if not q:
+        return []
+    res = subprocess.run(
+        ["cmd", "/c", "npx", "-y", "skills", "find", q],
+        capture_output=True,
+        text=True,
+        timeout=25,
+        check=False,
+    )
+    clean = ANSI_RE.sub("", res.stdout or "")
+    lines = [ln.strip() for ln in clean.splitlines() if ln.strip()]
+    results: list[dict[str, str]] = []
+    for i, ln in enumerate(lines):
+        m = re.match(r"^([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+@[a-zA-Z0-9_.-]+)\s+(.+?installs?)$", ln)
+        if m:
+            url = ""
+            if i + 1 < len(lines) and "https://" in lines[i + 1]:
+                url = lines[i + 1].split("https://", 1)[1].strip()
+                url = "https://" + url
+            results.append({"package": m.group(1), "installs": m.group(2), "url": url})
+    return results

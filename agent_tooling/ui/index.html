@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="description" content="Consola local de operaciones para IDEs agénticos, servidores MCP, modelos OAC V3.4 y recomendaciones contextuales ECC." />
+<meta name="description" content="Consola local de operaciones para IDEs agénticos, catálogo vivo de skills y servidores MCP, modelos OAC V3.4 y recomendaciones ECC." />
 <title>Agent Tooling v3: Multi-IDE Operations Console</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;500&family=Host+Grotesk:wght@400;500&display=swap" rel="stylesheet" />
 <style>
-/* Hallmark · v2.0.0 · shape: app screen · theme: console (graphite) · genre: modern-minimal · posture: restrained · surface: absolute · nav: sidebar · footer: inline · hero: workbench · deal: developer-operations-console-multi-agent-dea7·f18ba71a·2026-11-20·r0 · signature: 1px hairline seam instrument console with live RAM and IDE MCP switchboard */
-/* critique: replaced all emojis with 1.65px outline vector SVGs, removed neon gradients and floating drop-shadows, adopted OKLCH graphite 3-step surfaces with Host Grotesk + Atkinson Hyperlegible Mono and strict 4px spacing tokens. */
+/* Hallmark · v2.0.0 · shape: app screen · theme: console (graphite) · genre: modern-minimal · posture: restrained · surface: absolute · nav: sidebar · footer: inline · hero: workbench · deal: developer-operations-console-multi-agent-dea7·f18ba71a·2026-11-20·r0 · signature: 1px hairline seam instrument console with live animated status beacons and skill/MCP inspector */
+/* critique: added GPU-composited animated green status beacons for loaded skills and MCPs, full 4-action inspector (info, edit, explorer, archive), and Vercel skills finder while keeping zero sloplint violations. */
 
 :root {
   --color-paper: oklch(17% 0.008 250);
@@ -44,8 +44,9 @@
   --radius-chip: 4px;
   --rule-hair: 1px;
   --tracking-display: -0.025em;
-  --dur-short: 140ms;
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-short: 150ms;
+  --dur-med: 240ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 
   --space-1: 4px;
   --space-2: 8px;
@@ -75,8 +76,54 @@ html, body {
 ::selection { background: color-mix(in oklab, var(--color-accent) 25%, transparent); }
 :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
+/* GPU-Composited Animated Green Live Beacon (transform + opacity only) */
+@keyframes beaconPulse {
+  0% { transform: scale(1); opacity: 0.75; }
+  75% { transform: scale(2.35); opacity: 0; }
+  100% { transform: scale(2.35); opacity: 0; }
+}
+@keyframes surfaceEnter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.live-beacon {
+  position: relative;
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-ok);
+  flex-shrink: 0;
+}
+.live-beacon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-ok);
+  animation: beaconPulse 2s var(--ease-out) infinite;
+}
+.idle-beacon {
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-rule-2);
+  flex-shrink: 0;
+}
+.error-beacon {
+  display: inline-flex;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-bad);
+  flex-shrink: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  .live-beacon::after { animation: none; }
 }
 
 h1, h2, h3 {
@@ -289,7 +336,7 @@ header.topbar {
   transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), transform 110ms var(--ease-out);
 }
 .btn:hover:not(:disabled) { border-color: var(--color-ink-2); background: var(--color-paper); }
-.btn:active:not(:disabled) { transform: scale(0.98); }
+.btn:active:not(:disabled) { transform: scale(0.97); }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn-amber {
@@ -309,6 +356,15 @@ header.topbar {
 .btn-ok:hover:not(:disabled) {
   background: var(--color-ok-soft);
   border-color: var(--color-ok);
+}
+.btn-bad {
+  background: transparent;
+  border-color: color-mix(in oklab, var(--color-bad) 50%, var(--color-rule));
+  color: var(--color-bad);
+}
+.btn-bad:hover:not(:disabled) {
+  background: var(--color-bad-soft);
+  border-color: var(--color-bad);
 }
 .btn-sm { padding: var(--space-1) var(--space-2); font-size: 12.5px; }
 
@@ -343,7 +399,7 @@ header.topbar {
   font-size: 13px;
   font-weight: 500;
   cursor: default;
-  transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out);
+  transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out), transform 110ms var(--ease-out);
 }
 .mcp-switch[aria-pressed="true"] {
   background: var(--color-ok-soft);
@@ -357,6 +413,7 @@ header.topbar {
 }
 .mcp-switch.editable { cursor: pointer; }
 .mcp-switch.editable:hover { border-color: var(--color-accent); color: var(--color-ink); }
+.mcp-switch.editable:active { transform: scale(0.97); }
 .mcp-state-glyph {
   width: 6px;
   height: 6px;
@@ -384,7 +441,7 @@ main {
   padding: var(--space-6) var(--space-7) 64px;
 }
 .tabpanel { display: none; }
-.tabpanel.active { display: block; }
+.tabpanel.active { display: block; animation: surfaceEnter var(--dur-med) var(--ease-out); }
 .section-bar {
   display: flex;
   align-items: baseline;
@@ -418,7 +475,7 @@ label.field-label {
   color: var(--color-muted);
   margin-bottom: var(--space-1);
 }
-select, input[type="text"], input[type="search"] {
+select, input[type="text"], input[type="search"], textarea {
   background: var(--color-paper-3);
   color: var(--color-ink);
   border: var(--rule-hair) solid var(--color-rule-2);
@@ -427,6 +484,13 @@ select, input[type="text"], input[type="search"] {
   font-family: var(--font-body);
   font-size: 13.5px;
   width: 100%;
+}
+textarea.code-editor {
+  font-family: var(--font-outlier);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 300px;
+  resize: vertical;
 }
 select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -499,7 +563,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   color: var(--color-ink);
   border: var(--rule-hair) solid var(--color-rule-2);
   border-radius: var(--radius-card);
-  max-width: 720px;
+  max-width: 760px;
   width: 100%;
   max-height: 85vh;
   overflow-y: auto;
@@ -542,6 +606,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
   <symbol id="ic-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
+  <symbol id="ic-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
   <symbol id="ic-gauge" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></symbol>
   <symbol id="ic-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></symbol>
   <symbol id="ic-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
@@ -552,6 +617,9 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   <symbol id="ic-restore" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
   <symbol id="ic-refresh" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
   <symbol id="ic-spark" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="ic-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="ic-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="ic-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
   <symbol id="ic-close" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
 </svg>
 
@@ -567,6 +635,9 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
     <div class="nav-list" role="tablist" aria-orientation="vertical">
       <button type="button" class="nav-btn" role="tab" id="nav-ides" aria-selected="true" aria-controls="tab-ides" onclick="showTab('ides')">
         <svg class="icon" aria-hidden="true"><use href="#ic-terminal"/></svg> IDEs agénticos
+      </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-catalog" aria-selected="false" aria-controls="tab-catalog" onclick="showTab('catalog')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-box"/></svg> Skills y MCPs vivos
       </button>
       <button type="button" class="nav-btn" role="tab" id="nav-load" aria-selected="false" aria-controls="tab-load" onclick="showTab('load')">
         <svg class="icon" aria-hidden="true"><use href="#ic-gauge"/></svg> Mayor carga y RAM
@@ -609,6 +680,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
 
     <nav class="mobile-nav" aria-label="Navegación móvil">
       <button type="button" class="btn btn-sm" onclick="showTab('ides')">IDEs</button>
+      <button type="button" class="btn btn-sm" onclick="showTab('catalog')">Skills y MCPs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('load')">Carga</button>
       <button type="button" class="btn btn-sm" onclick="showTab('agents')">Agentes OAC</button>
       <button type="button" class="btn btn-sm" onclick="showTab('profiles')">Perfiles</button>
@@ -622,6 +694,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         <button type="button" class="btn btn-sm" onclick="loadSnapshot()">Reintentar</button>
       </div>
 
+      <!-- TAB 1: IDES AGÉNTICOS -->
       <section id="tab-ides" class="tabpanel active" role="tabpanel" aria-labelledby="nav-ides">
         <div class="section-bar">
           <h2>Estado y servidores activos por IDE agéntico</h2>
@@ -632,6 +705,101 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         </div>
       </section>
 
+      <!-- TAB 2: SKILLS Y MCPS VIVOS -->
+      <section id="tab-catalog" class="tabpanel" role="tabpanel" aria-labelledby="nav-catalog">
+        <div class="section-bar">
+          <h2>Catálogo vivo de servidores MCP y skills</h2>
+          <div class="row-inline">
+            <span class="chip ok"><span class="live-beacon" role="status" aria-label="Activo"></span> Cargado y activo</span>
+            <span class="chip"><span class="idle-beacon" role="status" aria-label="En espera"></span> En espera o catálogo frío</span>
+            <span class="chip bad"><span class="error-beacon" role="status" aria-label="Error"></span> Con error</span>
+          </div>
+        </div>
+
+        <!-- MCPs Live Table -->
+        <div class="panel-surface" style="padding:0;overflow:hidden;margin-bottom:var(--space-5);">
+          <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <div>
+              <h3>Servidores MCP registrados (<span id="catMcpCount" class="measured">0</span>)</h3>
+              <span class="muted">Estado de salud del binario, IDEs donde corre actualmente y acciones directas</span>
+            </div>
+            <div style="min-width:240px;">
+              <label for="searchMcpCat" class="field-label" style="display:none;">Filtrar MCP</label>
+              <input type="search" id="searchMcpCat" placeholder="Filtrar MCP o IDE (codex, antigravity…)" oninput="renderCatalogMcps()" />
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Servidor MCP</th>
+                  <th>Salud</th>
+                  <th>Corriendo / activo en</th>
+                  <th>Perfiles</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="catalogMcpsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Skills Live Table + Vercel Finder -->
+        <div class="panel-surface" style="margin-bottom:var(--space-5);">
+          <div class="panel-head">
+            <div>
+              <h3>Buscador externo de skills (Vercel skills.sh)</h3>
+              <span class="muted">Consulta el registro abierto con npx skills find sin salir de la consola</span>
+            </div>
+          </div>
+          <div class="row-inline">
+            <div style="flex:1;min-width:240px;">
+              <label for="inputVercelFind" class="field-label" style="display:none;">Buscar en skills.sh</label>
+              <input type="search" id="inputVercelFind" placeholder="Ejemplo: react performance, playwright, tailwind, rust…" />
+            </div>
+            <button type="button" class="btn btn-amber" onclick="runVercelFind()">
+              <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en Vercel Skills
+            </button>
+          </div>
+          <div id="vercelFindOut" style="margin-top:var(--space-3);"></div>
+        </div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;">
+          <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <div>
+              <h3>Skills instaladas (<span id="catSkillCount" class="measured">0</span>)</h3>
+              <span class="muted">Pulso verde indica skill cargada y descubrible por los IDEs listados</span>
+            </div>
+            <div class="row-inline">
+              <label for="filterSkillState" class="field-label" style="display:none;">Estado</label>
+              <select id="filterSkillState" onchange="renderCatalogSkills()" style="width:auto;">
+                <option value="all">Todas las skills</option>
+                <option value="loaded">Solo cargadas (en verde)</option>
+                <option value="error">Con error</option>
+                <option value="cold">Catálogo frío</option>
+              </select>
+              <label for="searchSkillCat" class="field-label" style="display:none;">Buscar skill</label>
+              <input type="search" id="searchSkillCat" placeholder="Buscar por nombre, descripción o IDE…" oninput="renderCatalogSkills()" style="min-width:250px;width:auto;" />
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Skill</th>
+                  <th>Salud</th>
+                  <th>Cargada / disponible en</th>
+                  <th>Descripción</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="catalogSkillsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: MAYOR CARGA -->
       <section id="tab-load" class="tabpanel" role="tabpanel" aria-labelledby="nav-load">
         <div class="section-bar">
           <h2>Diagnóstico de carga del sistema y presión de contexto</h2>
@@ -698,6 +866,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         </div>
       </section>
 
+      <!-- TAB 4: AGENTES Y OAC -->
       <section id="tab-agents" class="tabpanel" role="tabpanel" aria-labelledby="nav-agents">
         <div class="seam-grid seam-4" style="margin-bottom: var(--space-5);">
           <div>
@@ -779,6 +948,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         </div>
       </section>
 
+      <!-- TAB 5: PERFILES -->
       <section id="tab-profiles" class="tabpanel" role="tabpanel" aria-labelledby="nav-profiles">
         <div class="section-bar">
           <h2>Perfiles declarativos por proyecto</h2>
@@ -787,6 +957,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         <div class="seam-grid seam-3" id="profilesGrid"></div>
       </section>
 
+      <!-- TAB 6: SIMULADOR ECC -->
       <section id="tab-ecc" class="tabpanel" role="tabpanel" aria-labelledby="nav-ecc">
         <div class="panel-surface" style="margin-bottom: var(--space-5);">
           <div class="panel-head">
@@ -830,6 +1001,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         </div>
       </section>
 
+      <!-- TAB 7: SQLITE & ROLLBACKS -->
       <section id="tab-health" class="tabpanel" role="tabpanel" aria-labelledby="nav-health">
         <div class="seam-grid seam-2">
           <div>
@@ -853,6 +1025,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   </div>
 </div>
 
+<!-- MODAL 1: AI CONFIG RECOMMENDATION -->
 <div id="aiModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" onclick="if(event.target===this) closeAiModal()">
   <div class="modal">
     <div class="panel-head">
@@ -865,6 +1038,26 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   </div>
 </div>
 
+<!-- MODAL 2: RESOURCE INSPECTOR & EDITOR (Skill / MCP) -->
+<div id="resModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="resModalTitle" onclick="if(event.target===this) closeResModal()">
+  <div class="modal">
+    <div class="panel-head">
+      <h2 id="resModalTitle" style="font-size:19px;">Detalle del recurso</h2>
+      <div class="row-inline">
+        <button type="button" class="btn btn-ok btn-sm" id="resSaveBtn" style="display:none;" onclick="saveResEdit()">
+          <svg class="icon" aria-hidden="true"><use href="#ic-save"/></svg> Guardar cambios
+        </button>
+        <button type="button" class="btn btn-sm" id="closeResBtn" onclick="closeResModal()">
+          <svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg> Cerrar (Esc)
+        </button>
+      </div>
+    </div>
+    <div id="resModalMeta" style="margin-bottom:var(--space-3);"></div>
+    <label for="resEditorArea" class="field-label" id="resEditorLabel">Contenido</label>
+    <textarea id="resEditorArea" class="code-editor" readonly></textarea>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -872,6 +1065,7 @@ let SNAPSHOT = null;
 const IDE_EDIT_MODE = {};
 const IDE_DRAFT_MCPS = {};
 let lastFocusedEl = null;
+let CURRENT_RES = null;
 
 const LEVEL_MAP = { HIGH: 'Alta', MEDIUM: 'Media', LOW: 'Baja' };
 
@@ -893,8 +1087,9 @@ function showTab(name) {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('aiModal').classList.contains('open')) {
-    closeAiModal();
+  if (e.key === 'Escape') {
+    if (document.getElementById('resModal').classList.contains('open')) closeResModal();
+    else if (document.getElementById('aiModal').classList.contains('open')) closeAiModal();
   }
 });
 
@@ -945,6 +1140,8 @@ function renderAll() {
   document.getElementById('totalLiveRam').textContent = `${totalRam.toFixed(1)} MB`;
 
   renderIdes(loadCatalog);
+  renderCatalogMcps();
+  renderCatalogSkills();
   renderSystemLoad(liveProcs);
   renderLoadTable();
   renderOacSummary(oac);
@@ -994,11 +1191,12 @@ function renderIdes(loadCatalog) {
       const info = loadCatalog[name] || { level: 'LOW', ram: 'N/A', tokens: '' };
       const lvlLabel = LEVEL_MAP[info.level] || 'Baja';
       const clickAttr = (isEditing && !isBundled) ? `onclick="toggleDraftMcp('${ideKey}','${name}')"` : '';
+      const beaconCls = isOn ? 'live-beacon' : 'idle-beacon';
       return `
         <button type="button" class="mcp-switch ${isBundled ? 'bundled' : ''} ${isEditing && !isBundled ? 'editable' : ''}"
           aria-pressed="${isOn ? 'true' : 'false'}" ${!isEditing || isBundled ? 'tabindex="-1"' : ''}
           ${clickAttr} title="RAM: ${info.ram} | Contexto: ${info.tokens}">
-          <span class="mcp-state-glyph" aria-hidden="true"></span>
+          <span class="${beaconCls}" role="status" aria-label="${isOn ? 'Activo' : 'Inactivo'}"></span>
           <span class="measured">${name}</span>
           <span class="load-pill load-${lvlLabel}">${lvlLabel}</span>
         </button>`;
@@ -1027,6 +1225,215 @@ function renderIdes(loadCatalog) {
     `;
     grid.appendChild(cell);
   });
+}
+
+function renderCatalogMcps() {
+  const mcps = SNAPSHOT?.catalog?.mcps || [];
+  document.getElementById('catMcpCount').textContent = mcps.length;
+  const q = (document.getElementById('searchMcpCat')?.value || '').trim().toLowerCase();
+  const filtered = mcps.filter(m => !q || m.id.toLowerCase().includes(q) || m.running_in.join(' ').toLowerCase().includes(q) || m.profiles.join(' ').toLowerCase().includes(q));
+
+  document.getElementById('catalogMcpsBody').innerHTML = filtered.length ? filtered.map(m => {
+    const beacon = m.health === 'error'
+      ? '<span class="error-beacon" role="status" aria-label="Error"></span>'
+      : (m.is_loaded ? '<span class="live-beacon" role="status" aria-label="Cargado"></span>' : '<span class="idle-beacon" role="status" aria-label="Inactivo"></span>');
+    const healthChip = m.health === 'ok'
+      ? `<span class="chip ok" title="${m.health_detail}">OK</span>`
+      : `<span class="chip bad" title="${m.health_detail}">Error</span>`;
+    const whereHtml = m.running_in.length
+      ? m.running_in.map(ide => `<span class="chip ok">${ide}</span>`).join(' ')
+      : '<span class="muted">En espera (por perfil)</span>';
+    const ramTag = m.live_ram_mb > 0 ? ` <span class="chip cool measured">${m.live_ram_mb} MB vivos</span>` : '';
+    const profHtml = m.profiles.length ? m.profiles.map(p => `<span class="chip measured">${p}</span>`).join(' ') : '<span class="muted">—</span>';
+
+    return `
+      <tr>
+        <td>
+          <div class="row-inline">
+            ${beacon}
+            <strong class="measured">${m.id}</strong>
+            <span class="load-pill load-${LEVEL_MAP[m.load_level] || 'Baja'}">${LEVEL_MAP[m.load_level] || 'Baja'}</span>
+          </div>
+          <div class="muted" style="margin-top:var(--space-1);">${m.health_detail}</div>
+        </td>
+        <td>${healthChip}</td>
+        <td><div class="row-inline">${whereHtml}${ramTag}</div></td>
+        <td><div class="row-inline">${profHtml}</div></td>
+        <td>
+          <div class="row-inline">
+            <button type="button" class="btn btn-sm" onclick="openResModal('mcp','${m.id}',false)" title="Ver información">
+              <svg class="icon" aria-hidden="true"><use href="#ic-eye"/></svg> Info
+            </button>
+            <button type="button" class="btn btn-sm" onclick="openResModal('mcp','${m.id}',true)" title="Editar MCP" ${m.bundled ? 'disabled' : ''}>
+              <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Editar
+            </button>
+            <button type="button" class="btn btn-sm" onclick="openExplorer('mcp','${m.id}')" title="Abrir en el explorador de Windows">
+              <svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> Explorador
+            </button>
+            <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('mcp','${m.id}')" title="Desactivar en todos los IDEs" ${m.bundled ? 'disabled' : ''}>
+              <svg class="icon" aria-hidden="true"><use href="#ic-trash"/></svg> Apagar
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">Sin servidores MCP que coincidan con el filtro.</td></tr>';
+}
+
+function renderCatalogSkills() {
+  const skills = SNAPSHOT?.catalog?.skills || [];
+  document.getElementById('catSkillCount').textContent = skills.length;
+  const q = (document.getElementById('searchSkillCat')?.value || '').trim().toLowerCase();
+  const stateFilter = document.getElementById('filterSkillState')?.value || 'all';
+
+  const filtered = skills.filter(s => {
+    if (stateFilter === 'loaded' && !s.is_loaded) return false;
+    if (stateFilter === 'error' && s.health !== 'error') return false;
+    if (stateFilter === 'cold' && s.scope !== 'cold_catalog') return false;
+    if (!q) return true;
+    return s.id.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) || s.running_in.join(' ').toLowerCase().includes(q);
+  });
+
+  const shown = filtered.slice(0, 120);
+  document.getElementById('catalogSkillsBody').innerHTML = shown.length ? shown.map(s => {
+    const beacon = s.health === 'error'
+      ? '<span class="error-beacon" role="status" aria-label="Error"></span>'
+      : (s.is_loaded ? '<span class="live-beacon" role="status" aria-label="Cargada"></span>' : '<span class="idle-beacon" role="status" aria-label="Catálogo frío"></span>');
+    const healthChip = s.health === 'ok'
+      ? `<span class="chip ok" title="${s.health_detail}">OK</span>`
+      : `<span class="chip bad" title="${s.health_detail}">Error</span>`;
+    const whereHtml = s.running_in.map(ide => `<span class="chip ${s.is_loaded ? 'ok' : ''}">${ide}</span>`).join(' ');
+    const profHtml = s.profiles.map(p => `<span class="chip cool measured">perfil:${p}</span>`).join(' ');
+
+    return `
+      <tr>
+        <td>
+          <div class="row-inline">
+            ${beacon}
+            <strong class="measured">${s.id}</strong>
+          </div>
+          ${profHtml ? `<div class="row-inline" style="margin-top:var(--space-1);">${profHtml}</div>` : ''}
+        </td>
+        <td>${healthChip}</td>
+        <td><div class="row-inline">${whereHtml}</div></td>
+        <td class="muted" style="max-width:360px;">${s.description}</td>
+        <td>
+          <div class="row-inline">
+            <button type="button" class="btn btn-sm" onclick="openResModal('skill','${s.id}',false)" title="Ver SKILL.md">
+              <svg class="icon" aria-hidden="true"><use href="#ic-eye"/></svg> Info
+            </button>
+            <button type="button" class="btn btn-sm" onclick="openResModal('skill','${s.id}',true)" title="Editar SKILL.md">
+              <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Editar
+            </button>
+            <button type="button" class="btn btn-sm" onclick="openExplorer('skill','${s.id}')" title="Abrir en el explorador de Windows">
+              <svg class="icon" aria-hidden="true"><use href="#ic-folder"/></svg> Explorador
+            </button>
+            <button type="button" class="btn btn-bad btn-sm" onclick="deleteRes('skill','${s.id}')" title="Archivar en backup privado">
+              <svg class="icon" aria-hidden="true"><use href="#ic-trash"/></svg> Eliminar
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">Sin skills que coincidan con el filtro actual.</td></tr>';
+}
+
+async function openResModal(kind, id, editable) {
+  lastFocusedEl = document.activeElement;
+  CURRENT_RES = { kind, id, editable };
+  document.getElementById('resModal').classList.add('open');
+  document.getElementById('resModalTitle').textContent = `${editable ? 'Editar' : 'Inspeccionar'} ${kind.toUpperCase()}: ${id}`;
+  document.getElementById('resSaveBtn').style.display = editable ? 'inline-flex' : 'none';
+  const area = document.getElementById('resEditorArea');
+  area.readOnly = !editable;
+  area.value = 'Cargando…';
+
+  const res = await fetch('/api/resource/info', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ kind, id })
+  });
+  const data = await res.json();
+  if (!data.ok) { area.value = 'Error: ' + data.error; return; }
+  const it = data.result.item;
+  document.getElementById('resModalMeta').innerHTML = `
+    <div class="row-inline">
+      <span class="chip ${it.health === 'ok' ? 'ok' : 'bad'}">Salud: ${it.health.toUpperCase()} (${it.health_detail})</span>
+      <span class="path-ref">${it.path || it.explorer_path}</span>
+    </div>`;
+  document.getElementById('resEditorLabel').textContent = editable
+    ? 'Edita el contenido y pulsa Guardar cambios (se creará backup SHA-256 automático):'
+    : 'Contenido actual (modo lectura):';
+  area.value = data.result.content || '';
+  if (editable) area.focus(); else document.getElementById('closeResBtn').focus();
+}
+
+function closeResModal() {
+  document.getElementById('resModal').classList.remove('open');
+  if (lastFocusedEl) lastFocusedEl.focus();
+}
+
+async function saveResEdit() {
+  if (!CURRENT_RES) return;
+  const content = document.getElementById('resEditorArea').value;
+  const res = await fetch('/api/resource/edit', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ kind: CURRENT_RES.kind, id: CURRENT_RES.id, content })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    closeResModal();
+    toast(`Guardado ${CURRENT_RES.id} (Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else toast('Error guardando: ' + data.error, true);
+}
+
+async function openExplorer(kind, id) {
+  const res = await fetch('/api/resource/open-explorer', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ kind, id })
+  });
+  const data = await res.json();
+  if (data.ok) toast(`Abierto en el Explorador: ${data.result.opened}`);
+  else toast('Error: ' + data.error, true);
+}
+
+async function deleteRes(kind, id) {
+  const msg = kind === 'skill'
+    ? `¿Archivar y retirar la skill '${id}'? Se moverá íntegramente a un backup privado en %LOCALAPPDATA%\\agent-tooling-backups con rollback.`
+    : `¿Desactivar el servidor MCP '${id}' en todos los IDEs globales con backup?`;
+  if (!confirm(msg)) return;
+  const res = await fetch('/api/resource/delete', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ kind, id })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`${id} archivado con seguridad (ChangeId: ${data.result.change_id})`);
+    loadSnapshot();
+  } else toast('Error: ' + data.error, true);
+}
+
+async function runVercelFind() {
+  const q = document.getElementById('inputVercelFind').value.trim();
+  if (!q) return;
+  const out = document.getElementById('vercelFindOut');
+  out.innerHTML = '<span class="muted">Consultando skills.sh vía npx skills find…</span>';
+  const res = await fetch('/api/skills/vercel-find', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ query: q })
+  });
+  const data = await res.json();
+  if (!data.ok) { out.innerHTML = `<span class="chip bad">${data.error}</span>`; return; }
+  const list = data.result || [];
+  out.innerHTML = list.length ? list.map(item => `
+    <div class="finding-row">
+      <div class="row-inline" style="justify-content:space-between;">
+        <strong class="measured">${item.package}</strong>
+        <span class="chip cool measured">${item.installs}</span>
+      </div>
+      <div class="row-inline" style="margin-top:var(--space-1);justify-content:space-between;">
+        <span class="path-ref">npx skills add ${item.package}</span>
+        ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener" class="chip amber">Ver en skills.sh</a>` : ''}
+      </div>
+    </div>`).join('') : '<span class="muted">Sin resultados para esa búsqueda.</span>';
 }
 
 function startIdeEdit(ideKey) {
@@ -1253,7 +1660,7 @@ function renderProfiles() {
       const on = active.has(m);
       return `
         <button type="button" class="mcp-switch editable" aria-pressed="${on?'true':'false'}" onclick="toggleMcp('${pname}','${m}',${!on})">
-          <span class="mcp-state-glyph" aria-hidden="true"></span>
+          <span class="${on ? 'live-beacon' : 'idle-beacon'}" role="status" aria-label="${on ? 'Activo' : 'Inactivo'}"></span>
           <span class="measured">${m}</span>
         </button>`;
     }).join('');
