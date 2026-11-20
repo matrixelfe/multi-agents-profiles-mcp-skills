@@ -3,296 +3,354 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Agent Tooling v3 — Multi-IDE Control Center</title>
+<title>Agent Tooling v3 — Multi-IDE Operations Console</title>
 <style>
+  /* ==========================================================================
+     1. PRIMITIVE TOKENS (design-system skill: Layer 1)
+     ========================================================================== */
   :root {
-    --bg-0: #060911;
-    --bg-1: #0c1220;
-    --glass: rgba(17, 24, 39, 0.72);
-    --glass-2: rgba(24, 34, 54, 0.85);
-    --border: rgba(148, 163, 184, 0.16);
-    --border-strong: rgba(56, 189, 248, 0.4);
-    --text: #f1f5f9;
-    --muted: #94a3b8;
-    --sky: #38bdf8;
-    --indigo: #818cf8;
-    --emerald: #10b981;
-    --amber: #f59e0b;
-    --rose: #f43f5e;
-    --radius: 14px;
-    --shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    --p-slate-950: #090d16;
+    --p-slate-900: #0f1623;
+    --p-slate-850: #151e2e;
+    --p-slate-800: #1c273b;
+    --p-slate-700: #2b3a55;
+    --p-slate-400: #94a3b8;
+    --p-slate-100: #f1f5f9;
+    --p-sky-400: #38bdf8;
+    --p-sky-500: #0ea5e9;
+    --p-indigo-400: #818cf8;
+    --p-emerald-400: #34d399;
+    --p-emerald-600: #059669;
+    --p-amber-400: #fbbf24;
+    --p-rose-400: #fb7185;
+    --p-rose-500: #f43f5e;
+
+    /* ========================================================================
+       2. SEMANTIC TOKENS (design-system skill: Layer 2)
+       ======================================================================== */
+    --bg-canvas: var(--p-slate-950);
+    --bg-surface: var(--p-slate-900);
+    --bg-surface-elevated: var(--p-slate-850);
+    --bg-input: #070a12;
+    --border-subtle: rgba(148, 163, 184, 0.16);
+    --border-focus: var(--p-sky-400);
+    --text-primary: var(--p-slate-100);
+    --text-muted: var(--p-slate-400);
+    --accent-primary: var(--p-sky-400);
+    --accent-secondary: var(--p-indigo-400);
+    --status-ok: var(--p-emerald-400);
+    --status-warn: var(--p-amber-400);
+    --status-danger: var(--p-rose-400);
+
+    /* ========================================================================
+       3. COMPONENT TOKENS (design-system skill: Layer 3)
+       ======================================================================== */
+    --card-radius: 12px;
+    --btn-radius: 8px;
+    --chip-radius: 7px;
+    --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--border-focus);
+    --ease-out-fast: cubic-bezier(0.22, 1, 0.36, 1);
   }
+
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    background:
-      radial-gradient(1200px 600px at 10% -10%, rgba(56, 189, 248, 0.12), transparent 60%),
-      radial-gradient(900px 500px at 90% 0%, rgba(129, 140, 248, 0.12), transparent 55%),
-      var(--bg-0);
-    color: var(--text);
+    background: var(--bg-canvas);
+    color: var(--text-primary);
     min-height: 100vh;
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+  /* Reduced motion (emil-design-eng + frontend-a11y) */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
   }
 
   /* Layout */
-  .app-shell { display: grid; grid-template-columns: 248px 1fr; min-height: 100vh; }
-  @media (max-width: 960px) { .app-shell { grid-template-columns: 1fr; } aside { display: none; } }
-
-  aside {
-    background: rgba(10, 15, 28, 0.9);
-    border-right: 1px solid var(--border);
-    padding: 20px 14px;
-    display: flex; flex-direction: column; gap: 6px;
+  .app-shell { display: grid; grid-template-columns: 244px 1fr; min-height: 100vh; }
+  aside.sidebar {
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border-subtle);
+    padding: 18px 12px;
+    display: flex; flex-direction: column; gap: 4px;
     position: sticky; top: 0; height: 100vh;
   }
-  .brand {
-    padding: 8px 12px 18px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 10px;
-  }
-  .brand h1 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
-  .brand p { margin: 4px 0 0; font-size: 11px; color: var(--muted); }
+  .brand { padding: 4px 10px 16px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 8px; }
+  .brand h1 { margin: 0; font-size: 15px; font-weight: 800; letter-spacing: -.01em; display: flex; align-items: center; gap: 8px; }
+  .brand p { margin: 4px 0 0; font-size: 11.5px; color: var(--text-muted); }
 
+  .nav-list { display: flex; flex-direction: column; gap: 4px; }
   .nav-btn {
-    width: 100%; text-align: left; background: transparent; color: var(--muted);
-    border: 1px solid transparent; padding: 10px 12px; border-radius: 10px;
+    width: 100%; text-align: left; background: transparent; color: var(--text-muted);
+    border: 1px solid transparent; padding: 9px 11px; border-radius: var(--btn-radius);
     cursor: pointer; font-weight: 600; font-size: 13px;
-    display: flex; align-items: center; gap: 10px; transition: all .16s ease;
+    display: flex; align-items: center; gap: 9px;
+    transition: background-color 140ms var(--ease-out-fast), color 140ms var(--ease-out-fast);
   }
-  .nav-btn:hover { color: var(--text); background: rgba(255,255,255,0.04); }
-  .nav-btn.active {
-    color: var(--sky); background: rgba(56, 189, 248, 0.1);
+  .nav-btn:hover { color: var(--text-primary); background: rgba(255, 255, 255, 0.04); }
+  .nav-btn[aria-selected="true"] {
+    color: var(--accent-primary);
+    background: rgba(56, 189, 248, 0.1);
     border-color: rgba(56, 189, 248, 0.28);
   }
-  .sidebar-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+  .sidebar-footer { margin-top: auto; padding: 12px 10px 0; border-top: 1px solid var(--border-subtle); font-size: 11px; color: var(--text-muted); }
+
+  /* Mobile responsive navigation (frontend-design-direction) */
+  .mobile-nav { display: none; gap: 6px; padding: 10px 16px; overflow-x: auto; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); }
+  @media (max-width: 960px) {
+    .app-shell { grid-template-columns: 1fr; }
+    aside.sidebar { display: none; }
+    .mobile-nav { display: flex; }
+  }
 
   /* Topbar */
   .content-col { display: flex; flex-direction: column; min-width: 0; }
   header.topbar {
     position: sticky; top: 0; z-index: 30;
-    backdrop-filter: blur(16px); background: rgba(6, 9, 17, 0.78);
-    border-bottom: 1px solid var(--border);
-    padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   }
-  .topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .row-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-  /* Buttons */
+  /* Tactile Buttons (emil-design-eng: explicit transition props + :active scale(0.97)) */
   .btn {
-    border: none; border-radius: 9px; padding: 8px 14px; font-weight: 700; font-size: 12px;
-    cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s ease;
+    border: 1px solid transparent; border-radius: var(--btn-radius);
+    padding: 7px 13px; font-weight: 700; font-size: 12px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    transition: transform 120ms var(--ease-out-fast), background-color 140ms ease-out, border-color 140ms ease-out;
   }
-  .btn-ai {
-    background: linear-gradient(135deg, #38bdf8, #818cf8);
-    color: #030712; box-shadow: 0 4px 18px rgba(56, 189, 248, 0.3);
-  }
-  .btn-ai:hover { transform: translateY(-1px); filter: brightness(1.08); }
-  .btn-primary { background: var(--sky); color: #04131c; }
-  .btn-primary:hover { filter: brightness(1.1); }
-  .btn-save { background: var(--emerald); color: #022c22; }
-  .btn-save:hover { filter: brightness(1.1); }
-  .btn-ghost { background: var(--glass-2); color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { border-color: var(--border-strong); }
-  .btn-warn { background: rgba(245, 158, 11, 0.14); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.35); }
-  .btn-warn:hover { background: rgba(245, 158, 11, 0.24); }
-  .btn-sm { padding: 5px 10px; font-size: 11.5px; border-radius: 7px; }
+  .btn:active:not(:disabled) { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-ai { background: linear-gradient(135deg, var(--p-sky-400), var(--p-indigo-400)); color: #030712; }
+  .btn-primary { background: var(--p-sky-500); color: #04131c; }
+  .btn-save { background: var(--p-emerald-600); color: #ecfdf5; }
+  .btn-ghost { background: var(--bg-surface-elevated); color: var(--text-primary); border-color: var(--border-subtle); }
+  .btn-ghost:hover { border-color: rgba(148, 163, 184, 0.35); }
+  .btn-warn { background: rgba(251, 191, 36, 0.12); color: var(--status-warn); border-color: rgba(251, 191, 36, 0.35); }
+  .btn-sm { padding: 5px 9px; font-size: 11.5px; border-radius: 7px; }
 
   /* Badges */
   .badge {
-    display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px;
-    font-size: 11px; font-weight: 700; border: 1px solid var(--border); background: var(--glass-2); color: var(--muted);
+    display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; border: 1px solid var(--border-subtle);
+    background: var(--bg-surface-elevated); color: var(--text-muted);
   }
-  .badge.ok { color: #6ee7b7; border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.12); }
-  .badge.warn { color: #fcd34d; border-color: rgba(245,158,11,.4); background: rgba(245,158,11,.12); }
-  .badge.danger { color: #fda4af; border-color: rgba(244,63,94,.45); background: rgba(244,63,94,.14); }
-  .badge.info { color: #7dd3fc; border-color: rgba(56,189,248,.4); background: rgba(56,189,248,.12); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
+  .badge.ok { color: var(--status-ok); border-color: rgba(52, 211, 153, 0.35); background: rgba(16, 185, 129, 0.1); }
+  .badge.warn { color: var(--status-warn); border-color: rgba(251, 191, 36, 0.35); background: rgba(245, 158, 11, 0.1); }
+  .badge.danger { color: var(--status-danger); border-color: rgba(251, 113, 133, 0.4); background: rgba(244, 63, 94, 0.12); }
+  .badge.info { color: var(--accent-primary); border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-  /* Main & Cards */
-  main { padding: 22px 24px 64px; max-width: 1480px; width: 100%; margin: 0 auto; }
-  .tab { display: none; animation: fadeIn .18s ease; }
-  .tab.active { display: block; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  /* Main & Zero-latency Tab Switching (emil-design-eng: 100+/day actions do not animate) */
+  main { padding: 20px 22px 64px; max-width: 1460px; width: 100%; margin: 0 auto; }
+  .tabpanel { display: none; }
+  .tabpanel.active { display: block; }
 
-  .section-title { margin: 0 0 14px; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  .grid { display: grid; gap: 16px; }
-  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
-  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); }
-  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .section-header h2 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+
+  .grid { display: grid; gap: 14px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-4 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 
   .card {
-    background: var(--glass); backdrop-filter: blur(14px);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 18px; box-shadow: var(--shadow); transition: border-color .18s ease;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--card-radius);
+    padding: 16px;
+    transition: border-color 150ms ease-out;
   }
-  .card.editing { border-color: var(--sky); box-shadow: 0 0 0 1px rgba(56,189,248,.35), var(--shadow); }
+  .card.editing { border-color: var(--accent-primary); }
   .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-  .card h2, .card h3 { margin: 0; font-size: 15px; font-weight: 700; }
-  .muted { color: var(--muted); font-size: 12px; }
-  .kpi { font-size: 28px; font-weight: 800; color: var(--sky); margin: 4px 0; letter-spacing: -.02em; }
+  .card h3 { margin: 0; font-size: 14.5px; font-weight: 700; }
+  .muted { color: var(--text-muted); font-size: 12px; }
+  .kpi { font-size: 26px; font-weight: 800; color: var(--text-primary); margin: 4px 0; letter-spacing: -.02em; }
 
-  /* IDE MCP Pills */
-  .mcp-grid { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
-  .mcp-chip {
-    display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px;
-    border-radius: 8px; font-size: 12px; font-family: ui-monospace, Consolas, monospace;
-    border: 1px solid var(--border); background: rgba(15, 23, 42, 0.7); color: var(--muted);
-    transition: all .14s ease;
+  /* Semantic Interactive MCP Chip Buttons (frontend-a11y: real <button aria-pressed>) */
+  .mcp-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .mcp-btn {
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px;
+    border-radius: var(--chip-radius); font-size: 12px; font-family: ui-monospace, Consolas, monospace;
+    border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); color: var(--text-muted);
+    cursor: default;
+    transition: transform 110ms var(--ease-out-fast), border-color 140ms ease-out, background-color 140ms ease-out;
   }
-  .mcp-chip.on { color: #a7f3d0; border-color: rgba(16,185,129,.45); background: rgba(6, 78, 59, 0.45); }
-  .mcp-chip.bundled { color: #bae6fd; border-color: rgba(56,189,248,.4); background: rgba(12, 74, 110, 0.4); }
-  .mcp-chip.editable { cursor: pointer; }
-  .mcp-chip.editable:hover { transform: translateY(-1px); border-color: var(--sky); }
+  .mcp-btn[aria-pressed="true"] { color: #a7f3d0; border-color: rgba(52, 211, 153, 0.45); background: rgba(6, 78, 59, 0.4); }
+  .mcp-btn.bundled { color: #bae6fd; border-color: rgba(56, 189, 248, 0.35); background: rgba(12, 74, 110, 0.35); }
+  .mcp-btn.editable { cursor: pointer; }
+  .mcp-btn.editable:hover { border-color: var(--accent-primary); }
+  .mcp-btn.editable:active { transform: scale(0.96); }
+
   .load-tag { font-family: system-ui, sans-serif; font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px; text-transform: uppercase; }
-  .load-HIGH { background: rgba(244,63,94,.2); color: #fda4af; }
-  .load-MEDIUM { background: rgba(245,158,11,.2); color: #fcd34d; }
-  .load-LOW { background: rgba(16,185,129,.2); color: #6ee7b7; }
+  .load-HIGH { background: rgba(244, 63, 94, 0.18); color: var(--status-danger); }
+  .load-MEDIUM { background: rgba(245, 158, 11, 0.18); color: var(--status-warn); }
+  .load-LOW { background: rgba(16, 185, 129, 0.16); color: var(--status-ok); }
 
-  /* Progress Bars */
-  .bar-track { height: 8px; border-radius: 999px; background: rgba(148,163,184,.14); overflow: hidden; margin-top: 6px; }
-  .bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--sky), var(--indigo)); }
-  .bar-fill.high { background: linear-gradient(90deg, #f59e0b, #f43f5e); }
+  /* Bars */
+  .bar-track { height: 7px; border-radius: 999px; background: rgba(148, 163, 184, 0.12); overflow: hidden; margin-top: 6px; }
+  .bar-fill { height: 100%; border-radius: 999px; background: var(--p-sky-500); }
+  .bar-fill.high { background: var(--p-rose-500); }
 
-  /* Tables & Inputs */
+  /* Tables & Form Controls */
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
-  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
-  tr:hover td { background: rgba(56, 189, 248, 0.04); }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+  th { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 700; }
+  tr:hover td { background: rgba(56, 189, 248, 0.03); }
 
-  select, input[type="text"] {
-    background: rgba(6, 9, 17, 0.85); color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; padding: 7px 10px; font-size: 12.5px; width: 100%;
+  label.field-label { display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 5px; font-weight: 600; }
+  select, input[type="text"], input[type="search"] {
+    background: var(--bg-input); color: var(--text-primary); border: 1px solid var(--border-subtle);
+    border-radius: var(--btn-radius); padding: 7px 10px; font-size: 12.5px; width: 100%;
   }
   select:disabled, input:disabled { opacity: 0.55; cursor: not-allowed; }
   .pill-list { display: flex; flex-wrap: wrap; gap: 5px; }
-  .pill { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--glass-2); border: 1px solid var(--border); font-family: ui-monospace, Consolas, monospace; }
-  .pill.allow { border-color: rgba(16,185,129,.45); color: #6ee7b7; }
-  .pill.deny { border-color: rgba(244,63,94,.45); color: #fda4af; }
-  .pill.chain { border-color: rgba(56,189,248,.35); color: #7dd3fc; }
-  .row-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .pill { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); font-family: ui-monospace, Consolas, monospace; }
+  .pill.allow { border-color: rgba(52, 211, 153, 0.4); color: var(--status-ok); }
+  .pill.deny { border-color: rgba(251, 113, 133, 0.4); color: var(--status-danger); }
+  .pill.chain { border-color: rgba(56, 189, 248, 0.35); color: var(--accent-primary); }
 
-  /* Modal (AI Config Recommendation) */
+  /* Error Banner (frontend-design-direction: explicit error + recovery path) */
+  .error-banner {
+    display: none; padding: 12px 16px; border-radius: var(--card-radius); margin-bottom: 16px;
+    background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(251, 113, 133, 0.45);
+    color: #fecdd3; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .error-banner.visible { display: flex; }
+
+  /* Modal (emil-design-eng: scale(0.96) + opacity -> 1, ease-out) */
   .modal-backdrop {
-    position: fixed; inset: 0; background: rgba(2, 6, 23, 0.78); backdrop-filter: blur(8px);
-    display: none; align-items: center; justify-content: center; z-index: 90; padding: 20px;
+    position: fixed; inset: 0; background: rgba(2, 6, 23, 0.76); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center; z-index: 90; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity 160ms ease-out;
   }
-  .modal-backdrop.open { display: flex; }
+  .modal-backdrop.open { opacity: 1; pointer-events: auto; }
   .modal {
-    background: #0f172a; border: 1px solid var(--border-strong); border-radius: 16px;
-    max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 22px;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+    background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 14px;
+    max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 20px;
+    transform: scale(0.96); transition: transform 180ms var(--ease-out-fast);
   }
-  .finding {
-    padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
-    background: rgba(15, 23, 42, 0.75); margin-bottom: 10px;
-  }
+  .modal-backdrop.open .modal { transform: scale(1); }
+  .finding { padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated); margin-bottom: 10px; }
 
+  /* Toast (spatial consistency + aria-live) */
   #toast {
-    position: fixed; bottom: 22px; right: 22px; background: #0f172a;
-    border: 1px solid var(--sky); color: var(--text); padding: 12px 16px;
-    border-radius: 10px; font-size: 13px; display: none; z-index: 120; max-width: 440px;
-    box-shadow: var(--shadow);
+    position: fixed; bottom: 20px; right: 20px; background: var(--bg-surface-elevated);
+    border: 1px solid var(--accent-primary); color: var(--text-primary); padding: 11px 15px;
+    border-radius: 10px; font-size: 12.5px; z-index: 120; max-width: 440px;
+    opacity: 0; transform: translateY(10px); pointer-events: none;
+    transition: opacity 160ms ease-out, transform 180ms var(--ease-out-fast);
   }
+  #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 </style>
 </head>
 <body>
 <div class="app-shell">
-  <aside>
+  <aside class="sidebar" aria-label="Navegación principal">
     <div class="brand">
       <h1>⚡ Agent Tooling <span class="badge info">v3</span></h1>
       <p>OAC V3.4 · Multi-IDE · ECC</p>
     </div>
-    <button class="nav-btn active" onclick="showTab('ides', this)">🖥️ IDEs Agénticos</button>
-    <button class="nav-btn" onclick="showTab('load', this)">🔥 Mayor Carga (RAM/Tokens)</button>
-    <button class="nav-btn" onclick="showTab('agents', this)">🤖 Agentes, Modelos y OAC</button>
-    <button class="nav-btn" onclick="showTab('profiles', this)">🗂️ Perfiles por Proyecto</button>
-    <button class="nav-btn" onclick="showTab('ecc', this)">🧠 Simulador ECC</button>
-    <button class="nav-btn" onclick="showTab('health', this)">🗄️ SQLite y Rollbacks</button>
+    <div class="nav-list" role="tablist" aria-orientation="vertical">
+      <button type="button" class="nav-btn" role="tab" id="nav-ides" aria-selected="true" aria-controls="tab-ides" onclick="showTab('ides')">🖥️ IDEs Agénticos</button>
+      <button type="button" class="nav-btn" role="tab" id="nav-load" aria-selected="false" aria-controls="tab-load" onclick="showTab('load')">🔥 Mayor Carga (RAM/Tokens)</button>
+      <button type="button" class="nav-btn" role="tab" id="nav-agents" aria-selected="false" aria-controls="tab-agents" onclick="showTab('agents')">🤖 Agentes, Modelos y OAC</button>
+      <button type="button" class="nav-btn" role="tab" id="nav-profiles" aria-selected="false" aria-controls="tab-profiles" onclick="showTab('profiles')">🗂️ Perfiles por Proyecto</button>
+      <button type="button" class="nav-btn" role="tab" id="nav-ecc" aria-selected="false" aria-controls="tab-ecc" onclick="showTab('ecc')">🧠 Simulador ECC</button>
+      <button type="button" class="nav-btn" role="tab" id="nav-health" aria-selected="false" aria-controls="tab-health" onclick="showTab('health')">🗄️ SQLite y Rollbacks</button>
+    </div>
     <div class="sidebar-footer">
-      <div>Respaldo SHA-256 en cada cambio</div>
-      <div id="lastUpdated">Sincronizando...</div>
+      <div>Backup SHA-256 automático</div>
+      <div id="lastUpdated" class="num">Cargando...</div>
     </div>
   </aside>
 
   <div class="content-col">
     <header class="topbar">
-      <div class="topbar-left">
+      <div class="row-inline">
         <span id="spendGuardBadge" class="badge ok"><span class="dot"></span> PAYG: ...</span>
         <span id="sqliteBadge" class="badge"><span class="dot"></span> SQLite: ...</span>
-        <span id="liveRamBadge" class="badge info">RAM Viva: ...</span>
+        <span id="liveRamBadge" class="badge info num">RAM Viva: ...</span>
       </div>
-      <div class="topbar-right">
-        <button class="btn btn-ai" onclick="openAiRecommend()">✨ Recomendación por IA Config</button>
-        <button class="btn btn-ghost" onclick="loadSnapshot()">↻ Recargar</button>
+      <div class="row-inline">
+        <button type="button" class="btn btn-ai" onclick="openAiRecommend()">✨ Recomendación por IA Config</button>
+        <button type="button" class="btn btn-ghost" onclick="loadSnapshot()">↻ Recargar</button>
       </div>
     </header>
 
+    <nav class="mobile-nav" aria-label="Navegación móvil">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="showTab('ides')">🖥️ IDEs</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="showTab('load')">🔥 Carga</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="showTab('agents')">🤖 OAC</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="showTab('profiles')">🗂️ Perfiles</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="showTab('ecc')">🧠 ECC</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="showTab('health')">🗄️ Salud</button>
+    </nav>
+
     <main>
-      <!-- TAB 1: IDES AGÉNTICOS -->
-      <section id="tab-ides" class="tab active">
-        <div class="section-title">
-          <span>🖥️ Configuración por IDE Agéntico</span>
-          <span class="muted">Usa ✏️ Editar → activa/desactiva MCPs → 💾 Guardar (backup automático) o ↺ Restaurar por defecto</span>
+      <div id="errorBanner" class="error-banner" role="alert">
+        <span id="errorBannerMsg">No se pudo conectar con el servidor local.</span>
+        <button type="button" class="btn btn-ghost btn-sm" onclick="loadSnapshot()">Reintentar</button>
+      </div>
+
+      <!-- TAB 1: IDES -->
+      <section id="tab-ides" class="tabpanel active" role="tabpanel" aria-labelledby="nav-ides">
+        <div class="section-header">
+          <h2>🖥️ Configuración por IDE Agéntico</h2>
+          <span class="muted">✏️ Editar → alterna MCPs con teclado o clic → 💾 Guardar (backup SHA-256) o ↺ Restaurar</span>
         </div>
-        <div class="grid grid-2" id="idesGrid"></div>
+        <div class="grid grid-2" id="idesGrid">
+          <div class="card"><div class="muted">Cargando estado de IDEs...</div></div>
+        </div>
       </section>
 
       <!-- TAB 2: MAYOR CARGA -->
-      <section id="tab-load" class="tab">
-        <div class="section-title">
-          <span>🔥 Análisis de Carga: Sistema (RAM) y Agente (Tokens/Contexto)</span>
+      <section id="tab-load" class="tabpanel" role="tabpanel" aria-labelledby="nav-load">
+        <div class="section-header">
+          <h2>🔥 Bottlenecks: Carga del Sistema (RAM) y del Agente (Tokens)</h2>
+          <div style="min-width:240px;">
+            <label for="searchLoad" class="field-label" style="display:none;">Filtrar recursos</label>
+            <input type="search" id="searchLoad" placeholder="Filtrar MCP o impacto (HIGH, cpp, devtools...)" oninput="renderLoadTable()" />
+          </div>
         </div>
-        <div class="grid grid-2" style="margin-bottom: 18px;">
+        <div class="grid grid-2" style="margin-bottom:14px;">
           <div class="card">
             <div class="card-head">
-              <h3>💻 Procesos AI / MCP Activos Ahora en Windows</h3>
-              <span class="badge info" id="totalLiveRam">0 MB</span>
+              <h3>💻 Procesos AI / MCP Activos en Windows</h3>
+              <span class="badge info num" id="totalLiveRam">0.0 MB</span>
             </div>
             <div id="liveProcessBars" class="muted">Escaneando procesos...</div>
           </div>
           <div class="card">
             <div class="card-head">
-              <h3>📊 Resumen de Presión de Contexto</h3>
-              <span class="badge ok">Divulgación Progresiva</span>
+              <h3>📊 Presión de Contexto Global</h3>
+              <span class="badge ok">Objetivo Core: 0 pesados</span>
             </div>
-            <div class="grid grid-2" style="margin-top:8px;">
-              <div>
-                <div class="muted">MCPs Activos Global (OpenCode)</div>
-                <div class="kpi" id="kpiOcActive">-</div>
-              </div>
-              <div>
-                <div class="muted">MCPs Activos Global (Codex)</div>
-                <div class="kpi" id="kpiCxActive">-</div>
-              </div>
-              <div>
-                <div class="muted">Skills Globales OpenCode</div>
-                <div class="kpi" id="kpiOcSkills">-</div>
-              </div>
-              <div>
-                <div class="muted">Skills Compartidas (~/.agents)</div>
-                <div class="kpi" id="kpiSharedSkills">-</div>
-              </div>
+            <div class="grid grid-2">
+              <div><div class="muted">MCPs Activos (OpenCode)</div><div class="kpi num" id="kpiOcActive">-</div></div>
+              <div><div class="muted">MCPs Activos (Codex)</div><div class="kpi num" id="kpiCxActive">-</div></div>
+              <div><div class="muted">Skills Globales (OpenCode)</div><div class="kpi num" id="kpiOcSkills">-</div></div>
+              <div><div class="muted">Skills Compartidas (~/.agents)</div><div class="kpi num" id="kpiSharedSkills">-</div></div>
             </div>
           </div>
         </div>
-
         <div class="card">
           <div class="card-head">
-            <h3>⚠️ Ranking de Recursos con Mayor Carga (Sistema y Agente)</h3>
-            <span class="muted">Ordenado de mayor impacto (ALTA) a menor impacto (BAJA)</span>
+            <h3>⚠️ Ranking de Recursos por Carga (RAM &amp; Schemas)</h3>
+            <span class="muted">Umbrales: ALTA (&gt;50 MB o &gt;25 tools) · MEDIA · BAJA</span>
           </div>
           <div style="overflow-x:auto;">
             <table>
               <thead>
-                <tr>
-                  <th>Recurso / MCP</th>
-                  <th>Impacto</th>
-                  <th>Carga Sistema (RAM)</th>
-                  <th>Carga Agente (Tokens)</th>
-                  <th>Estado Global</th>
-                  <th>Recomendación</th>
-                </tr>
+                <tr><th>Recurso</th><th>Impacto</th><th>RAM Estimada</th><th>Carga Agente (Tokens)</th><th>Estado Global</th><th>Acción Sugerida</th></tr>
               </thead>
               <tbody id="heavyLoadTableBody"></tbody>
             </table>
@@ -300,34 +358,32 @@
         </div>
       </section>
 
-      <!-- TAB 3: AGENTES, MODELOS Y OAC -->
-      <section id="tab-agents" class="tab">
-        <div class="grid grid-4" style="margin-bottom: 16px;">
-          <div class="card"><div class="muted">Agentes Detectados</div><div class="kpi" id="kpiAgents">-</div><div class="muted">OAC + Code Mode</div></div>
-          <div class="card"><div class="muted">Routing OAC</div><div class="kpi" id="kpiRoutingVer">-</div><div class="muted" id="kpiLine2">Line 2 Fallback</div></div>
-          <div class="card"><div class="muted">Spend Guard (PAYG)</div><div class="kpi" id="kpiSpendGuard" style="color:var(--emerald);">-</div><div class="muted">Solo lectura</div></div>
-          <div class="card"><div class="muted">Cooldowns Cuota</div><div class="kpi" id="kpiCooldowns">-</div><div class="muted" id="kpiTracked">quota-state.json</div></div>
+      <!-- TAB 3: AGENTES Y OAC -->
+      <section id="tab-agents" class="tabpanel" role="tabpanel" aria-labelledby="nav-agents">
+        <div class="grid grid-4" style="margin-bottom:14px;">
+          <div class="card"><div class="muted">Agentes Activos</div><div class="kpi num" id="kpiAgents">-</div><div class="muted">OAC + Code Mode</div></div>
+          <div class="card"><div class="muted">Routing OAC</div><div class="kpi num" id="kpiRoutingVer">-</div><div class="muted" id="kpiLine2">Line 2 Fallback</div></div>
+          <div class="card"><div class="muted">Spend Guard (PAYG)</div><div class="kpi" id="kpiSpendGuard" style="color:var(--status-ok);">-</div><div class="muted">Bloqueo de costos</div></div>
+          <div class="card"><div class="muted">Cooldowns de Cuota</div><div class="kpi num" id="kpiCooldowns">-</div><div class="muted" id="kpiTracked">quota-state.json</div></div>
         </div>
 
-        <div class="card" id="retryCard" style="margin-bottom: 16px;">
+        <div class="card" id="retryCard" style="margin-bottom:14px;">
           <div class="card-head">
-            <h3>⚙️ Comportamiento de Reintentos y Fallback (oac-routing.yaml)</h3>
+            <h3>⚙️ Reintentos y Fallback (oac-routing.yaml)</h3>
             <div class="row-inline">
-              <button class="btn btn-ghost btn-sm" id="btnEditRetry" onclick="toggleRetryEdit(true)">✏️ Editar</button>
-              <button class="btn btn-save btn-sm" id="btnSaveRetry" style="display:none;" onclick="saveRetryBehavior()">💾 Guardar</button>
-              <button class="btn btn-warn btn-sm" onclick="restoreRetryDefaults()">↺ Restaurar por defecto</button>
+              <button type="button" class="btn btn-ghost btn-sm" id="btnEditRetry" onclick="toggleRetryEdit(true)">✏️ Editar</button>
+              <button type="button" class="btn btn-save btn-sm" id="btnSaveRetry" style="display:none;" onclick="saveRetryBehavior()">💾 Guardar</button>
+              <button type="button" class="btn btn-warn btn-sm" onclick="restoreRetryDefaults()">↺ Restaurar</button>
             </div>
           </div>
-          <div class="grid grid-2" style="align-items: end;">
+          <div class="grid grid-2" style="align-items:end;">
             <div>
-              <label class="muted">Cadena Go-Free permitida (Iceman bloqueado por política)</label>
+              <label class="field-label" for="inputGoFree">Cadena Go-Free permitida (Iceman bloqueado por política)</label>
               <input type="text" id="inputGoFree" disabled />
             </div>
             <div class="row-inline">
-              <label class="row-inline" style="cursor:pointer;">
-                <input type="checkbox" id="chkLine2" disabled />
-                <span>Habilitar Line 2 Fallback (OpenAI OAuth)</span>
-              </label>
+              <input type="checkbox" id="chkLine2" disabled />
+              <label for="chkLine2" style="font-size:13px;cursor:pointer;">Habilitar Line 2 Fallback (OpenAI OAuth)</label>
             </div>
           </div>
         </div>
@@ -335,18 +391,15 @@
         <div class="card">
           <div class="card-head">
             <h3>🤖 Agentes, Modelos Asignados, Cadenas y Permisos</h3>
-            <span class="muted">Edita el modelo asignado de cualquier agente OAC y guarda con backup SHA-256</span>
+            <div style="min-width:220px;">
+              <label for="searchAgents" class="field-label" style="display:none;">Buscar agente</label>
+              <input type="search" id="searchAgents" placeholder="Buscar agente o modelo..." oninput="renderAgentsTable()" />
+            </div>
           </div>
           <div style="overflow-x:auto;">
             <table>
               <thead>
-                <tr>
-                  <th>Agente</th>
-                  <th>Grupo / Rol</th>
-                  <th>Modelo Asignado</th>
-                  <th>Cadena Preferred → Fallback</th>
-                  <th>Delegación / Restricciones</th>
-                </tr>
+                <tr><th>Agente</th><th>Grupo / Rol</th><th>Modelo Asignado</th><th>Preferred → Fallback</th><th>Delegación / Restricciones</th></tr>
               </thead>
               <tbody id="agentsTableBody"></tbody>
             </table>
@@ -355,22 +408,22 @@
       </section>
 
       <!-- TAB 4: PERFILES -->
-      <section id="tab-profiles" class="tab">
-        <div class="section-title">
-          <span>🗂️ Perfiles Especializados por Proyecto</span>
-          <span class="muted">Click en cualquier MCP para activarlo/desactivarlo en el perfil (backup SHA-256 automático)</span>
+      <section id="tab-profiles" class="tabpanel" role="tabpanel" aria-labelledby="nav-profiles">
+        <div class="section-header">
+          <h2>🗂️ Perfiles Especializados por Proyecto</h2>
+          <span class="muted">Activa o desactiva MCPs por perfil (respaldo SHA-256 automático en cada cambio)</span>
         </div>
         <div class="grid grid-3" id="profilesGrid"></div>
       </section>
 
       <!-- TAB 5: SIMULADOR ECC -->
-      <section id="tab-ecc" class="tab">
-        <div class="card" style="margin-bottom: 16px;">
+      <section id="tab-ecc" class="tabpanel" role="tabpanel" aria-labelledby="nav-ecc">
+        <div class="card" style="margin-bottom:14px;">
           <div class="card-head"><h3>🧠 Simulador Determinista de Recomendación ECC (0 llamadas LLM)</h3></div>
-          <div class="grid grid-3" style="margin-bottom: 12px;">
-            <div><label class="muted">Agente</label><select id="recAgent"></select></div>
+          <div class="grid grid-3" style="margin-bottom:12px;">
+            <div><label class="field-label" for="recAgent">Agente</label><select id="recAgent"></select></div>
             <div>
-              <label class="muted">Superficie Cliente</label>
+              <label class="field-label" for="recClient">Superficie Cliente</label>
               <select id="recClient">
                 <option value="openchamber:opencode-runtime">openchamber:opencode-runtime</option>
                 <option value="opencode:local">opencode:local</option>
@@ -381,22 +434,22 @@
                 <option value="antigravity:ide">antigravity:ide</option>
               </select>
             </div>
-            <div><label class="muted">Perfil</label><select id="recProfile"></select></div>
+            <div><label class="field-label" for="recProfile">Perfil</label><select id="recProfile"></select></div>
           </div>
-          <div style="margin-bottom: 12px;">
-            <label class="muted">Descripción de la tarea</label>
+          <div style="margin-bottom:12px;">
+            <label class="field-label" for="recTask">Descripción de la tarea</label>
             <input type="text" id="recTask" value="navegar a una página dinámica y llenar un formulario" />
           </div>
-          <button class="btn btn-primary" onclick="runRecommend()">Evaluar Recomendaciones</button>
+          <button type="button" class="btn btn-primary" onclick="runRecommend()">Evaluar Recomendaciones</button>
         </div>
         <div class="grid grid-2">
-          <div class="card"><h3>📚 Skills Recomendadas (carga bajo demanda)</h3><div id="recSkillsOut" class="muted">Ejecuta una evaluación.</div></div>
-          <div class="card"><h3>🤝 Subagentes Sugeridos (Allowlist Real)</h3><div id="recSubagentsOut" class="muted">Ejecuta una evaluación.</div></div>
+          <div class="card"><h3>📚 Skills Recomendadas (carga bajo demanda)</h3><div id="recSkillsOut" class="muted">Ejecuta una evaluación para ver resultados.</div></div>
+          <div class="card"><h3>🤝 Subagentes Sugeridos (Allowlist Real)</h3><div id="recSubagentsOut" class="muted">Ejecuta una evaluación para ver resultados.</div></div>
         </div>
       </section>
 
       <!-- TAB 6: SQLITE & ROLLBACKS -->
-      <section id="tab-health" class="tab">
+      <section id="tab-health" class="tabpanel" role="tabpanel" aria-labelledby="nav-health">
         <div class="grid grid-2">
           <div class="card">
             <div class="card-head"><h3>🗄️ Superficies Multicliente (SQLite)</h3></div>
@@ -416,47 +469,60 @@
   </div>
 </div>
 
-<!-- MODAL: AI CONFIG RECOMMENDATION -->
-<div id="aiModal" class="modal-backdrop" onclick="if(event.target===this) closeAiModal()">
+<!-- MODAL: AI CONFIG RECOMMENDATION (frontend-a11y: role=dialog, aria-modal, Escape close) -->
+<div id="aiModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle" onclick="if(event.target===this) closeAiModal()">
   <div class="modal">
     <div class="card-head">
-      <h2>✨ Recomendación por IA Config</h2>
-      <button class="btn btn-ghost btn-sm" onclick="closeAiModal()">✕ Cerrar</button>
+      <h2 id="aiModalTitle" style="margin:0;font-size:17px;">✨ Recomendación por IA Config</h2>
+      <button type="button" class="btn btn-ghost btn-sm" id="closeAiBtn" onclick="closeAiModal()">✕ Cerrar (Esc)</button>
     </div>
     <div id="aiModalBody" class="muted">Analizando configuración de todos tus IDEs...</div>
   </div>
 </div>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 let SNAPSHOT = null;
 const IDE_EDIT_MODE = {};
 const IDE_DRAFT_MCPS = {};
+let lastFocusedEl = null;
 
 function toast(msg, isErr = false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.style.borderColor = isErr ? 'var(--rose)' : 'var(--sky)';
-  el.style.display = 'block';
-  setTimeout(() => { el.style.display = 'none'; }, 4800);
+  el.style.borderColor = isErr ? 'var(--status-danger)' : 'var(--accent-primary)';
+  el.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.classList.remove('show'), 4600);
 }
 
-function showTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+function showTab(name) {
+  document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.setAttribute('aria-selected', 'false'));
   document.getElementById('tab-' + name).classList.add('active');
-  if (btn) btn.classList.add('active');
+  const btn = document.getElementById('nav-' + name);
+  if (btn) btn.setAttribute('aria-selected', 'true');
 }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('aiModal').classList.contains('open')) {
+    closeAiModal();
+  }
+});
 
 async function loadSnapshot() {
+  const banner = document.getElementById('errorBanner');
   try {
     const res = await fetch('/api/snapshot');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     SNAPSHOT = await res.json();
+    banner.classList.remove('visible');
     document.getElementById('lastUpdated').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
     renderAll();
   } catch (e) {
-    toast('Error cargando snapshot: ' + e, true);
+    document.getElementById('errorBannerMsg').textContent = 'Error cargando configuración: ' + e.message;
+    banner.classList.add('visible');
   }
 }
 
@@ -479,7 +545,6 @@ function renderAll() {
   const loadCatalog = SNAPSHOT.system_load?.resource_catalog || {};
   const liveProcs = SNAPSHOT.system_load?.live_processes || [];
 
-  // Header badges
   const sgState = oac.spend_guard?.state || 'UNKNOWN';
   const sgEl = document.getElementById('spendGuardBadge');
   sgEl.innerHTML = `<span class="dot"></span> PAYG: ${sgState}`;
@@ -494,8 +559,10 @@ function renderAll() {
   document.getElementById('totalLiveRam').textContent = `${totalRam.toFixed(1)} MB`;
 
   renderIdes(loadCatalog);
-  renderSystemLoad(liveProcs, loadCatalog);
-  renderAgentsAndOac(oac);
+  renderSystemLoad(liveProcs);
+  renderLoadTable();
+  renderOacSummary(oac);
+  renderAgentsTable();
   renderProfiles();
   renderHealth(sq);
 }
@@ -507,7 +574,7 @@ function renderIdes(loadCatalog) {
 
   Object.entries(ides).forEach(([ideKey, ide]) => {
     const isEditing = !!IDE_EDIT_MODE[ideKey];
-    const mcps = isEditing && IDE_DRAFT_MCPS[ideKey] ? IDE_DRAFT_MCPS[ideKey] : ide.mcps || {};
+    const mcps = isEditing && IDE_DRAFT_MCPS[ideKey] ? IDE_DRAFT_MCPS[ideKey] : (ide.mcps || {});
     const activeCount = Object.values(mcps).filter(v => (typeof v === 'boolean' ? v : v.enabled)).length;
     const totalCount = Object.keys(mcps).length;
 
@@ -516,17 +583,13 @@ function renderIdes(loadCatalog) {
 
     let actionsHtml = '';
     if (ide.editable) {
-      if (!isEditing) {
-        actionsHtml = `
-          <button class="btn btn-ghost btn-sm" onclick="startIdeEdit('${ideKey}')">✏️ Editar</button>
-          <button class="btn btn-warn btn-sm" onclick="restoreIde('${ideKey}')">↺ Restaurar</button>`;
-      } else {
-        actionsHtml = `
-          <button class="btn btn-save btn-sm" onclick="saveIde('${ideKey}')">💾 Guardar</button>
-          <button class="btn btn-ghost btn-sm" onclick="cancelIdeEdit('${ideKey}')">Cancelar</button>`;
-      }
+      actionsHtml = !isEditing
+        ? `<button type="button" class="btn btn-ghost btn-sm" onclick="startIdeEdit('${ideKey}')">✏️ Editar</button>
+           <button type="button" class="btn btn-warn btn-sm" onclick="restoreIde('${ideKey}')">↺ Restaurar</button>`
+        : `<button type="button" class="btn btn-save btn-sm" onclick="saveIde('${ideKey}')">💾 Guardar</button>
+           <button type="button" class="btn btn-ghost btn-sm" onclick="cancelIdeEdit('${ideKey}')">Cancelar</button>`;
     } else if (ide.sync_supported) {
-      actionsHtml = `<button class="btn btn-primary btn-sm" onclick="syncAntigravity()">🔄 Sincronizar Agentes OAC</button>`;
+      actionsHtml = `<button type="button" class="btn btn-primary btn-sm" onclick="syncAntigravity()">🔄 Sincronizar Agentes OAC</button>`;
     } else {
       actionsHtml = `<span class="badge warn">Solo Observación</span>`;
     }
@@ -534,33 +597,31 @@ function renderIdes(loadCatalog) {
     const mcpChips = Object.entries(mcps).map(([name, val]) => {
       const isOn = typeof val === 'boolean' ? val : !!val.enabled;
       const isBundled = typeof val === 'object' && !!val.bundled;
-      const info = loadCatalog[name] || { level: 'LOW', ram: 'N/A' };
-      const cls = isBundled ? 'bundled' : (isOn ? 'on' : '');
+      const info = loadCatalog[name] || { level: 'LOW', ram: 'N/A', tokens: '' };
       const clickAttr = (isEditing && !isBundled) ? `onclick="toggleDraftMcp('${ideKey}','${name}')"` : '';
       return `
-        <span class="mcp-chip ${cls} ${isEditing && !isBundled ? 'editable' : ''}" ${clickAttr} title="${info.ram} · ${info.tokens || ''}">
-          ${isBundled ? '🔒' : (isOn ? '●' : '○')} ${name}
+        <button type="button" class="mcp-btn ${isBundled ? 'bundled' : ''} ${isEditing && !isBundled ? 'editable' : ''}"
+          aria-pressed="${isOn ? 'true' : 'false'}" ${!isEditing || isBundled ? 'tabindex="-1"' : ''}
+          ${clickAttr} title="${info.ram} · ${info.tokens}">
+          <span aria-hidden="true">${isBundled ? '🔒' : (isOn ? '●' : '○')}</span> ${name}
           <span class="load-tag load-${info.level}">${info.level}</span>
-        </span>`;
-    }).join('') || '<span class="muted">Sin MCPs locales configurados (usa perfiles por proyecto)</span>';
+        </button>`;
+    }).join('') || '<span class="muted">Sin MCPs globales (usa perfiles por repositorio)</span>';
 
     const pluginsHtml = (ide.plugins_active || []).slice(0, 8).map(p => `<span class="pill">${p}</span>`).join('') || '<span class="muted">Ninguno</span>';
 
     card.innerHTML = `
       <div class="card-head">
-        <div>
-          <h3>${ide.title}</h3>
-          <div class="muted" style="margin-top:2px;"><code>${ide.config_path}</code></div>
-        </div>
+        <div><h3>${ide.title}</h3><div class="muted"><code>${ide.config_path}</code></div></div>
         <div class="row-inline">${actionsHtml}</div>
       </div>
       <div class="row-inline" style="margin-bottom:10px;">
         <span class="badge ${ide.status === 'available' ? 'ok' : ''}">${ide.status}</span>
-        <span class="badge info">MCPs activos: ${activeCount}/${totalCount}</span>
-        <span class="badge">Skills: ${ide.skills_count}</span>
-        ${ide.agents_count ? `<span class="badge">Agentes: ${ide.agents_count}</span>` : ''}
+        <span class="badge info num">MCPs activos: ${activeCount}/${totalCount}</span>
+        <span class="badge num">Skills: ${ide.skills_count}</span>
+        ${ide.agents_count ? `<span class="badge num">Agentes: ${ide.agents_count}</span>` : ''}
       </div>
-      <div class="muted">Servidores MCP ${isEditing ? '(Click para activar/desactivar)' : ''}:</div>
+      <div class="muted">Servidores MCP ${isEditing ? '(Modo edición activo — selecciona para alternar)' : ''}:</div>
       <div class="mcp-grid">${mcpChips}</div>
       <div class="muted" style="margin-top:12px;margin-bottom:4px;">Plugins Activos (${(ide.plugins_active || []).length}):</div>
       <div class="pill-list">${pluginsHtml}</div>
@@ -572,9 +633,7 @@ function renderIdes(loadCatalog) {
 function startIdeEdit(ideKey) {
   const mcps = SNAPSHOT.ides[ideKey].mcps || {};
   const draft = {};
-  Object.entries(mcps).forEach(([k, v]) => {
-    draft[k] = { ...v, enabled: !!v.enabled };
-  });
+  Object.entries(mcps).forEach(([k, v]) => { draft[k] = { ...v, enabled: !!v.enabled }; });
   IDE_DRAFT_MCPS[ideKey] = draft;
   IDE_EDIT_MODE[ideKey] = true;
   renderIdes(SNAPSHOT.system_load?.resource_catalog || {});
@@ -605,15 +664,13 @@ async function saveIde(ideKey) {
   if (data.ok) {
     IDE_EDIT_MODE[ideKey] = false;
     delete IDE_DRAFT_MCPS[ideKey];
-    toast(`Guardado ${ideKey} con backup SHA-256 (${data.result.change_id})`);
+    toast(`Guardado ${ideKey} · Backup SHA-256: ${data.result.change_id}`);
     loadSnapshot();
-  } else {
-    toast('Error: ' + data.error, true);
-  }
+  } else toast('Error: ' + data.error, true);
 }
 
 async function restoreIde(ideKey) {
-  if (!confirm(`¿Restaurar ${ideKey} a Core Mínimo por defecto (solo computer-use activo, MCPs pesados desactivados)? Se creará backup automático.`)) return;
+  if (!confirm(`¿Restaurar ${ideKey} a Core Mínimo por defecto (solo computer-use activo, MCPs pesados apagados)?`)) return;
   const res = await fetch('/api/ide/restore', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ ide: ideKey })
@@ -621,25 +678,21 @@ async function restoreIde(ideKey) {
   const data = await res.json();
   if (data.ok) {
     IDE_EDIT_MODE[ideKey] = false;
-    toast(`${ideKey} restaurado a Core Mínimo (Backup: ${data.result.change_id})`);
+    toast(`${ideKey} restaurado a Core Mínimo · Backup: ${data.result.change_id}`);
     loadSnapshot();
-  } else {
-    toast('Error: ' + data.error, true);
-  }
+  } else toast('Error: ' + data.error, true);
 }
 
 async function syncAntigravity() {
   const res = await fetch('/api/sync-antigravity', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
   const data = await res.json();
   if (data.ok) {
-    toast(`Sincronizados ${data.result.total} agentes OAC a Antigravity (4 primarios + 15 subagentes ocultos).`);
+    toast(`Sincronizados ${data.result.total} agentes OAC + regla unificada AGENTS.md a Antigravity.`);
     loadSnapshot();
-  } else {
-    toast('Error: ' + data.error, true);
-  }
+  } else toast('Error: ' + data.error, true);
 }
 
-function renderSystemLoad(liveProcs, loadCatalog) {
+function renderSystemLoad(liveProcs) {
   const container = document.getElementById('liveProcessBars');
   if (!liveProcs.length) {
     container.innerHTML = '<div class="badge ok">0 procesos pesados activos en reposo</div>';
@@ -651,39 +704,38 @@ function renderSystemLoad(liveProcs, loadCatalog) {
       return `
         <div style="margin-bottom:10px;">
           <div class="row-inline" style="justify-content:space-between;">
-            <span><strong>${p.process}</strong> <span class="muted">(${p.count} proc)</span></span>
-            <span class="badge ${isHigh ? 'danger' : 'info'}">${p.ram_mb} MB</span>
+            <span><strong>${p.process}</strong> <span class="muted num">(${p.count} proc)</span></span>
+            <span class="badge num ${isHigh ? 'danger' : 'info'}">${p.ram_mb.toFixed(1)} MB</span>
           </div>
           <div class="bar-track"><div class="bar-fill ${isHigh ? 'high' : ''}" style="width:${pct}%"></div></div>
         </div>`;
     }).join('');
   }
-
   const ocMcps = SNAPSHOT.mcps?.opencode || {};
   const cxMcps = SNAPSHOT.mcps?.codex || {};
   document.getElementById('kpiOcActive').textContent = Object.values(ocMcps).filter(v => v.enabled).length;
   document.getElementById('kpiCxActive').textContent = Object.values(cxMcps).filter(v => v.enabled).length;
   document.getElementById('kpiOcSkills').textContent = SNAPSHOT.skills?.opencode_global_count || 0;
   document.getElementById('kpiSharedSkills').textContent = SNAPSHOT.skills?.shared_count || 0;
+}
 
+function renderLoadTable() {
+  const q = (document.getElementById('searchLoad')?.value || '').trim().toLowerCase();
+  const loadCatalog = SNAPSHOT?.system_load?.resource_catalog || {};
+  const ocMcps = SNAPSHOT?.mcps?.opencode || {};
+  const cxMcps = SNAPSHOT?.mcps?.codex || {};
   const order = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-  const rows = Object.entries(loadCatalog).sort((a, b) => (order[a[1].level] ?? 9) - (order[b[1].level] ?? 9));
-  document.getElementById('heavyLoadTableBody').innerHTML = rows.map(([name, info]) => {
+  const rows = Object.entries(loadCatalog)
+    .filter(([name, info]) => !q || name.toLowerCase().includes(q) || info.level.toLowerCase().includes(q) || info.note.toLowerCase().includes(q))
+    .sort((a, b) => (order[a[1].level] ?? 9) - (order[b[1].level] ?? 9));
+  document.getElementById('heavyLoadTableBody').innerHTML = rows.length ? rows.map(([name, info]) => {
     const ocOn = ocMcps[name]?.enabled;
     const cxOn = cxMcps[name]?.enabled;
     const state = (ocOn || cxOn)
       ? `<span class="badge ${info.level === 'HIGH' ? 'danger' : 'ok'}">ACTIVO (${[ocOn ? 'OC' : '', cxOn ? 'Codex' : ''].filter(Boolean).join('+')})</span>`
       : `<span class="badge">Desactivado global</span>`;
-    return `
-      <tr>
-        <td><code>${name}</code></td>
-        <td><span class="load-tag load-${info.level}">${info.level}</span></td>
-        <td>${info.ram}</td>
-        <td>${info.tokens}</td>
-        <td>${state}</td>
-        <td class="muted">${info.note}</td>
-      </tr>`;
-  }).join('');
+    return `<tr><td><code>${name}</code></td><td><span class="load-tag load-${info.level}">${info.level}</span></td><td class="num">${info.ram}</td><td>${info.tokens}</td><td>${state}</td><td class="muted">${info.note}</td></tr>`;
+  }).join('') : '<tr><td colspan="6" class="muted">Sin coincidencias para el filtro actual.</td></tr>';
 }
 
 function toggleRetryEdit(editing) {
@@ -695,17 +747,14 @@ function toggleRetryEdit(editing) {
 }
 
 async function restoreRetryDefaults() {
-  if (!confirm('¿Restaurar la cadena de reintentos OAC a los valores seguros por defecto?')) return;
+  if (!confirm('¿Restaurar reintentos OAC a los valores seguros por defecto?')) return;
   const res = await fetch('/api/oac/retry', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ line2_fallback_enabled: true, go_free_allowed: ['longcat-2.5-free', 'crouton-alpha-free', 'beam-free'] })
   });
   const data = await res.json();
-  if (data.ok) {
-    toggleRetryEdit(false);
-    toast(`Reintentos restaurados (Backup: ${data.result.change_id})`);
-    loadSnapshot();
-  } else toast('Error: ' + data.error, true);
+  if (data.ok) { toggleRetryEdit(false); toast(`Reintentos restaurados · Backup: ${data.result.change_id}`); loadSnapshot(); }
+  else toast('Error: ' + data.error, true);
 }
 
 async function saveRetryBehavior() {
@@ -716,54 +765,43 @@ async function saveRetryBehavior() {
     body: JSON.stringify({ line2_fallback_enabled: line2, go_free_allowed: goFree })
   });
   const data = await res.json();
-  if (data.ok) {
-    toggleRetryEdit(false);
-    toast(`Reintentos guardados (Backup: ${data.result.change_id}, Sync JSONC: ${data.result.synced_jsonc})`);
-    loadSnapshot();
-  } else toast('Error: ' + data.error, true);
+  if (data.ok) { toggleRetryEdit(false); toast(`Reintentos guardados · Backup: ${data.result.change_id}`); loadSnapshot(); }
+  else toast('Error: ' + data.error, true);
 }
 
-function renderAgentsAndOac(oac) {
+function renderOacSummary(oac) {
   document.getElementById('kpiAgents').textContent = (SNAPSHOT.agents || []).length;
   document.getElementById('kpiRoutingVer').textContent = 'v' + (oac.routing_version ?? '?');
   document.getElementById('kpiLine2').textContent = 'Line 2 Fallback: ' + (oac.routing?.line2_fallback_enabled ? 'ON' : 'OFF');
   document.getElementById('kpiSpendGuard').textContent = oac.spend_guard?.state || 'UNKNOWN';
   document.getElementById('kpiCooldowns').textContent = (oac.quota_summary?.cooldowns || []).length;
   document.getElementById('kpiTracked').textContent = `${oac.quota_summary?.models_tracked || 0} modelos monitoreados`;
-
   document.getElementById('inputGoFree').value = (oac.routing?.go_free_allowed || []).join(', ');
   document.getElementById('chkLine2').checked = !!oac.routing?.line2_fallback_enabled;
 
+  const recAgentSel = document.getElementById('recAgent');
+  recAgentSel.innerHTML = (SNAPSHOT.agents || []).map(ag => `<option value="${ag.id}">${ag.id} (${ag.group})</option>`).join('');
+}
+
+function renderAgentsTable() {
+  const q = (document.getElementById('searchAgents')?.value || '').trim().toLowerCase();
+  const oac = SNAPSHOT?.oac || {};
   const models = getAllSafeModels();
   const tbody = document.getElementById('agentsTableBody');
-  tbody.innerHTML = '';
-  const recAgentSel = document.getElementById('recAgent');
-  recAgentSel.innerHTML = '';
+  const list = (SNAPSHOT?.agents || []).filter(ag => !q || ag.id.toLowerCase().includes(q) || (ag.oac_assigned_model || '').toLowerCase().includes(q) || (ag.oac_role || '').toLowerCase().includes(q));
 
-  (SNAPSHOT.agents || []).forEach(ag => {
-    const opt = document.createElement('option');
-    opt.value = ag.id; opt.textContent = `${ag.id} (${ag.group})`;
-    recAgentSel.appendChild(opt);
-
+  tbody.innerHTML = list.length ? list.map(ag => {
     const isOacAssigned = !!(oac.assignments && oac.assignments[ag.rel_path]);
     let modelCell = `<span class="pill">${ag.oac_assigned_model || ag.model || 'heredado'}</span>`;
     if (isOacAssigned) {
       const selId = 'sel_' + ag.rel_path.replace(/[^a-z0-9]/gi, '_');
       const optionsHtml = models.map(m => `<option value="${m}" ${m === ag.oac_assigned_model ? 'selected' : ''}>${m}</option>`).join('');
-      modelCell = `<div class="row-inline"><select id="${selId}" style="min-width:205px;">${optionsHtml}</select><button class="btn btn-save btn-sm" onclick="saveAgentModel('${ag.rel_path}','${selId}')">💾</button></div>`;
+      modelCell = `<div class="row-inline"><select id="${selId}" aria-label="Modelo para ${ag.id}" style="min-width:205px;">${optionsHtml}</select><button type="button" class="btn btn-save btn-sm" onclick="saveAgentModel('${ag.rel_path}','${selId}')">💾</button></div>`;
     }
     const chains = [...(ag.preferred_chain || []).map(m => `<span class="pill chain">${m}</span>`), ...(ag.fallback_chain || []).map(m => `<span class="pill">↳ ${m}</span>`)].join('');
     const perms = [...(ag.allowed_subagents || []).map(s => `<span class="pill allow">allow:${s}</span>`), ...(ag.denied_tools || []).map(d => `<span class="pill deny">deny:${d}</span>`)].join('') || '<span class="muted">Estándar</span>';
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${ag.id}</strong><div class="muted">${ag.rel_path}</div></td>
-      <td><span class="badge ${ag.group === 'oac' ? 'info' : 'warn'}">${ag.group}</span> <span class="badge">${ag.oac_role || ag.mode}</span></td>
-      <td>${modelCell}</td>
-      <td><div class="pill-list">${chains || '<span class="muted">—</span>'}</div></td>
-      <td><div class="pill-list">${perms}</div></td>`;
-    tbody.appendChild(tr);
-  });
+    return `<tr><td><strong>${ag.id}</strong><div class="muted">${ag.rel_path}</div></td><td><span class="badge ${ag.group==='oac'?'info':'warn'}">${ag.group}</span> <span class="badge">${ag.oac_role||ag.mode}</span></td><td>${modelCell}</td><td><div class="pill-list">${chains||'<span class="muted">—</span>'}</div></td><td><div class="pill-list">${perms}</div></td></tr>`;
+  }).join('') : '<tr><td colspan="5" class="muted">Sin agentes que coincidan con la búsqueda.</td></tr>';
 }
 
 async function saveAgentModel(agentRelPath, selectId) {
@@ -773,10 +811,8 @@ async function saveAgentModel(agentRelPath, selectId) {
     body: JSON.stringify({ agent: agentRelPath, model })
   });
   const data = await res.json();
-  if (data.ok) {
-    toast(`Guardado ${agentRelPath} → ${model} (Backup: ${data.result.change_id})`);
-    loadSnapshot();
-  } else toast('Error: ' + data.error, true);
+  if (data.ok) { toast(`Guardado ${agentRelPath} → ${model} · Backup: ${data.result.change_id}`); loadSnapshot(); }
+  else toast('Error: ' + data.error, true);
 }
 
 function renderProfiles() {
@@ -786,25 +822,16 @@ function renderProfiles() {
   const allMcps = Array.from(new Set([...Object.keys(SNAPSHOT.mcps?.opencode || {}), ...Object.keys(SNAPSHOT.mcps?.codex || {})])).filter(m => m !== 'node_repl').sort();
 
   Object.entries(SNAPSHOT.profiles || {}).forEach(([pname, pdata]) => {
-    const opt = document.createElement('option');
-    opt.value = pname; opt.textContent = pname;
+    const opt = document.createElement('option'); opt.value = pname; opt.textContent = pname;
     recProfSel.appendChild(opt);
-
     const active = new Set(pdata.mcp_servers || []);
     const skills = pdata.skills || [];
-    const card = document.createElement('div');
-    card.className = 'card';
+    const card = document.createElement('div'); card.className = 'card';
     const toggles = allMcps.map(m => {
       const on = active.has(m);
-      return `<span class="mcp-chip editable ${on ? 'on' : ''}" onclick="toggleMcp('${pname}','${m}',${!on})">${on ? '✓' : '+'} ${m}</span>`;
+      return `<button type="button" class="mcp-btn editable" aria-pressed="${on?'true':'false'}" onclick="toggleMcp('${pname}','${m}',${!on})">${on?'✓':'+'} ${m}</button>`;
     }).join('');
-    card.innerHTML = `
-      <div class="card-head">
-        <h3>${pname}</h3>
-        <span class="badge info">${active.size} MCPs · ${skills.length} skills</span>
-      </div>
-      <div class="muted" style="margin-bottom:10px;">${pdata.description || ''}</div>
-      <div class="mcp-grid">${toggles}</div>`;
+    card.innerHTML = `<div class="card-head"><h3>${pname}</h3><span class="badge info num">${active.size} MCPs · ${skills.length} skills</span></div><div class="muted" style="margin-bottom:8px;">${pdata.description||''}</div><div class="mcp-grid">${toggles}</div>`;
     pGrid.appendChild(card);
   });
 }
@@ -815,10 +842,8 @@ async function toggleMcp(profile, mcp, enabled) {
     body: JSON.stringify({ profile, mcp, enabled })
   });
   const data = await res.json();
-  if (data.ok) {
-    toast(`Perfil ${profile}: ${mcp} ${enabled ? 'activado' : 'desactivado'} (Backup: ${data.result.change_id})`);
-    loadSnapshot();
-  } else toast('Error: ' + data.error, true);
+  if (data.ok) { toast(`Perfil ${profile}: ${mcp} ${enabled?'activado':'desactivado'} · Backup: ${data.result.change_id}`); loadSnapshot(); }
+  else toast('Error: ' + data.error, true);
 }
 
 async function runRecommend() {
@@ -828,10 +853,7 @@ async function runRecommend() {
     project_profile: document.getElementById('recProfile').value,
     task: document.getElementById('recTask').value,
   };
-  const res = await fetch('/api/recommend', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify(payload)
-  });
+  const res = await fetch('/api/recommend', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
   const data = await res.json();
   if (!data.ok) { toast('Error: ' + data.error, true); return; }
   const r = data.result;
@@ -854,9 +876,11 @@ function renderHealth(sq) {
 }
 
 async function openAiRecommend() {
+  lastFocusedEl = document.activeElement;
   document.getElementById('aiModal').classList.add('open');
+  document.getElementById('closeAiBtn').focus();
   const body = document.getElementById('aiModalBody');
-  body.innerHTML = 'Ejecutando auditoría inteligente de configuración...';
+  body.innerHTML = 'Ejecutando auditoría determinista...';
   const res = await fetch('/api/ai-config-recommend', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
   const data = await res.json();
   if (!data.ok) { body.innerHTML = `<span class="badge danger">${data.error}</span>`; return; }
@@ -864,9 +888,9 @@ async function openAiRecommend() {
   const sevBadge = s => s === 'OPTIMAL' ? 'ok' : (s === 'CRITICAL' || s === 'HIGH' ? 'danger' : 'warn');
   body.innerHTML = `
     <div class="row-inline" style="margin-bottom:14px;">
-      <span class="kpi" style="margin:0;">${r.score}/100</span>
-      <span class="badge ${r.score >= 90 ? 'ok' : 'warn'}" style="font-size:14px;">Grado ${r.grade}</span>
-      <span class="muted">Diagnóstico determinista (0 costo LLM)</span>
+      <span class="kpi num" style="margin:0;">${r.score}/100</span>
+      <span class="badge ${r.score >= 90 ? 'ok' : 'warn'}" style="font-size:13px;">Grado ${r.grade}</span>
+      <span class="muted">Auditoría determinista (0 costo LLM)</span>
     </div>
     ${r.findings.map(f => `
       <div class="finding">
@@ -875,13 +899,16 @@ async function openAiRecommend() {
           <span class="badge ${sevBadge(f.severity)}">${f.severity}</span>
         </div>
         <div class="muted">${f.detail}</div>
-        ${f.action ? `<div style="margin-top:8px;"><button class="btn btn-primary btn-sm" onclick="runAiAction('${f.action}')">⚡ ${f.action_label}</button></div>` : ''}
+        ${f.action ? `<div style="margin-top:8px;"><button type="button" class="btn btn-primary btn-sm" onclick="runAiAction('${f.action}')">⚡ ${f.action_label}</button></div>` : ''}
       </div>
     `).join('')}
   `;
 }
 
-function closeAiModal() { document.getElementById('aiModal').classList.remove('open'); }
+function closeAiModal() {
+  document.getElementById('aiModal').classList.remove('open');
+  if (lastFocusedEl) lastFocusedEl.focus();
+}
 
 async function runAiAction(action) {
   if (action === 'restore_opencode_core') await restoreIde('opencode');
