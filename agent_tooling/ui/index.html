@@ -833,6 +833,9 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <button type="button" class="nav-btn" role="tab" id="nav-catalog" aria-selected="false" aria-controls="tab-catalog" onclick="showTab('catalog')">
         <svg class="icon" aria-hidden="true"><use href="#ic-box"/></svg> Skills y MCPs vivos
       </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-tokens" aria-selected="false" aria-controls="tab-tokens" onclick="showTab('tokens')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-spark"/></svg> Ahorrador de Tokens
+      </button>
       <button type="button" class="nav-btn" role="tab" id="nav-load" aria-selected="false" aria-controls="tab-load" onclick="showTab('load')">
         <svg class="icon" aria-hidden="true"><use href="#ic-gauge"/></svg> Mayor carga y RAM
       </button>
@@ -889,6 +892,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <button type="button" class="btn btn-sm" onclick="showTab('overview')">Overview</button>
       <button type="button" class="btn btn-sm" onclick="showTab('ides')">IDEs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('catalog')">Skills y MCPs</button>
+      <button type="button" class="btn btn-sm" onclick="showTab('tokens')">Tokens</button>
       <button type="button" class="btn btn-sm" onclick="showTab('load')">Carga</button>
       <button type="button" class="btn btn-sm" onclick="showTab('agents')">Agentes OAC</button>
       <button type="button" class="btn btn-sm" onclick="showTab('profiles')">Perfiles</button>
@@ -1280,6 +1284,94 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
             <p class="muted" style="margin-top:0;">Antigravity está enlazado mediante NTFS Junction (<code>~/.gemini/config/skills → ~/.agents/skills</code>) y la regla <code>oac-custom-agents/rules/AGENTS.md</code> mantiene un único contrato de persistencia.</p>
             <div id="hygieneDupList" class="row-inline"></div>
           </div>
+        </div>
+      </section>
+
+      <!-- TAB 2.5: AHORRADOR DE TOKENS -->
+      <section id="tab-tokens" class="tabpanel" role="tabpanel" aria-labelledby="nav-tokens">
+        <div class="section-bar">
+          <h2>Ahorrador de Tokens y optimización de contexto</h2>
+          <span class="muted">Estado en vivo de compresores, poda de contexto, hooks y herramientas sugeridas por harness</span>
+        </div>
+
+        <div class="ov-kpi-grid" id="tokKpiGrid" style="margin-bottom:var(--space-4);">
+          <div class="ov-kpi"><span class="muted">Analizando ahorradores…</span></div>
+        </div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;margin-bottom:var(--space-5);">
+          <div style="padding:var(--space-4) var(--space-5);border-bottom:var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <div>
+              <h3>Ahorradores instalados en tu ecosistema</h3>
+              <span class="muted">RTK, Context-Mode, Dynamic Context Pruning, Bóveda Fría, Agent Browser, CodeGraph y PMB</span>
+            </div>
+            <button type="button" class="btn btn-sm" onclick="loadSnapshot()">
+              <svg class="icon" aria-hidden="true"><use href="#ic-refresh"/></svg> Re-auditar
+            </button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Herramienta y función</th>
+                  <th>Estado</th>
+                  <th>Versión / Actualización</th>
+                  <th>Harnesses con soporte activo</th>
+                  <th>Ahorro estimado</th>
+                </tr>
+              </thead>
+              <tbody id="tokInstalledBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;margin-bottom:var(--space-5);">
+          <div style="padding:var(--space-4) var(--space-5);border-bottom:var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <div>
+              <h3>Otros ahorradores de tokens sugeridos</h3>
+              <span class="muted">Herramientas complementarias recomendadas para llevar la eficiencia de contexto al límite</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Herramienta sugerida</th>
+                  <th>Estado</th>
+                  <th>Harnesses compatibles</th>
+                  <th>Beneficio y comando</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tokSuggestedBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel-surface">
+          <div class="panel-head">
+            <div>
+              <h3>Buscador Vercel de skills y plugins ahorradores de tokens</h3>
+              <span class="muted">Busca más optimizadores en skills.sh vía npx skills find e instálalos con validación automática</span>
+            </div>
+          </div>
+          <div class="row-inline" style="margin-bottom:var(--space-3);">
+            <div style="flex:1;min-width:240px;">
+              <label for="inputTokVercelFind" class="field-label" style="display:none;">Buscar ahorrador en skills.sh</label>
+              <input type="search" id="inputTokVercelFind" placeholder="Ejemplo: token, context, compression, pruning, headroom, memory…" />
+            </div>
+            <button type="button" class="btn btn-amber" onclick="searchVercelTokenSavers()">
+              <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en Vercel
+            </button>
+          </div>
+          <div class="row-inline" style="margin-bottom:var(--space-3);">
+            <span class="muted">Búsquedas rápidas:</span>
+            <button type="button" class="btn btn-sm" onclick="searchVercelTokenSavers('token')">token</button>
+            <button type="button" class="btn btn-sm" onclick="searchVercelTokenSavers('context')">context</button>
+            <button type="button" class="btn btn-sm" onclick="searchVercelTokenSavers('compression')">compression</button>
+            <button type="button" class="btn btn-sm" onclick="searchVercelTokenSavers('pruning')">pruning</button>
+            <button type="button" class="btn btn-sm" onclick="searchVercelTokenSavers('memory')">memory</button>
+          </div>
+          <div id="tokVercelOut"></div>
         </div>
       </section>
 
@@ -1713,6 +1805,7 @@ function renderAll() {
   safeRun('catalogSkills', () => renderCatalogSkills());
   safeRun('catalogPlugins', () => renderCatalogPlugins());
   safeRun('catalogHygiene', () => renderCatalogHygiene());
+  safeRun('tokenSavers', () => renderTokenSavers());
   safeRun('systemLoad', () => renderSystemLoad(liveProcs));
   safeRun('loadTable', () => renderLoadTable());
   safeRun('oacSummary', () => renderOacSummary(oac));
@@ -2635,6 +2728,134 @@ async function runVercelFind() {
       </div>
     </div>`;
   }).join('') : '<span class="muted">Sin resultados para esa búsqueda.</span>';
+}
+
+function renderTokenSavers() {
+  const ts = SNAPSHOT?.token_savers || { installed: [], suggested: [], summary: {} };
+  const sum = ts.summary || {};
+  const kpi = document.getElementById('tokKpiGrid');
+  if (kpi) {
+    kpi.innerHTML = `
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Ahorradores activos</span><span class="live-beacon" role="status" aria-label="Activo"></span></span>
+        <span class="ov-kpi-val">${sum.active_count || 0}/${sum.total_installed || 0}</span>
+        <span class="ov-kpi-sub">Herramientas operando en vivo</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Ahorro por perfil activo</span><span class="chip measured">${sum.active_profile || 'all'}</span></span>
+        <span class="ov-kpi-val">-${sum.profile_reduction_pct || 0}%</span>
+        <span class="ov-kpi-sub">Reducción de metadatos globales</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Salud operativa</span><span class="chip measured">OK</span></span>
+        <span class="ov-kpi-val">${sum.ok_count || 0}/${sum.total_installed || 0}</span>
+        <span class="ov-kpi-sub">Binarios, hooks y plugins sanos</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Sugeridos disponibles</span><span class="chip cool measured">Extensible</span></span>
+        <span class="ov-kpi-val">${(ts.suggested || []).length}</span>
+        <span class="ov-kpi-sub">Optimizadores recomendados</span>
+      </div>`;
+  }
+
+  const instBody = document.getElementById('tokInstalledBody');
+  if (instBody) {
+    instBody.innerHTML = (ts.installed || []).map(item => {
+      const beacon = item.health === 'error'
+        ? '<span class="error-beacon" role="status" aria-label="Error"></span>'
+        : (item.active ? '<span class="live-beacon" role="status" aria-label="Activo"></span>' : '<span class="idle-beacon" role="status" aria-label="Inactivo"></span>');
+      const statusChip = item.health === 'error'
+        ? '<span class="chip bad">Error</span>'
+        : (item.active ? '<span class="chip measured">OK · Activo</span>' : '<span class="chip">Inactivo</span>');
+      const updChip = item.update_status === 'Al día' || item.update_status.startsWith('Auto')
+        ? `<span class="chip measured">${item.update_status}</span>`
+        : `<span class="chip amber">${item.update_status}</span>`;
+      const harnessesHtml = (item.harnesses || []).length
+        ? item.harnesses.map(h => `<span class="chip">${h}</span>`).join(' ')
+        : '<span class="muted">Sin harness enlazado</span>';
+      return `
+        <tr>
+          <td>
+            <div class="row-inline">
+              ${beacon}
+              <strong style="color:var(--color-ink);">${item.name}</strong>
+              <span class="chip">${item.category}</span>
+            </div>
+            <div class="muted" style="margin-top:var(--space-1);">${item.health_detail}</div>
+          </td>
+          <td>${statusChip}</td>
+          <td>
+            <div class="measured" style="color:var(--color-ink);">${item.version}</div>
+            <div style="margin-top:var(--space-1);">${updChip}</div>
+          </td>
+          <td><div class="row-inline">${harnessesHtml}</div></td>
+          <td><span class="chip cool measured">${item.estimated_saving}</span></td>
+        </tr>`;
+    }).join('');
+  }
+
+  const sugBody = document.getElementById('tokSuggestedBody');
+  if (sugBody) {
+    sugBody.innerHTML = (ts.suggested || []).map(s => {
+      const safeQ = (s.vercel_query || s.id).replace(/'/g, "\\'");
+      const harnessesHtml = (s.harnesses_compatible || []).map(h => `<span class="chip">${h}</span>`).join(' ');
+      return `
+        <tr>
+          <td>
+            <strong style="color:var(--color-ink);">${s.name}</strong>
+            <div class="muted" style="margin-top:var(--space-1);">${s.category}</div>
+          </td>
+          <td><span class="chip">${s.status}</span></td>
+          <td><div class="row-inline">${harnessesHtml}</div></td>
+          <td>
+            <div class="muted">${s.benefit}</div>
+            <div style="margin-top:var(--space-1);"><span class="path-ref">${s.install_hint}</span></div>
+          </td>
+          <td>
+            <button type="button" class="btn btn-sm" onclick="searchVercelTokenSavers('${safeQ}')">
+              <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Buscar en Vercel
+            </button>
+          </td>
+        </tr>`;
+    }).join('');
+  }
+}
+
+async function searchVercelTokenSavers(qOverride = null) {
+  const inp = document.getElementById('inputTokVercelFind');
+  const q = (qOverride !== null ? qOverride : (inp?.value || '')).trim();
+  if (!q) return;
+  if (inp && qOverride !== null) inp.value = qOverride;
+  const out = document.getElementById('tokVercelOut');
+  out.innerHTML = `<span class="muted">Buscando ahorradores de tokens '${q}' en skills.sh…</span>`;
+  try {
+    const res = await fetch('/api/skills/vercel-find', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ query: q })
+    });
+    const data = await res.json();
+    if (!data.ok) { out.innerHTML = `<span class="chip bad">${data.error}</span>`; return; }
+    const list = data.result || [];
+    out.innerHTML = list.length ? list.map(item => {
+      const safePkg = (item.package || '').replace(/'/g, "\\'");
+      return `
+        <div class="finding-row">
+          <div class="row-inline" style="justify-content:space-between;">
+            <strong class="measured" style="color:var(--color-ink);">${item.package}</strong>
+            <span class="chip cool measured">${item.installs}</span>
+          </div>
+          <div class="row-inline" style="margin-top:var(--space-1);justify-content:space-between;">
+            <span class="path-ref">npx skills add ${item.package}</span>
+            <div class="row-inline">
+              <button type="button" class="btn btn-sm" onclick="jumpToCatalog('vercel'); quickInstallPack('${safePkg}')">Instalar y validar</button>
+              ${item.url ? `<a href="${item.url}" target="_blank" rel="noopener" class="chip">Ver en skills.sh</a>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('') : '<span class="muted">Sin resultados para esa búsqueda en skills.sh.</span>';
+  } catch (err) {
+    out.innerHTML = `<span class="chip bad">Error: ${err.message}</span>`;
+  }
 }
 
 function startIdeEdit(ideKey) {

@@ -445,10 +445,12 @@ def load_oac_snapshot(
     )
 
     from agent_tooling.profile_switcher import get_active_profile_state
+    from agent_tooling.token_savers import inspect_token_savers
 
     return redact_dict({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "active_profile": get_active_profile_state(home),
+        "token_savers": inspect_token_savers(home),
         "oac": {
             "routing_version": routing.get("routing_version"),
             "routing": routing.get("routing", {}),
