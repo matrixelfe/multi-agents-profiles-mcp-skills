@@ -22,6 +22,7 @@ python -m PyInstaller `
   --hidden-import "agent_tooling.profile_switcher" `
   --hidden-import "agent_tooling.skill_installer" `
   --hidden-import "agent_tooling.token_savers" `
+  --hidden-import "agent_tooling.memory_learning_logs" `
   launcher_exe.py
 
 $exe = Join-Path $RepoRoot "dist\AgentToolingControlCenter.exe"

@@ -446,11 +446,19 @@ def load_oac_snapshot(
 
     from agent_tooling.profile_switcher import get_active_profile_state
     from agent_tooling.token_savers import inspect_token_savers
+    from agent_tooling.memory_learning_logs import (
+        inspect_learning_evolution,
+        inspect_memory_hub,
+        inspect_system_logs,
+    )
 
     return redact_dict({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "active_profile": get_active_profile_state(home),
         "context_savers": inspect_token_savers(home),
+        "memory_hub": inspect_memory_hub(home),
+        "learning_hub": inspect_learning_evolution(home),
+        "system_logs": inspect_system_logs(home),
         "oac": {
             "routing_version": routing.get("routing_version"),
             "routing": routing.get("routing", {}),
@@ -548,6 +556,51 @@ def update_oac_assignment(agent_rel_path: str, new_model: str, opencode_root: Pa
         "model": new_model,
         "sha256_before": pre_hash,
         "synced_jsonc": synced,
+    }
+
+
+def update_oac_role_chain(
+    role_name: str,
+    preferred_chain: list[str],
+    opencode_root: Path | None = None,
+) -> dict[str, Any]:
+    """Safely update a role's preferred model chain in oac-routing.yaml via Drag & Drop."""
+    oc_root = opencode_root or (Path.home() / ".config" / "opencode")
+    routing_path = oc_root / "config" / "oac-routing.yaml"
+    if not routing_path.exists():
+        raise FileNotFoundError(f"oac-routing.yaml not found: {routing_path}")
+
+    blocked_prefixes = ("alibaba/", "anthropic/", "google/", "z.ai/", "minimax/", "kimi-for-coding/")
+    clean_chain: list[str] = []
+    for m in preferred_chain:
+        m_str = str(m).strip()
+        if not m_str:
+            continue
+        if any(m_str.startswith(p) for p in blocked_prefixes):
+            raise ValueError(f"Model '{m_str}' belongs to a spend-guard blocked provider. Rejected.")
+        if m_str not in clean_chain:
+            clean_chain.append(m_str)
+
+    if not clean_chain:
+        raise ValueError("La cadena preferred no puede quedar vacía.")
+
+    change_id, pre_hash = _backup_file(routing_path, f"ui-oac-role-{role_name}")
+    data = yaml.safe_load(routing_path.read_text(encoding="utf-8-sig")) or {}
+    roles = data.get("roles") or {}
+    if role_name not in roles or not isinstance(roles[role_name], dict):
+        raise KeyError(f"Role '{role_name}' not found in oac-routing.yaml")
+
+    roles[role_name]["preferred"] = clean_chain
+    tmp = routing_path.with_suffix(".yaml.tmp")
+    tmp.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    yaml.safe_load(tmp.read_text(encoding="utf-8"))
+    tmp.replace(routing_path)
+
+    return {
+        "change_id": change_id,
+        "role": role_name,
+        "preferred": clean_chain,
+        "sha256_before": pre_hash,
     }
 
 

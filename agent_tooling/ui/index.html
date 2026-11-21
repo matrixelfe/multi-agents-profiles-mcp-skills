@@ -791,10 +791,119 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
   height: 100%;
   transition: opacity var(--dur-short) var(--ease-out);
 }
+
+/* iOS Toggle Switch */
+.ios-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 42px;
+  height: 24px;
+  padding: var(--space-1);
+  border-radius: var(--radius-pill);
+  border: var(--rule-hair) solid var(--color-rule-2);
+  background: var(--color-paper-3);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+}
+.ios-switch[aria-checked="true"] {
+  background: var(--color-ok);
+  border-color: var(--color-ok);
+}
+.ios-knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  transform: translateX(0);
+  transition: transform var(--dur-short) var(--ease-out);
+  pointer-events: none;
+}
+.ios-switch[aria-checked="true"] .ios-knob {
+  transform: translateX(18px);
+}
+
+/* OAC Drag & Drop Split Layout */
+.oac-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.oac-split.editing {
+  grid-template-columns: minmax(0, 1fr) 330px;
+}
+@media (max-width: 1120px) {
+  .oac-split.editing { grid-template-columns: 1fr; }
+}
+.oac-palette {
+  display: none;
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border: var(--rule-hair) solid var(--color-accent);
+  border-radius: var(--radius-card);
+  padding: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.oac-split.editing .oac-palette {
+  display: flex;
+}
+.drg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: var(--rule-hair) solid var(--color-rule-2);
+  background: var(--color-paper-3);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: grab;
+  user-select: none;
+  transition: border-color var(--dur-short) var(--ease-out), transform var(--dur-short) var(--ease-out);
+}
+.drg-chip:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+.drop-zone {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px dashed transparent;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  transition: border-color var(--dur-short) var(--ease-out), background var(--dur-short) var(--ease-out);
+}
+.oac-split.editing .drop-zone {
+  border-color: var(--color-rule-2);
+  background: var(--color-paper);
+}
+.drop-zone.drag-over {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.chain-rm {
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  cursor: pointer;
+  padding: 0 var(--space-1);
+  font-size: 12px;
+}
+.chain-rm:hover { color: var(--color-bad); }
 </style>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="ic-brain" viewBox="0 0 24 24"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M12 5v13"/></symbol>
+  <symbol id="ic-trend" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+  <symbol id="ic-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
   <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
   <symbol id="ic-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></symbol>
   <symbol id="ic-box" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
@@ -848,6 +957,15 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <button type="button" class="nav-btn" role="tab" id="nav-ecc" aria-selected="false" aria-controls="tab-ecc" onclick="showTab('ecc')">
         <svg class="icon" aria-hidden="true"><use href="#ic-compass"/></svg> Simulador ECC
       </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-memory" aria-selected="false" aria-controls="tab-memory" onclick="showTab('memory')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-brain"/></svg> Memoria (PMB)
+      </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-learning" aria-selected="false" aria-controls="tab-learning" onclick="showTab('learning')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-trend"/></svg> Aprendizaje
+      </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-logs" aria-selected="false" aria-controls="tab-logs" onclick="showTab('logs')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-file"/></svg> Logs del sistema
+      </button>
       <button type="button" class="nav-btn" role="tab" id="nav-health" aria-selected="false" aria-controls="tab-health" onclick="showTab('health')">
         <svg class="icon" aria-hidden="true"><use href="#ic-db"/></svg> SQLite y rollbacks
       </button>
@@ -897,6 +1015,9 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <button type="button" class="btn btn-sm" onclick="showTab('agents')">Agentes OAC</button>
       <button type="button" class="btn btn-sm" onclick="showTab('profiles')">Perfiles</button>
       <button type="button" class="btn btn-sm" onclick="showTab('ecc')">ECC</button>
+      <button type="button" class="btn btn-sm" onclick="showTab('memory')">Memoria</button>
+      <button type="button" class="btn btn-sm" onclick="showTab('learning')">Aprendizaje</button>
+      <button type="button" class="btn btn-sm" onclick="showTab('logs')">Logs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('health')">SQLite</button>
     </nav>
 
@@ -1510,28 +1631,55 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
           </div>
         </div>
 
-        <div class="panel-surface" style="padding:0;overflow:hidden;">
-          <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
-            <h3>Matriz de agentes, modelos asignados, cadenas de fallback y permisos</h3>
-            <div style="min-width:250px;">
-              <label for="searchAgents" class="field-label" style="display:none;">Buscar agente</label>
-              <input type="search" id="searchAgents" placeholder="Filtrar agente, rol o modelo…" oninput="renderAgentsTable()" />
+        <div class="oac-split" id="oacSplitWrap">
+          <div class="panel-surface" style="padding:0;overflow:hidden;">
+            <div style="padding: var(--space-4) var(--space-5); border-bottom: var(--rule-hair) solid var(--color-rule);" class="panel-head">
+              <div>
+                <h3>Matriz de agentes, modelos asignados, cadenas de fallback y permisos</h3>
+                <span class="muted">Distingue Agentes Principales (visibles en el selector de OpenChamber) de Subagentes (delegación interna)</span>
+              </div>
+              <div class="row-inline">
+                <label for="filterAgentKind" class="field-label" style="display:none;">Tipo de agente</label>
+                <select id="filterAgentKind" onchange="renderAgentsTable()" style="width:auto;">
+                  <option value="all">Tipo: Todos</option>
+                  <option value="primary">Solo Agentes Principales (OpenChamber)</option>
+                  <option value="subagent">Solo Subagentes (Background)</option>
+                </select>
+                <label for="searchAgents" class="field-label" style="display:none;">Buscar agente</label>
+                <input type="search" id="searchAgents" placeholder="Filtrar agente, rol o modelo…" oninput="renderAgentsTable()" style="min-width:210px;width:auto;" />
+                <button type="button" class="btn btn-amber btn-sm" id="btnOacEditMode" onclick="toggleOacEditMode()">
+                  <svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Modo Edición (Drag &amp; Drop)
+                </button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Agente y visibilidad</th>
+                    <th>Tipo y rol OAC</th>
+                    <th>Modelo asignado (suelta aquí)</th>
+                    <th>Cadena preferred → fallback (arrastra para añadir/reordenar)</th>
+                    <th>Allowlist y bloqueos</th>
+                  </tr>
+                </thead>
+                <tbody id="agentsTableBody"></tbody>
+              </table>
             </div>
           </div>
-          <div style="overflow-x:auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Agente</th>
-                  <th>Grupo y rol</th>
-                  <th>Modelo asignado (edición rápida)</th>
-                  <th>Cadena preferred → fallback</th>
-                  <th>Allowlist de delegación y bloqueos</th>
-                </tr>
-              </thead>
-              <tbody id="agentsTableBody"></tbody>
-            </table>
-          </div>
+
+          <aside class="oac-palette" id="oacModelPalette" aria-label="Paleta de modelos por proveedor">
+            <div>
+              <h3 style="font-size:15px;">Modelos disponibles por proveedor</h3>
+              <span class="muted">Arrastra cualquier modelo hacia Modelo asignado o hacia la Cadena preferred de un agente</span>
+            </div>
+            <div>
+              <label for="searchPaletteModels" class="field-label" style="display:none;">Filtrar modelos</label>
+              <input type="search" id="searchPaletteModels" placeholder="Buscar modelo o proveedor (glm, gpt, mimo…)" oninput="renderOacModelPalette()" />
+            </div>
+            <div class="ov-pills" id="oacProviderPills"></div>
+            <div id="oacPaletteList" style="display:flex;flex-direction:column;gap:var(--space-3);max-height:540px;overflow-y:auto;"></div>
+          </aside>
         </div>
       </section>
 
@@ -1584,6 +1732,168 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
           <div>
             <h3 style="margin-bottom:var(--space-2);">Subagentes autorizados (filtrados por allowlist real)</h3>
             <div id="recSubagentsOut" class="muted">Ejecuta una evaluación para inspeccionar delegación.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6.1: MEMORIA PERSISTENTE (PMB) -->
+      <section id="tab-memory" class="tabpanel" role="tabpanel" aria-labelledby="nav-memory">
+        <div class="section-bar">
+          <h2>Memoria persistente cross-IDE (PMB Shared Memory)</h2>
+          <span class="muted">Lectura directa de ~/.pmb/workspaces/personal/events.sqlite, grafo de entidades y llamadas MCP en los 5 harnesses</span>
+        </div>
+
+        <div class="ov-kpi-grid" id="memKpiGrid" style="margin-bottom:var(--space-4);"></div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;margin-bottom:var(--space-5);">
+          <div style="padding:var(--space-4) var(--space-5);border-bottom:var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <div>
+              <h3>Hechos, decisiones y actividades almacenadas en PMB</h3>
+              <span class="muted">Memoria compartida en modo stdio entre OpenCode/OpenChamber, Antigravity, Codex, GitHub Copilot y Claude Code</span>
+            </div>
+            <div style="min-width:240px;">
+              <label for="searchMemEvents" class="field-label" style="display:none;">Buscar en memoria</label>
+              <input type="search" id="searchMemEvents" placeholder="Filtrar recuerdo, tipo (fact, activity) o workspace…" oninput="renderMemoryHub()" />
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo y Workspace</th>
+                  <th>Contenido almacenado en PMB</th>
+                  <th>Importancia / Tier</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="memEventsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="seam-grid seam-2">
+          <div>
+            <div class="panel-head">
+              <h3>Grafo de conocimiento (Entidades extraídas)</h3>
+              <span class="chip cool measured" id="memGraphBadge">0 entidades</span>
+            </div>
+            <div id="memEntitiesCloud" class="row-inline"></div>
+          </div>
+          <div>
+            <div class="panel-head">
+              <h3>Últimas consultas MCP a PMB</h3>
+              <span class="chip measured">Latencia en vivo</span>
+            </div>
+            <div id="memMcpCallsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6.2: APRENDIZAJE Y AUTO-EVOLUCIÓN -->
+      <section id="tab-learning" class="tabpanel" role="tabpanel" aria-labelledby="nav-learning">
+        <div class="section-bar">
+          <h2>Motor de aprendizaje continuo y auto-evolución (Realidad vs. Teoría)</h2>
+          <button type="button" class="btn btn-amber" onclick="runDistillInstincts()">
+            <svg class="icon" aria-hidden="true"><use href="#ic-spark"/></svg> Destilar instintos ahora
+          </button>
+        </div>
+
+        <div class="ov-kpi-grid" id="learnKpiGrid" style="margin-bottom:var(--space-4);"></div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;margin-bottom:var(--space-5);">
+          <div style="padding:var(--space-4) var(--space-5);border-bottom:var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <div>
+              <h3>Qué hace realmente tu ecosistema cuando aprende y se mejora a sí mismo</h3>
+              <span class="muted">Comparativa transparente entre lo que promete la arquitectura teórica y lo que está ejecutándose hoy en disco</span>
+            </div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fase del ciclo evolutivo</th>
+                  <th>Estado real</th>
+                  <th>Qué debería hacer en teoría</th>
+                  <th>Qué está haciendo realmente hoy en tu PC</th>
+                </tr>
+              </thead>
+              <tbody id="learnStagesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="seam-grid seam-2" style="margin-bottom:var(--space-5);">
+          <div>
+            <div class="panel-head">
+              <h3>Instintos destilados (ecc-homunculus)</h3>
+              <span class="path-ref">~/.local/share/ecc-homunculus/instincts/personal</span>
+            </div>
+            <div id="learnInstinctsList"></div>
+          </div>
+          <div>
+            <div class="panel-head">
+              <h3>Hooks activos de captura y verificación</h3>
+              <span class="path-ref">~/.claude/settings.json</span>
+            </div>
+            <div id="learnHooksList"></div>
+          </div>
+        </div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;">
+          <div style="padding:var(--space-4) var(--space-5);border-bottom:var(--rule-hair) solid var(--color-rule);" class="panel-head">
+            <h3>Trazas de observación crudas capturadas (obs_*.jsonl)</h3>
+            <span class="path-ref">~/.local/share/ecc-homunculus/global/observations</span>
+          </div>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th>Evento / Tool</th>
+                  <th>Detalle capturado</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody id="learnObsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6.3: LOGS DEL SISTEMA -->
+      <section id="tab-logs" class="tabpanel" role="tabpanel" aria-labelledby="nav-logs">
+        <div class="section-bar">
+          <h2>Logs unificados del ecosistema</h2>
+          <div class="row-inline">
+            <label for="filterLogSource" class="field-label" style="display:none;">Fuente de log</label>
+            <select id="filterLogSource" onchange="renderSystemLogs()" style="width:auto;">
+              <option value="all">Fuente: Todas</option>
+              <option value="Auditoría / Backup">Auditoría y Backups SHA-256</option>
+              <option value="PMB MCP">PMB MCP Calls</option>
+              <option value="PMB Daemon">PMB Daemon</option>
+              <option value="GitHub Copilot">GitHub Copilot</option>
+            </select>
+            <label for="searchLogsInput" class="field-label" style="display:none;">Buscar en logs</label>
+            <input type="search" id="searchLogsInput" placeholder="Filtrar mensaje o herramienta…" oninput="renderSystemLogs()" style="min-width:220px;width:auto;" />
+            <button type="button" class="btn btn-sm" onclick="loadSnapshot()">
+              <svg class="icon" aria-hidden="true"><use href="#ic-refresh"/></svg> Actualizar logs
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-surface" style="padding:0;overflow:hidden;">
+          <div style="overflow-x:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fuente</th>
+                  <th>Nivel</th>
+                  <th>Fecha y hora</th>
+                  <th>Evento registrado</th>
+                </tr>
+              </thead>
+              <tbody id="sysLogsBody"></tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -1811,6 +2121,9 @@ function renderAll() {
   safeRun('oacSummary', () => renderOacSummary(oac));
   safeRun('agentsTable', () => renderAgentsTable());
   safeRun('profiles', () => renderProfiles());
+  safeRun('memoryHub', () => renderMemoryHub());
+  safeRun('learningHub', () => renderLearningHub());
+  safeRun('systemLogs', () => renderSystemLogs());
   safeRun('health', () => renderHealth(sq));
 }
 
@@ -2766,7 +3079,13 @@ function renderTokenSavers() {
         : (item.active ? '<span class="live-beacon" role="status" aria-label="Activo"></span>' : '<span class="idle-beacon" role="status" aria-label="Inactivo"></span>');
       const statusChip = item.health === 'error'
         ? '<span class="chip bad">Error</span>'
-        : (item.active ? '<span class="chip measured">OK · Activo</span>' : '<span class="chip">Inactivo</span>');
+        : (item.active ? '<span class="chip ok">Activo</span>' : '<span class="chip">Inactivo</span>');
+      const iosSwitch = `
+        <button type="button" role="switch" class="ios-switch" aria-checked="${item.active ? 'true' : 'false'}"
+          aria-label="Alternar ${item.name}" title="${item.active ? 'Desactivar' : 'Activar'} ${item.name}"
+          onclick="toggleSaver('${item.id}', ${!item.active})">
+          <span class="ios-knob"></span>
+        </button>`;
       const updChip = item.update_status === 'Al día' || item.update_status.startsWith('Auto')
         ? `<span class="chip measured">${item.update_status}</span>`
         : `<span class="chip amber">${item.update_status}</span>`;
@@ -2783,7 +3102,7 @@ function renderTokenSavers() {
             </div>
             <div class="muted" style="margin-top:var(--space-1);">${item.health_detail}</div>
           </td>
-          <td>${statusChip}</td>
+          <td><div class="row-inline">${iosSwitch}${statusChip}</div></td>
           <td>
             <div class="measured" style="color:var(--color-ink);">${item.version}</div>
             <div style="margin-top:var(--space-1);">${updChip}</div>
@@ -3021,35 +3340,231 @@ function renderOacSummary(oac) {
   recAgentSel.innerHTML = (SNAPSHOT.agents || []).map(ag => `<option value="${ag.id}">${ag.id} (${ag.group})</option>`).join('');
 }
 
+let OAC_EDIT_MODE = false;
+let OAC_PROVIDER_FILTER = 'all';
+
+async function toggleSaver(saverId, enabled) {
+  try {
+    const res = await fetch('/api/tokens/toggle', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ saver_id: saverId, enabled })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast(data.result.detail);
+      loadSnapshot();
+    } else toast('Error: ' + data.error, true);
+  } catch (err) {
+    toast('Error de red: ' + err.message, true);
+  }
+}
+
+function toggleOacEditMode() {
+  OAC_EDIT_MODE = !OAC_EDIT_MODE;
+  const wrap = document.getElementById('oacSplitWrap');
+  if (wrap) wrap.classList.toggle('editing', OAC_EDIT_MODE);
+  const btn = document.getElementById('btnOacEditMode');
+  if (btn) {
+    btn.innerHTML = OAC_EDIT_MODE
+      ? '<svg class="icon" aria-hidden="true"><use href="#ic-close"/></svg> Salir de Edición'
+      : '<svg class="icon" aria-hidden="true"><use href="#ic-edit"/></svg> Modo Edición (Drag &amp; Drop)';
+  }
+  renderAgentsTable();
+  if (OAC_EDIT_MODE) renderOacModelPalette();
+}
+
+function setOacProviderFilter(prov) {
+  OAC_PROVIDER_FILTER = prov;
+  renderOacModelPalette();
+}
+
+function onModelDragStart(ev, modelName, fromRole = '', fromIdx = -1) {
+  ev.dataTransfer.setData('text/plain', JSON.stringify({ model: modelName, fromRole, fromIdx }));
+  ev.dataTransfer.effectAllowed = 'copyMove';
+}
+
+function renderOacModelPalette() {
+  const models = getAllSafeModels();
+  const q = (document.getElementById('searchPaletteModels')?.value || '').trim().toLowerCase();
+  const byProv = {};
+  models.forEach(m => {
+    const prov = m.includes('/') ? m.split('/')[0] : 'otros';
+    if (!byProv[prov]) byProv[prov] = [];
+    byProv[prov].push(m);
+  });
+
+  const provs = ['all', ...Object.keys(byProv).sort()];
+  const pillsEl = document.getElementById('oacProviderPills');
+  if (pillsEl) {
+    pillsEl.innerHTML = provs.map(p => `
+      <button type="button" class="ov-pill" aria-pressed="${OAC_PROVIDER_FILTER === p ? 'true' : 'false'}" onclick="setOacProviderFilter('${p}')">
+        ${p === 'all' ? 'Todos' : p}
+      </button>`).join('');
+  }
+
+  const listEl = document.getElementById('oacPaletteList');
+  if (!listEl) return;
+  const groups = Object.entries(byProv)
+    .filter(([prov]) => OAC_PROVIDER_FILTER === 'all' || prov === OAC_PROVIDER_FILTER)
+    .map(([prov, mList]) => {
+      const filtered = mList.filter(m => !q || m.toLowerCase().includes(q));
+      if (!filtered.length) return '';
+      const chips = filtered.map(m => {
+        const safeM = m.replace(/'/g, "\\'");
+        return `<span class="drg-chip" draggable="true" ondragstart="onModelDragStart(event,'${safeM}')">${m}</span>`;
+      }).join(' ');
+      return `
+        <div class="finding-row" style="margin-top:0;">
+          <div class="row-inline" style="justify-content:space-between;margin-bottom:var(--space-2);">
+            <strong style="color:var(--color-ink);">${prov}</strong>
+            <span class="chip measured">${filtered.length}</span>
+          </div>
+          <div class="row-inline">${chips}</div>
+        </div>`;
+    }).filter(Boolean).join('');
+
+  listEl.innerHTML = groups || '<span class="muted">Sin modelos para ese filtro.</span>';
+}
+
+async function onDropAssignedModel(ev, agentRelPath) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  if (!agentRelPath || agentRelPath === '[REDACTED]') return;
+  try {
+    const payload = JSON.parse(ev.dataTransfer.getData('text/plain'));
+    if (!payload.model) return;
+    const res = await fetch('/api/oac/assignment', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ agent: agentRelPath, model: payload.model })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast(`Asignado ${agentRelPath} → ${payload.model} (Backup: ${data.result.change_id})`);
+      loadSnapshot();
+    } else toast('Error: ' + data.error, true);
+  } catch (err) {
+    toast('Error al soltar modelo: ' + err.message, true);
+  }
+}
+
+async function onDropRoleChain(ev, roleName) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  if (!roleName) return;
+  try {
+    const payload = JSON.parse(ev.dataTransfer.getData('text/plain'));
+    if (!payload.model) return;
+    const roleObj = SNAPSHOT?.oac?.roles?.[roleName] || {};
+    const chain = [...(roleObj.preferred || [])];
+    const existingIdx = chain.indexOf(payload.model);
+    if (existingIdx !== -1) chain.splice(existingIdx, 1);
+    chain.unshift(payload.model);
+    await saveRolePreferredChain(roleName, chain);
+  } catch (err) {
+    toast('Error actualizando cadena: ' + err.message, true);
+  }
+}
+
+async function removeRoleChainModel(roleName, modelName) {
+  const roleObj = SNAPSHOT?.oac?.roles?.[roleName] || {};
+  const chain = (roleObj.preferred || []).filter(m => m !== modelName);
+  if (!chain.length) { toast('La cadena preferred debe tener al menos 1 modelo.', true); return; }
+  await saveRolePreferredChain(roleName, chain);
+}
+
+async function saveRolePreferredChain(roleName, chain) {
+  const res = await fetch('/api/oac/role-chain', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ role: roleName, preferred: chain })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    toast(`Cadena '${roleName}' actualizada (${chain.length} modelos · Backup: ${data.result.change_id})`);
+    loadSnapshot();
+  } else toast('Error: ' + data.error, true);
+}
+
 function renderAgentsTable() {
   const q = (document.getElementById('searchAgents')?.value || '').trim().toLowerCase();
+  const kindF = document.getElementById('filterAgentKind')?.value || 'all';
   const oac = SNAPSHOT?.oac || {};
   const models = getAllSafeModels();
   const tbody = document.getElementById('agentsTableBody');
-  const list = (SNAPSHOT?.agents || []).filter(ag => !q || ag.id.toLowerCase().includes(q) || (ag.oac_assigned_model || '').toLowerCase().includes(q) || (ag.oac_role || '').toLowerCase().includes(q));
+  const list = (SNAPSHOT?.agents || []).filter(ag => {
+    const isPrim = ag.mode === 'primary' || ['ask', 'openagent', 'opencoder', 'auto-orchestrator'].includes(ag.id);
+    if (kindF === 'primary' && !isPrim) return false;
+    if (kindF === 'subagent' && isPrim) return false;
+    if (!q) return true;
+    return ag.id.toLowerCase().includes(q) || (ag.oac_assigned_model || '').toLowerCase().includes(q) || (ag.oac_role || '').toLowerCase().includes(q) || (ag.rel_path || '').toLowerCase().includes(q);
+  });
 
   tbody.innerHTML = list.length ? list.map(ag => {
+    const isPrim = ag.mode === 'primary' || ['ask', 'openagent', 'opencoder', 'auto-orchestrator'].includes(ag.id);
+    const kindBadge = isPrim
+      ? '<span class="chip ok" title="Visible en el selector principal de OpenChamber">Agente Principal (OpenChamber)</span>'
+      : '<span class="chip" title="Invocado por delegación interna, oculto del selector principal">Subagente (Background)</span>';
+
     const isOacAssigned = !!(oac.assignments && oac.assignments[ag.rel_path]);
-    let modelCell = `<span class="chip measured">${ag.oac_assigned_model || ag.model || 'heredado'}</span>`;
-    if (isOacAssigned) {
+    const safeRel = (ag.rel_path || '').replace(/'/g, "\\'");
+    const assignedVal = ag.oac_assigned_model || ag.model || 'heredado';
+    let modelCell = `
+      <div class="drop-zone"
+        ondragover="if(OAC_EDIT_MODE){event.preventDefault();this.classList.add('drag-over');}"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="if(OAC_EDIT_MODE) onDropAssignedModel(event,'${safeRel}')">
+        <span class="chip measured">${assignedVal}</span>
+      </div>`;
+    if (isOacAssigned && !OAC_EDIT_MODE) {
       const selId = 'sel_' + ag.rel_path.replace(/[^a-z0-9]/gi, '_');
       const optionsHtml = models.map(m => `<option value="${m}" ${m === ag.oac_assigned_model ? 'selected' : ''}>${m}</option>`).join('');
       modelCell = `
         <div class="row-inline">
           <select id="${selId}" class="measured" aria-label="Modelo para ${ag.id}" style="min-width:215px;width:auto;">${optionsHtml}</select>
-          <button type="button" class="btn btn-ok btn-sm" onclick="saveAgentModel('${ag.rel_path}','${selId}')" aria-label="Guardar modelo de ${ag.id}">
+          <button type="button" class="btn btn-ok btn-sm" onclick="saveAgentModel('${safeRel}','${selId}')" aria-label="Guardar modelo de ${ag.id}">
             <svg class="icon" aria-hidden="true"><use href="#ic-save"/></svg> Guardar
           </button>
         </div>`;
+    } else if (OAC_EDIT_MODE) {
+      modelCell = `
+        <div class="drop-zone" title="Suelta aquí un modelo del panel derecho para asignarlo"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="onDropAssignedModel(event,'${safeRel}')">
+          <span class="chip amber measured">${assignedVal}</span>
+          <span class="muted" style="font-size:11.5px;">Soltar modelo</span>
+        </div>`;
     }
-    const chains = [...(ag.preferred_chain || []).map(m => `<span class="chip cool measured">${m}</span>`), ...(ag.fallback_chain || []).map(m => `<span class="chip measured">→ ${m}</span>`)].join('');
-    const perms = [...(ag.allowed_subagents || []).map(s => `<span class="chip ok measured">allow:${s}</span>`), ...(ag.denied_tools || []).map(d => `<span class="chip bad measured">deny:${d}</span>`)].join('') || '<span class="muted">Estándar</span>';
+
+    const roleName = ag.oac_role || '';
+    const safeRole = roleName.replace(/'/g, "\\'");
+    const prefChips = (ag.preferred_chain || []).map((m, idx) => {
+      const safeM = m.replace(/'/g, "\\'");
+      if (OAC_EDIT_MODE && roleName) {
+        return `<span class="drg-chip" draggable="true" ondragstart="onModelDragStart(event,'${safeM}','${safeRole}',${idx})">${m}<button type="button" class="chain-rm" title="Quitar de cadena" onclick="removeRoleChainModel('${safeRole}','${safeM}')">×</button></span>`;
+      }
+      return `<span class="chip cool measured">${m}</span>`;
+    });
+    const fbChips = (ag.fallback_chain || []).map(m => `<span class="chip measured">→ ${m}</span>`);
+    const chainsHtml = [...prefChips, ...fbChips].join('') || '<span class="muted">Sin cadena</span>';
+
+    const chainCell = (OAC_EDIT_MODE && roleName)
+      ? `<div class="drop-zone" title="Arrastra un modelo aquí para colocarlo al inicio de la cadena '${roleName}'"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="onDropRoleChain(event,'${safeRole}')">${chainsHtml}</div>`
+      : `<div class="row-inline">${chainsHtml}</div>`;
+
+    const perms = [...(ag.allowed_subagents || []).map(s => `<span class="chip measured">allow:${s}</span>`), ...(ag.denied_tools || []).map(d => `<span class="chip bad measured">deny:${d}</span>`)].join('') || '<span class="muted">Estándar</span>';
     return `
       <tr>
-        <td><strong>${ag.id}</strong><div style="margin-top:var(--space-1);"><span class="path-ref">${ag.rel_path}</span></div></td>
+        <td>
+          <div class="row-inline"><strong style="color:var(--color-ink);">${ag.id}</strong></div>
+          <div style="margin-top:var(--space-1);">${kindBadge}</div>
+          <div style="margin-top:var(--space-1);"><span class="path-ref">${ag.rel_path}</span></div>
+        </td>
         <td><span class="chip ${ag.group==='oac'?'cool':'amber'}">${ag.group}</span> <span class="chip">${ag.oac_role||ag.mode}</span></td>
         <td>${modelCell}</td>
-        <td><div class="row-inline">${chains||'<span class="muted">Sin cadena</span>'}</div></td>
+        <td>${chainCell}</td>
         <td><div class="row-inline">${perms}</div></td>
       </tr>`;
   }).join('') : '<tr><td colspan="5" class="muted">Sin agentes que coincidan con el filtro.</td></tr>';
@@ -3064,6 +3579,189 @@ async function saveAgentModel(agentRelPath, selectId) {
   const data = await res.json();
   if (data.ok) { toast(`Guardado ${agentRelPath} → ${model} (Backup: ${data.result.change_id})`); loadSnapshot(); }
   else toast('Error: ' + data.error, true);
+}
+
+function renderMemoryHub() {
+  const mem = SNAPSHOT?.memory_hub || { workspaces: [], events: [], entities: [], mcp_calls: [], summary: {} };
+  const s = mem.summary || {};
+  const kpi = document.getElementById('memKpiGrid');
+  if (kpi) {
+    kpi.innerHTML = `
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Workspaces PMB</span><span class="live-beacon" role="status" aria-label="Activo"></span></span>
+        <span class="ov-kpi-val">${s.workspaces_count || 0}</span>
+        <span class="ov-kpi-sub">personal (stdio en 5 harnesses)</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Recuerdos y hechos</span><span class="chip ok">SQLite + LanceDB</span></span>
+        <span class="ov-kpi-val">${s.events_count || 0}</span>
+        <span class="ov-kpi-sub">Eventos y facts persistidos</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Entidades del Grafo</span><span class="chip cool measured">${s.edges_count || 0} aristas</span></span>
+        <span class="ov-kpi-val">${s.entities_count || 0}</span>
+        <span class="ov-kpi-sub">Archivos, conceptos y herramientas</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Consultas MCP a PMB</span><span class="chip measured">Cross-IDE</span></span>
+        <span class="ov-kpi-val">${s.mcp_calls_count || 0}</span>
+        <span class="ov-kpi-sub">find_lessons, project_overview…</span>
+      </div>`;
+  }
+
+  const q = (document.getElementById('searchMemEvents')?.value || '').trim().toLowerCase();
+  const evs = (mem.events || []).filter(e => !q || (e.content || '').toLowerCase().includes(q) || (e.type || '').toLowerCase().includes(q) || (e.workspace || '').toLowerCase().includes(q));
+  const evBody = document.getElementById('memEventsBody');
+  if (evBody) {
+    evBody.innerHTML = evs.length ? evs.map(e => `
+      <tr>
+        <td>
+          <span class="chip ${e.type === 'fact' ? 'ok' : 'cool'}">${e.type}</span>
+          <div style="margin-top:var(--space-1);"><span class="path-ref">${e.workspace}</span></div>
+        </td>
+        <td style="color:var(--color-ink);max-width:620px;">${e.content}</td>
+        <td><span class="chip measured">${e.tier} (imp: ${e.importance ?? 1})</span></td>
+        <td class="muted measured">${e.timestamp}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="muted">Sin recuerdos que coincidan con el filtro.</td></tr>';
+  }
+
+  const gBadge = document.getElementById('memGraphBadge');
+  if (gBadge) gBadge.textContent = `${s.entities_count || 0} entidades · ${s.edges_count || 0} aristas`;
+  const entCloud = document.getElementById('memEntitiesCloud');
+  if (entCloud) {
+    entCloud.innerHTML = (mem.entities || []).map(en => `
+      <span class="chip" title="Última vez: ${en.last_seen}">
+        <span class="muted">${en.kind}:</span> <strong style="color:var(--color-ink);">${en.name}</strong>
+        <span class="measured" style="color:var(--color-accent);">×${en.mentions}</span>
+      </span>`).join('') || '<span class="muted">Sin entidades registradas.</span>';
+  }
+
+  const callsEl = document.getElementById('memMcpCallsList');
+  if (callsEl) {
+    callsEl.innerHTML = (mem.mcp_calls || []).slice(0, 10).map(c => `
+      <div class="finding-row" style="margin-top:var(--space-1);">
+        <div class="row-inline" style="justify-content:space-between;">
+          <strong class="measured" style="color:var(--color-ink);">${c.tool}</strong>
+          <div class="row-inline">
+            <span class="chip cool measured">${c.duration_ms} ms</span>
+            <span class="chip ${c.outcome === 'ok' ? 'ok' : 'bad'}">${c.outcome}</span>
+          </div>
+        </div>
+        <div class="muted measured" style="margin-top:var(--space-1);">${c.timestamp}</div>
+      </div>`).join('') || '<span class="muted">Sin llamadas MCP registradas.</span>';
+  }
+}
+
+function renderLearningHub() {
+  const lh = SNAPSHOT?.learning_hub || { stages: [], hooks: [], observations: [], instincts: [], summary: {} };
+  const s = lh.summary || {};
+  const kpi = document.getElementById('learnKpiGrid');
+  if (kpi) {
+    kpi.innerHTML = `
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Hooks de aprendizaje</span><span class="live-beacon" role="status" aria-label="Activo"></span></span>
+        <span class="ov-kpi-val">${s.hooks_count || 0}</span>
+        <span class="ov-kpi-sub">SessionStart, PreTool, PostTool, Stop</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Trazas crudas (obs_*.jsonl)</span><span class="chip cool measured">${s.obs_files_count || 0} archivos</span></span>
+        <span class="ov-kpi-val">${s.obs_records_count || 0}</span>
+        <span class="ov-kpi-sub">Observaciones reales en disco</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Instintos destilados</span><span class="chip ${s.instincts_count > 0 ? 'ok' : 'amber'}">${s.instincts_count > 0 ? 'Activos' : 'Pendiente'}</span></span>
+        <span class="ov-kpi-val">${s.instincts_count || 0}</span>
+        <span class="ov-kpi-sub">ecc-homunculus/instincts/personal</span>
+      </div>
+      <div class="ov-kpi">
+        <span class="ov-kpi-label"><span>Gates Superpowers</span><span class="chip ok">14 activas</span></span>
+        <span class="ov-kpi-val">100%</span>
+        <span class="ov-kpi-sub">TDD, debugging y verificación en core</span>
+      </div>`;
+  }
+
+  const stBody = document.getElementById('learnStagesBody');
+  if (stBody) {
+    stBody.innerHTML = (lh.stages || []).map(st => `
+      <tr>
+        <td><strong style="color:var(--color-ink);">${st.stage}</strong></td>
+        <td><span class="chip ${st.status === 'ok' ? 'ok' : 'amber'}">${st.status === 'ok' ? 'Operativo' : 'Parcial'}</span></td>
+        <td class="muted">${st.theory}</td>
+        <td style="color:var(--color-ink);">${st.reality}</td>
+      </tr>`).join('');
+  }
+
+  const instEl = document.getElementById('learnInstinctsList');
+  if (instEl) {
+    instEl.innerHTML = (lh.instincts || []).length ? lh.instincts.map(i => `
+      <div class="finding-row">
+        <div class="row-inline" style="justify-content:space-between;">
+          <strong class="measured" style="color:var(--color-ink);">${i.id}</strong>
+          <span class="chip ok">Instinto activo</span>
+        </div>
+        <div class="muted" style="margin-top:var(--space-1);">${i.preview}</div>
+        <div style="margin-top:var(--space-1);"><span class="path-ref">${i.path}</span></div>
+      </div>`).join('') : '<div class="finding-row"><span class="muted">Aún no hay instintos destilados. Pulsa "Destilar instintos ahora" arriba a la derecha para extraerlos de tus observaciones y de PMB.</span></div>';
+  }
+
+  const hkEl = document.getElementById('learnHooksList');
+  if (hkEl) {
+    hkEl.innerHTML = (lh.hooks || []).map(h => `
+      <div class="finding-row" style="margin-top:var(--space-1);">
+        <div class="row-inline" style="justify-content:space-between;">
+          <span class="chip cool">${h.phase}</span>
+          <span class="chip ${h.status === 'ok' ? 'ok' : 'bad'}">${h.detail}</span>
+        </div>
+        <div style="margin-top:var(--space-1);"><span class="path-ref">${h.command}</span></div>
+      </div>`).join('');
+  }
+
+  const obsBody = document.getElementById('learnObsBody');
+  if (obsBody) {
+    obsBody.innerHTML = (lh.observations || []).length ? lh.observations.map(o => `
+      <tr>
+        <td><span class="path-ref">${o.file}</span></td>
+        <td><span class="chip">${o.event}</span></td>
+        <td class="muted" style="max-width:520px;">${o.summary}</td>
+        <td class="muted measured">${o.timestamp}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="muted">Sin observaciones crudas registradas.</td></tr>';
+  }
+}
+
+async function runDistillInstincts() {
+  toast('Destilando instintos desde PMB y observaciones ecc-homunculus…');
+  try {
+    const res = await fetch('/api/learning/distill', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}' });
+    const data = await res.json();
+    if (data.ok) {
+      toast(`Destilados ${data.result.created_count} instintos en ${data.result.dir}`);
+      loadSnapshot();
+    } else toast('Error: ' + data.error, true);
+  } catch (err) {
+    toast('Error de red: ' + err.message, true);
+  }
+}
+
+function renderSystemLogs() {
+  const logs = SNAPSHOT?.system_logs || [];
+  const srcF = document.getElementById('filterLogSource')?.value || 'all';
+  const q = (document.getElementById('searchLogsInput')?.value || '').trim().toLowerCase();
+  const filtered = logs.filter(l => {
+    if (srcF !== 'all' && l.source !== srcF) return false;
+    if (!q) return true;
+    return (l.message || '').toLowerCase().includes(q) || (l.source || '').toLowerCase().includes(q);
+  });
+
+  const body = document.getElementById('sysLogsBody');
+  if (body) {
+    body.innerHTML = filtered.length ? filtered.map(l => `
+      <tr>
+        <td><span class="chip">${l.source}</span></td>
+        <td><span class="chip ${l.level === 'ERROR' ? 'bad' : (l.level === 'OK' ? 'ok' : 'measured')}">${l.level}</span></td>
+        <td class="muted measured">${l.timestamp}</td>
+        <td style="color:var(--color-ink);">${l.message}</td>
+      </tr>`).join('') : '<tr><td colspan="4" class="muted">Sin eventos de log para el filtro seleccionado.</td></tr>';
+  }
 }
 
 function renderProfiles() {

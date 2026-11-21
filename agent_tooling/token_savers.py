@@ -288,8 +288,16 @@ def inspect_token_savers(home: Path | None = None) -> dict[str, Any]:
         },
     ]
 
-    active_count = sum(1 for item in installed if item["active"])
-    ok_count = sum(1 for item in installed if item["health"] == "ok")
+    active_count = 0
+    ok_count = 0
+    overrides = _load_saver_overrides(home)
+    for item in installed:
+        if item["id"] in overrides and item["id"] != "profile-junction-farm":
+            item["active"] = bool(overrides[item["id"]])
+        if item["active"]:
+            active_count += 1
+        if item["health"] == "ok":
+            ok_count += 1
 
     return {
         "installed": installed,
@@ -302,3 +310,66 @@ def inspect_token_savers(home: Path | None = None) -> dict[str, Any]:
             "active_profile": ap_state.get("active_profile", "all"),
         },
     }
+
+
+
+def _get_savers_override_file(home: Path) -> Path:
+    return home / ".agents" / "tooling" / "state" / "token-savers-state.json"
+
+
+def _load_saver_overrides(home: Path) -> dict[str, bool]:
+    p = _get_savers_override_file(home)
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf-8-sig"))
+        except Exception:
+            pass
+    return {}
+
+
+def toggle_token_saver(saver_id: str, enabled: bool, home: Path | None = None) -> dict[str, Any]:
+    """Toggle a token saver on or off across config files and persistent state."""
+    home = home or Path.home()
+    saver_id = (saver_id or "").strip()
+    overrides = _load_saver_overrides(home)
+    overrides[saver_id] = bool(enabled)
+    state_file = _get_savers_override_file(home)
+    state_file.parent.mkdir(parents=True, exist_ok=True)
+
+    # 1. Profile junction farm toggles between 'core' (-93% tokens) and 'all'
+    if saver_id == "profile-junction-farm":
+        from agent_tooling.profile_switcher import switch_active_profile
+        target_prof = "core" if enabled else "all"
+        res = switch_active_profile(target_prof, home=home)
+        state_file.write_text(json.dumps(overrides, indent=2) + "\n", encoding="utf-8")
+        return {"saver_id": saver_id, "enabled": enabled, "detail": f"Perfil cambiado a '{target_prof}' ({res['active_skills_count']} skills)"}
+
+    # 2. OpenCode plugins (context-mode, opencode-dcp)
+    oc_path = home / ".config" / "opencode" / "opencode.json"
+    if saver_id in ("opencode-dcp", "context-mode") and oc_path.exists():
+        try:
+            data = json.loads(oc_path.read_text(encoding="utf-8-sig"))
+            plugins = list(data.get("plugins") or [])
+            pkg = "@tarquinen/opencode-dcp@latest" if saver_id == "opencode-dcp" else "context-mode@latest"
+            match_key = "opencode-dcp" if saver_id == "opencode-dcp" else "context-mode"
+            plugins = [p for p in plugins if match_key not in str(p)]
+            if enabled:
+                plugins.append(pkg)
+            data["plugins"] = plugins
+            oc_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        except Exception:
+            pass
+
+    # 3. OpenCode MCP servers (codegraph, pmb-shared)
+    if saver_id in ("codegraph", "pmb-shared") and oc_path.exists():
+        try:
+            data = json.loads(oc_path.read_text(encoding="utf-8-sig"))
+            srv = data.get("mcp", {}).get("servers", {}).get(saver_id)
+            if isinstance(srv, dict):
+                srv["enabled"] = bool(enabled)
+                oc_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        except Exception:
+            pass
+
+    state_file.write_text(json.dumps(overrides, indent=2) + "\n", encoding="utf-8")
+    return {"saver_id": saver_id, "enabled": bool(enabled), "detail": f"{saver_id} {'activado' if enabled else 'desactivado'}"}

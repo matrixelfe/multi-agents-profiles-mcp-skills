@@ -5,7 +5,8 @@ import re
 from typing import Any
 
 SENSITIVE_KEY_PATTERNS = re.compile(
-    r"(token|key|secret|password|auth|pat|credential|bearer)", re.IGNORECASE
+    r"(api_?token|access_?token|refresh_?token|^token$|_token$|key|secret|password|auth|(?:^|_)pat(?:$|_)|credential|bearer)",
+    re.IGNORECASE,
 )
 
 

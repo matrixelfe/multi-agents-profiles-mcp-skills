@@ -155,6 +155,24 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "result": res})
                 return
 
+            if parsed.path == "/api/oac/role-chain":
+                from agent_tooling.oac.reader import update_oac_role_chain
+                res = update_oac_role_chain(str(body["role"]), list(body.get("preferred") or []))
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/tokens/toggle":
+                from agent_tooling.token_savers import toggle_token_saver
+                res = toggle_token_saver(str(body["saver_id"]), bool(body["enabled"]))
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/learning/distill":
+                from agent_tooling.memory_learning_logs import distill_instincts_now
+                res = distill_instincts_now()
+                self._send_json({"ok": True, "result": res})
+                return
+
             if parsed.path == "/api/oac/retry":
                 res = update_oac_retry_behavior(
                     line2_fallback_enabled=body.get("line2_fallback_enabled"),
