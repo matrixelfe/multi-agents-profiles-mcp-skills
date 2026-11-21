@@ -2731,7 +2731,7 @@ async function runVercelFind() {
 }
 
 function renderTokenSavers() {
-  const ts = SNAPSHOT?.token_savers || { installed: [], suggested: [], summary: {} };
+  const ts = SNAPSHOT?.context_savers || { installed: [], suggested: [], summary: {} };
   const sum = ts.summary || {};
   const kpi = document.getElementById('tokKpiGrid');
   if (kpi) {

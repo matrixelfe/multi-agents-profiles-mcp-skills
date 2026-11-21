@@ -7,6 +7,7 @@ and provides curated recommendations for additional token optimizers.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,13 +16,42 @@ from typing import Any
 from agent_tooling.profile_switcher import get_active_profile_state
 
 
-def _get_cmd_version(cmd: list[str]) -> str:
+_VERSION_CACHE: dict[str, str] = {}
+_NO_WIN = getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
+
+
+def _get_cmd_version(cmd: list[str], cache_key: str) -> str:
+    if cache_key in _VERSION_CACHE:
+        return _VERSION_CACHE[cache_key]
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=4, encoding="utf-8", errors="replace")
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=2.5,
+            encoding="utf-8",
+            errors="replace",
+            creationflags=_NO_WIN,
+        )
         out = (proc.stdout or proc.stderr or "").strip().splitlines()
-        return out[0][:60] if out else "instalado"
+        val = out[0][:60] if out else "instalado"
     except Exception:
-        return ""
+        val = "instalado"
+    _VERSION_CACHE[cache_key] = val
+    return val
+
+
+def _read_npm_pkg_version(pkg_name: str) -> str:
+    """Fast 0ms version check from global npm node_modules without spawning node."""
+    appdata = os.environ.get("APPDATA", "")
+    if appdata:
+        pj = Path(appdata) / "npm" / "node_modules" / pkg_name / "package.json"
+        if pj.exists():
+            try:
+                return f"{pkg_name} {json.loads(pj.read_text(encoding='utf-8-sig')).get('version', '')}".strip()
+            except Exception:
+                pass
+    return ""
 
 
 def _read_text_safe(path: Path) -> str:
@@ -74,7 +104,7 @@ def inspect_token_savers(home: Path | None = None) -> dict[str, Any]:
 
     # 2. RTK (Rust Token Killer)
     rtk_bin = shutil.which("rtk")
-    rtk_ver = _get_cmd_version([rtk_bin, "--version"]) if rtk_bin else ""
+    rtk_ver = _get_cmd_version([rtk_bin, "--version"], "rtk") if rtk_bin else ""
     rtk_harnesses = []
     if (home / ".gemini" / "config" / "plugins" / "rtk").exists():
         rtk_harnesses.append("Antigravity")
@@ -133,7 +163,7 @@ def inspect_token_savers(home: Path | None = None) -> dict[str, Any]:
 
     # 5. Agent Browser (Vercel Labs)
     ab_bin = shutil.which("agent-browser")
-    ab_ver = _get_cmd_version([ab_bin, "--version"]) if ab_bin else ""
+    ab_ver = _read_npm_pkg_version("agent-browser") or ("instalado" if ab_bin else "")
     ab_active = bool(ab_bin and _skill_present("agent-browser"))
     installed.append({
         "id": "agent-browser",

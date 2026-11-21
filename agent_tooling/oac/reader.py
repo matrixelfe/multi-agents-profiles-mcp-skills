@@ -450,7 +450,7 @@ def load_oac_snapshot(
     return redact_dict({
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "active_profile": get_active_profile_state(home),
-        "token_savers": inspect_token_savers(home),
+        "context_savers": inspect_token_savers(home),
         "oac": {
             "routing_version": routing.get("routing_version"),
             "routing": routing.get("routing", {}),

@@ -1,15 +1,29 @@
 """Native Windows Desktop App (.exe) for Agent Tooling v3 Control Center.
 
-Embeds the Control Center inside a native Windows WebView2 window (no browser tab)
-and cleanly shuts down the embedded HTTP server with zero background processes
-left behind when the window is closed.
+Embeds the Control Center inside a native Windows WebView2 window (no browser tab),
+suppresses ALL flashing console windows from child subprocesses on Windows, and
+cleanly shuts down the embedded HTTP server with zero background processes left behind.
 """
 from __future__ import annotations
 
 import os
 import socket
+import subprocess
 import threading
 from http.server import ThreadingHTTPServer
+
+# Globally prevent any child subprocess (tasklist, rtk, npx, cmd) from flashing
+# a visible terminal window when running inside the --noconsole Windows GUI EXE.
+if os.name == "nt":
+    _CREATE_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    _orig_popen_init = subprocess.Popen.__init__
+
+    def _silent_popen_init(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        flags = kwargs.get("creationflags", 0)
+        kwargs["creationflags"] = flags | _CREATE_NO_WINDOW
+        return _orig_popen_init(self, *args, **kwargs)
+
+    subprocess.Popen.__init__ = _silent_popen_init  # type: ignore[method-assign]
 
 import webview
 
@@ -52,7 +66,6 @@ def main() -> None:
             server.server_close()
         except Exception:
             pass
-        # Guarantee zero lingering daemon/background processes on window close
         os._exit(0)
 
 
