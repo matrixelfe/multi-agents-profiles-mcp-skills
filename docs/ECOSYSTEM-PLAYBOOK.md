@@ -92,6 +92,8 @@ Problemas reales que aparecieron en producción y cómo resolverlos de raíz:
 3. **UTF-8 con BOM en Python `tomllib` / `json.loads`:** PowerShell 5.1 `Set-Content -Encoding UTF8` escribe BOM y rompe `tomllib.loads()`. **Solución:** lee siempre con `encoding="utf-8-sig"` en Python.
 4. **Antigravity ignorando rutas absolutas en `skills.json`:** usa rutas relativas al home (`"~/.agents/skills"`) más la NTFS Junction en `~/.gemini/config/skills`.
 5. **Backups reversibles antes de tocar configs:** nunca sobrescribas un JSON/TOML de usuario sin copiar antes el original a `%LOCALAPPDATA%\agent-tooling-backups\<change-id>\` con hash SHA-256.
+6. **Hooks de Claude Code en Windows (`/usr/bin/bash`):** Claude Code ejecuta los hooks mediante Git Bash. Cualquier comando en `~/.claude/settings.json` con barras invertidas sin escapar (`C:\Users\...`) será corrompido por Bash (`C:Users...: command not found`). **Solución:** usa siempre barras diagonales y comillas: `"C:/Users/.../python.exe"`.
+7. **PMB MCP en `stdio` para evitar `ECONNREFUSED` y colisión en puerto `8765`:** configura `pmb-shared` siempre con `"type": "stdio"` apuntando a `pmb-mcp.EXE` (en vez de HTTP `:8765`), así nunca choca con `agent-tooling ui` ni falla si no levantaste un daemon HTTP aparte.
 
 ---
 

@@ -106,7 +106,12 @@ def inspect_and_repair_skill(
             hooks_detected.append(rel)
             if item.suffix.lower() == ".json":
                 try:
-                    json.loads(item.read_text(encoding="utf-8-sig"))
+                    raw_h = item.read_text(encoding="utf-8-sig")
+                    json.loads(raw_h)
+                    if re.search(r'"command"\s*:\s*"[A-Za-z]:\\\\', raw_h):
+                        warnings.append(
+                            f"Hook {rel} contiene rutas Windows con '\\\\' que fallan en Git Bash (/usr/bin/bash). Usa barras '/'."
+                        )
                 except Exception as exc:
                     warnings.append(f"Hook JSON inválido en {rel}: {exc}")
         elif low.startswith("scripts/") or item.suffix.lower() in (".ps1", ".mjs", ".py", ".sh"):
