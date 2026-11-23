@@ -171,6 +171,83 @@ MIGRATIONS: list[tuple[int, str]] = [
         );
         """,
     ),
+    (
+        3,
+        """
+        CREATE TABLE IF NOT EXISTS token_sessions (
+            session_id TEXT PRIMARY KEY,
+            harness TEXT NOT NULL,
+            mode TEXT NOT NULL DEFAULT 'default',
+            title_sanitized TEXT NOT NULL DEFAULT '',
+            primary_model TEXT NOT NULL DEFAULT 'unknown',
+            profile_active TEXT NOT NULL DEFAULT 'unknown',
+            started_at TEXT NOT NULL,
+            ended_at TEXT NOT NULL,
+            calls_count INTEGER NOT NULL DEFAULT 0,
+            input_uncached INTEGER NOT NULL DEFAULT 0,
+            cache_read INTEGER NOT NULL DEFAULT 0,
+            cache_write INTEGER NOT NULL DEFAULT 0,
+            output_tokens INTEGER NOT NULL DEFAULT 0,
+            reasoning_tokens INTEGER NOT NULL DEFAULT 0,
+            total_tokens INTEGER NOT NULL DEFAULT 0,
+            cache_hit_ratio REAL NOT NULL DEFAULT 0.0,
+            cost_usd REAL NOT NULL DEFAULT 0.0,
+            ai_credits REAL NOT NULL DEFAULT 0.0,
+            anomaly_count INTEGER NOT NULL DEFAULT 0,
+            source_file TEXT NOT NULL DEFAULT '',
+            source_mtime REAL NOT NULL DEFAULT 0.0
+        );
+        CREATE INDEX IF NOT EXISTS idx_token_sessions_harness_started
+            ON token_sessions(harness, started_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_token_sessions_model
+            ON token_sessions(primary_model, started_at DESC);
+
+        CREATE TABLE IF NOT EXISTS token_traces (
+            trace_id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES token_sessions(session_id) ON DELETE CASCADE,
+            turn_index INTEGER NOT NULL DEFAULT 1,
+            call_index INTEGER NOT NULL DEFAULT 1,
+            timestamp TEXT NOT NULL,
+            model TEXT NOT NULL DEFAULT 'unknown',
+            input_uncached INTEGER NOT NULL DEFAULT 0,
+            cache_read INTEGER NOT NULL DEFAULT 0,
+            cache_write INTEGER NOT NULL DEFAULT 0,
+            output_tokens INTEGER NOT NULL DEFAULT 0,
+            reasoning_tokens INTEGER NOT NULL DEFAULT 0,
+            total_tokens INTEGER NOT NULL DEFAULT 0,
+            cost_usd REAL NOT NULL DEFAULT 0.0,
+            ai_credits REAL NOT NULL DEFAULT 0.0,
+            latency_ms REAL NOT NULL DEFAULT 0.0,
+            tools_called_json TEXT NOT NULL DEFAULT '[]',
+            anomaly_flags_json TEXT NOT NULL DEFAULT '[]'
+        );
+        CREATE INDEX IF NOT EXISTS idx_token_traces_session_call
+            ON token_traces(session_id, call_index);
+        CREATE INDEX IF NOT EXISTS idx_token_traces_ts
+            ON token_traces(timestamp DESC);
+
+        CREATE TABLE IF NOT EXISTS token_anomalies (
+            anomaly_id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES token_sessions(session_id) ON DELETE CASCADE,
+            trace_id TEXT,
+            rule_code TEXT NOT NULL,
+            severity TEXT NOT NULL CHECK(severity IN ('CRITICAL','HIGH','MEDIUM','LOW')),
+            detected_at TEXT NOT NULL,
+            metric_value REAL NOT NULL DEFAULT 0.0,
+            threshold_value REAL NOT NULL DEFAULT 0.0,
+            recommendation TEXT NOT NULL DEFAULT ''
+        );
+        CREATE INDEX IF NOT EXISTS idx_token_anomalies_sev_time
+            ON token_anomalies(severity, detected_at DESC);
+
+        CREATE TABLE IF NOT EXISTS telemetry_watermarks (
+            source_key TEXT PRIMARY KEY,
+            last_mtime REAL NOT NULL DEFAULT 0.0,
+            last_cursor TEXT NOT NULL DEFAULT '',
+            last_synced_at TEXT NOT NULL
+        );
+        """,
+    ),
 ]
 
 

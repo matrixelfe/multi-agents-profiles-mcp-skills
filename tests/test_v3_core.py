@@ -26,7 +26,7 @@ def test_migrations_idempotent_and_fk(tmp_path: Path) -> None:
     conn = connect(db)
     try:
         v1 = migrate(conn)
-        assert v1 == [1, 2]
+        assert v1 == [1, 2, 3]
         v2 = migrate(conn)
         assert v2 == []
         fk = conn.execute("PRAGMA foreign_keys;").fetchone()[0]

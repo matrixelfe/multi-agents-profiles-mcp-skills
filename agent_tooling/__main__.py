@@ -116,6 +116,25 @@ def main() -> None:
     sag = sub.add_parser("sync-antigravity-agents", help="Project OAC/OpenCode agents into Antigravity plugin bundle")
     sag.add_argument("--dry-run", action="store_true", help="Preview without writing files")
 
+    sp = sub.add_parser("switch-profile", help="Switch active skill profile (e.g. core-lean, core, web, all)")
+    sp.add_argument("profile", help="Profile name")
+    sp.add_argument("--dry-run", action="store_true")
+
+    tel = sub.add_parser("telemetry", help="Token telemetry & trace logging (sync, report, export, prune)")
+    tel_sub = tel.add_subparsers(dest="tel_action", required=True)
+    tel_sub.add_parser("sync", help="Incremental read-only sync from all harnesses into SQLite + JSONL")
+    tel_rep = tel_sub.add_parser("report", help="Print telemetry report")
+    tel_rep.add_argument("--range", dest="range_key", default="7d", choices=["24h", "7d", "30d", "all"])
+    tel_rep.add_argument("--harness", default="all")
+    tel_rep.add_argument("--format", dest="fmt", default="md", choices=["md", "csv", "json"])
+    tel_exp = tel_sub.add_parser("export", help="Export telemetry report to a file")
+    tel_exp.add_argument("--out", required=True, help="Output file path")
+    tel_exp.add_argument("--range", dest="range_key", default="all", choices=["24h", "7d", "30d", "all"])
+    tel_exp.add_argument("--harness", default="all")
+    tel_exp.add_argument("--format", dest="fmt", default="md", choices=["md", "csv", "json"])
+    tel_pr = tel_sub.add_parser("prune", help="Prune telemetry sessions older than N days")
+    tel_pr.add_argument("--days", type=int, default=90)
+
     args = parser.parse_args()
     if args.command == "scan":
         cmd_scan()
@@ -132,6 +151,34 @@ def main() -> None:
     elif args.command == "sync-antigravity-agents":
         res = sync_antigravity_agents(dry_run=args.dry_run)
         print(json.dumps(res, indent=2, ensure_ascii=False))
+    elif args.command == "switch-profile":
+        from agent_tooling.profile_switcher import switch_active_profile
+        res = switch_active_profile(args.profile, dry_run=args.dry_run)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+    elif args.command == "telemetry":
+        from agent_tooling.telemetry import TelemetryStore, export_report, sync_all_harnesses
+        store = TelemetryStore(DB_PATH)
+        if args.tel_action == "sync":
+            res = sync_all_harnesses(tooling_root=TOOLING_ROOT, db_path=DB_PATH)
+            print(json.dumps(res, indent=2, ensure_ascii=False))
+        elif args.tel_action == "report":
+            summary = store.get_summary(range_key=args.range_key, harness=args.harness)
+            sessions = store.list_sessions(range_key=args.range_key, harness=args.harness, limit=50)
+            anomalies = store.list_anomalies(limit=50)
+            content, _, _ = export_report(summary, sessions, anomalies, fmt=args.fmt)
+            print(content)
+        elif args.tel_action == "export":
+            summary = store.get_summary(range_key=args.range_key, harness=args.harness)
+            sessions = store.list_sessions(range_key=args.range_key, harness=args.harness, limit=250)
+            anomalies = store.list_anomalies(limit=100)
+            content, _, _ = export_report(summary, sessions, anomalies, fmt=args.fmt)
+            out_path = Path(args.out)
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(content, encoding="utf-8")
+            print(f"Exported telemetry report to {out_path} ({len(content)} bytes)")
+        elif args.tel_action == "prune":
+            res = store.prune_old_traces(days=args.days)
+            print(json.dumps(res, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":

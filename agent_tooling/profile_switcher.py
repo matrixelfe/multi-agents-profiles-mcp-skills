@@ -17,6 +17,15 @@ from typing import Any
 import yaml
 
 
+CORE_LEAN_SKILLS: list[str] = [
+    "find-skills",
+    "verification-before-completion",
+    "systematic-debugging",
+    "code-review-and-quality",
+    "project-docs",
+    "project-changelog",
+]
+
 CORE_ESSENTIAL_SKILLS: list[str] = [
     "pmb-memory",
     "project-docs",
@@ -157,6 +166,11 @@ def switch_active_profile(
     # Step 2: Determine desired active skill set
     if profile_name == "all":
         desired = list(all_catalog)
+    elif profile_name == "core-lean":
+        lean_yaml = _load_profile_skills(profiles_dir, "core-lean")
+        wanted = set(lean_yaml or CORE_LEAN_SKILLS)
+        catalog_set = set(all_catalog)
+        desired = sorted(s for s in wanted if s in catalog_set)
     else:
         core_skills = set(CORE_ESSENTIAL_SKILLS) | set(_load_profile_skills(profiles_dir, "core"))
         prof_skills = set(_load_profile_skills(profiles_dir, profile_name))

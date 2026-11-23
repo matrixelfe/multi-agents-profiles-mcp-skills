@@ -1,0 +1,11 @@
+profile: core-lean
+schema_version: 1
+description: "Perfil ultra-ligero universal (6 skills esenciales + carga JIT desde Cold Vault ~/.agents/catalog/skills)"
+skills:
+  - find-skills
+  - verification-before-completion
+  - systematic-debugging
+  - code-review-and-quality
+  - project-docs
+  - project-changelog
+mcp_servers: []

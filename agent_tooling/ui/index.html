@@ -945,6 +945,9 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <button type="button" class="nav-btn" role="tab" id="nav-tokens" aria-selected="false" aria-controls="tab-tokens" onclick="showTab('tokens')">
         <svg class="icon" aria-hidden="true"><use href="#ic-spark"/></svg> Ahorrador de Tokens
       </button>
+      <button type="button" class="nav-btn" role="tab" id="nav-telemetry" aria-selected="false" aria-controls="tab-telemetry" onclick="showTab('telemetry')">
+        <svg class="icon" aria-hidden="true"><use href="#ic-trend"/></svg> Telemetría &amp; Trazas
+      </button>
       <button type="button" class="nav-btn" role="tab" id="nav-load" aria-selected="false" aria-controls="tab-load" onclick="showTab('load')">
         <svg class="icon" aria-hidden="true"><use href="#ic-gauge"/></svg> Mayor carga y RAM
       </button>
@@ -987,6 +990,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         <label for="activeProfileSelect" class="field-label" style="display:none;">Perfil activo de skills</label>
         <select id="activeProfileSelect" onchange="switchActiveProfile(this.value)" style="width:auto;" title="Cambia las skills activas vía NTFS Junctions para ahorrar tokens de contexto">
           <option value="all">Perfil: Todas</option>
+          <option value="core-lean">Perfil: core-lean (6 skills)</option>
           <option value="core">Perfil: core</option>
           <option value="web">Perfil: web</option>
           <option value="browser-automation">Perfil: browser-automation</option>
@@ -1011,6 +1015,7 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
       <button type="button" class="btn btn-sm" onclick="showTab('ides')">IDEs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('catalog')">Skills y MCPs</button>
       <button type="button" class="btn btn-sm" onclick="showTab('tokens')">Tokens</button>
+      <button type="button" class="btn btn-sm" onclick="showTab('telemetry')">Telemetría</button>
       <button type="button" class="btn btn-sm" onclick="showTab('load')">Carga</button>
       <button type="button" class="btn btn-sm" onclick="showTab('agents')">Agentes OAC</button>
       <button type="button" class="btn btn-sm" onclick="showTab('profiles')">Perfiles</button>
@@ -1898,6 +1903,275 @@ select:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
         </div>
       </section>
 
+      <!-- TAB TELEMETRY: AGENT USAGE & TELEMETRÍA CROSS-AGENT -->
+      <section id="tab-telemetry" class="tabpanel" role="tabpanel" aria-labelledby="nav-telemetry">
+        <style>
+          .au-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+          .au-title{font-size:20px;font-weight:700;margin:0;letter-spacing:-0.01em;}
+          .au-sub{font-size:12px;color:var(--color-muted);margin-top:3px;}
+          .au-pills{display:inline-flex;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px;gap:2px;}
+          .au-pill{background:transparent;border:0;color:var(--color-muted);font-size:12px;font-weight:500;padding:5px 11px;border-radius:6px;cursor:pointer;transition:all .15s;}
+          .au-pill:hover{color:#fff;}
+          .au-pill.active{background:rgba(255,255,255,0.12);color:#fff;font-weight:600;}
+          .au-kpi-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:18px;}
+          @media(max-width:1260px){.au-kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+          @media(max-width:740px){.au-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+          .au-kpi{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:13px 14px 10px;display:flex;flex-direction:column;justify-content:space-between;min-height:118px;}
+          .au-kpi-top{display:flex;justify-content:space-between;align-items:center;gap:6px;}
+          .au-kpi-label{font-size:10.5px;letter-spacing:0.06em;text-transform:uppercase;color:var(--color-muted);font-weight:600;}
+          .au-delta{font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:5px;background:rgba(34,197,94,0.14);color:#4ade80;}
+          .au-delta.neg{background:rgba(239,68,68,0.14);color:#f87171;}
+          .au-delta.neutral{background:rgba(255,255,255,0.07);color:var(--color-muted);}
+          .au-kpi-val{font-size:26px;font-weight:700;letter-spacing:-0.02em;margin:4px 0 2px;line-height:1.1;}
+          .au-kpi-sub{font-size:11.5px;color:var(--color-muted);margin-bottom:8px;}
+          .au-spark{width:100%;height:22px;display:block;}
+          .au-mid-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;margin-bottom:18px;}
+          .au-bot-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;}
+          @media(max-width:1080px){.au-mid-grid,.au-bot-grid{grid-template-columns:1fr;}}
+          .au-panel{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;}
+          .au-panel-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+          .au-panel-title{font-size:11px;letter-spacing:0.07em;text-transform:uppercase;color:var(--color-muted);font-weight:600;margin:0;}
+          .au-panel-meta{font-size:11.5px;color:var(--color-muted);}
+          .au-prov-bar{display:flex;height:6px;border-radius:4px;overflow:hidden;gap:2px;margin-bottom:8px;}
+          .au-prov-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--color-muted);margin-bottom:12px;}
+          .au-rank-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+          .au-rank-table th{font-size:11px;font-weight:500;color:var(--color-muted);text-align:right;padding:4px 6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);}
+          .au-rank-table th:first-child{text-align:left;}
+          .au-rank-table td{padding:6px 6px;text-align:right;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle;}
+          .au-rank-table td:first-child{text-align:left;}
+          .au-rank-row{transition:background .12s;}
+          .au-rank-row.clickable{cursor:pointer;}
+          .au-rank-row.clickable:hover{background:rgba(255,255,255,0.05);}
+          .au-rank-row.selected{background:rgba(56,189,248,0.12);}
+          .au-bar-track{width:100%;min-width:90px;height:6px;border-radius:3px;background:rgba(255,255,255,0.04);overflow:hidden;}
+          .au-bar-fill{height:100%;border-radius:3px;}
+          .au-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle;}
+          .au-hm-wrap{display:grid;grid-template-columns:18px 1fr;gap:6px;align-items:center;}
+          .au-hm-days{display:grid;grid-template-rows:repeat(7,15px);gap:3px;font-size:10px;color:var(--color-muted);text-align:center;line-height:15px;}
+          .au-hm-grid{display:grid;grid-template-columns:repeat(24,1fr);grid-template-rows:repeat(7,15px);gap:3px;}
+          .au-hm-cell{border-radius:2px;background:rgba(255,255,255,0.04);}
+          .au-hm-axis{display:flex;justify-content:space-between;font-size:10px;color:var(--color-muted);margin:5px 0 0 24px;padding-right:10%;}
+        </style>
+
+        <div class="au-head">
+          <div>
+            <h2 class="au-title">Agent usage</h2>
+            <div class="au-sub">
+              <span id="telDateSpanLabel">—</span>
+              <span id="telActiveHarnessChip" style="display:none;margin-left:8px;" class="chip cool"></span>
+              <button type="button" id="telClearHarnessBtn" class="btn btn-sm" style="display:none;margin-left:4px;padding:1px 7px;font-size:11px;" onclick="selectTelemetryHarness('all')">Quitar filtro ✕</button>
+              <span style="margin-left:8px;">· Sync: <strong id="telLastSync">—</strong></span>
+            </div>
+          </div>
+          <div class="row-inline" style="flex-wrap:wrap;gap:8px;">
+            <div class="au-pills" role="group" aria-label="Rango temporal">
+              <button type="button" class="au-pill" data-range="24h" onclick="setTelemetryRange('24h')">24h</button>
+              <button type="button" class="au-pill" data-range="7d" onclick="setTelemetryRange('7d')">7 days</button>
+              <button type="button" class="au-pill active" data-range="30d" onclick="setTelemetryRange('30d')">30 days</button>
+              <button type="button" class="au-pill" data-range="90d" onclick="setTelemetryRange('90d')">90 days</button>
+              <button type="button" class="au-pill" data-range="all" onclick="setTelemetryRange('all')">All</button>
+            </div>
+            <input type="hidden" id="telRangeSelect" value="30d">
+            <input type="hidden" id="telHarnessSelect" value="all">
+            <button type="button" class="btn btn-amber btn-sm" id="telSyncBtn" onclick="syncTelemetryNow()">
+              <svg class="icon" aria-hidden="true"><use href="#ic-refresh"/></svg> Sync
+            </button>
+            <button type="button" class="btn btn-sm" onclick="exportTelemetryReport('md')">MD</button>
+            <button type="button" class="btn btn-sm" onclick="exportTelemetryReport('csv')">CSV</button>
+            <button type="button" class="btn btn-sm" onclick="exportTelemetryReport('json')">JSON</button>
+          </div>
+        </div>
+
+        <!-- 6 KPI CARDS WITH DELTA PILLS + MINI SPARKLINES -->
+        <div class="au-kpi-grid">
+          <div class="au-kpi">
+            <div>
+              <div class="au-kpi-top"><span class="au-kpi-label">INPUT TOKENS</span><span id="telDeltaInput" class="au-delta neutral">—</span></div>
+              <div id="telKpiInput" class="au-kpi-val">—</div>
+              <div id="telKpiInputSub" class="au-kpi-sub">—% from cache</div>
+            </div>
+            <div id="telSparkInput"></div>
+          </div>
+
+          <div class="au-kpi">
+            <div>
+              <div class="au-kpi-top"><span class="au-kpi-label">OUTPUT TOKENS</span><span id="telDeltaOutput" class="au-delta neutral">—</span></div>
+              <div id="telKpiOutput" class="au-kpi-val">—</div>
+              <div id="telKpiOutputSub" class="au-kpi-sub">— per call</div>
+            </div>
+            <div id="telSparkOutput"></div>
+          </div>
+
+          <div class="au-kpi">
+            <div>
+              <div class="au-kpi-top"><span class="au-kpi-label">TASKS</span><span id="telDeltaTasks" class="au-delta neutral">—</span></div>
+              <div id="telKpiTasks" class="au-kpi-val">—</div>
+              <div id="telKpiTasksSub" class="au-kpi-sub">— calls</div>
+            </div>
+            <div id="telSparkTasks"></div>
+          </div>
+
+          <div class="au-kpi">
+            <div>
+              <div class="au-kpi-top"><span class="au-kpi-label">RELLAMADOS</span><span id="telDeltaRellamados" class="au-delta neutral">—</span></div>
+              <div id="telKpiRellamados" class="au-kpi-val">—</div>
+              <div id="telKpiRellamadosSub" class="au-kpi-sub">— / task · 0 alertas</div>
+            </div>
+            <div id="telSparkRellamados"></div>
+          </div>
+
+          <div class="au-kpi">
+            <div>
+              <div class="au-kpi-top"><span class="au-kpi-label">EFICIENCIA</span><span id="telDeltaEfficiency" class="au-delta neutral">—</span></div>
+              <div id="telKpiEfficiency" class="au-kpi-val">—</div>
+              <div id="telKpiEfficiencySub" class="au-kpi-sub">Cache + Uncached + Salud</div>
+            </div>
+            <div id="telSparkEfficiency"></div>
+          </div>
+
+          <div class="au-kpi">
+            <div>
+              <div class="au-kpi-top"><span class="au-kpi-label">AGENT TIME</span><span id="telDeltaTime" class="au-delta neutral">—</span></div>
+              <div id="telKpiTime" class="au-kpi-val">—</div>
+              <div id="telKpiTimeSub" class="au-kpi-sub">$0.00 est. API</div>
+            </div>
+            <div id="telSparkTime"></div>
+          </div>
+        </div>
+
+        <!-- MIDDLE ROW: TOKENS BY DAY (MIRRORED OR MULTI-LINE TREND) + WHEN THEY WORK (7x24 HEATMAP) -->
+        <div class="au-mid-grid">
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <div class="row-inline" style="gap:8px;">
+                <h3 class="au-panel-title">TOKENS BY DAY</h3>
+                <div class="au-pills" style="padding:2px;">
+                  <button type="button" class="au-pill active" id="telChartModeMirror" style="padding:2px 8px;font-size:11px;" onclick="setTelemetryChartMode('mirror')">Input / Output</button>
+                  <button type="button" class="au-pill" id="telChartModeLines" style="padding:2px 8px;font-size:11px;" onclick="setTelemetryChartMode('lines')">Líneas por Agente</button>
+                </div>
+              </div>
+              <span id="telDailyMeta" class="au-panel-meta">—</span>
+            </div>
+            <div id="telTrendLegend" style="display:none;flex-wrap:wrap;gap:10px;margin-bottom:6px;font-size:11px;"></div>
+            <div id="telDailyChart" style="min-height:175px;"></div>
+          </div>
+
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">WHEN THEY WORK</h3>
+              <span id="telMostActiveLabel" class="au-panel-meta">most active —</span>
+            </div>
+            <div class="au-hm-wrap">
+              <div class="au-hm-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+              <div id="telHeatmapGrid" class="au-hm-grid"></div>
+            </div>
+            <div class="au-hm-axis"><span>0</span><span>6</span><span>12</span><span>18</span></div>
+            <div style="display:flex;justify-content:flex-end;align-items:center;gap:4px;margin-top:8px;font-size:10.5px;color:var(--color-muted);">
+              <span>less</span>
+              <span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.05);"></span>
+              <span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.18);"></span>
+              <span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.38);"></span>
+              <span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.62);"></span>
+              <span style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.90);"></span>
+              <span>more</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM ROW: MODELS + AGENTS (CLICK ONE TO FILTER ENTIRE DASHBOARD) -->
+        <div class="au-bot-grid">
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">MODELS</h3>
+              <span id="telModelsCountLabel" class="au-panel-meta">0 models</span>
+            </div>
+            <div id="telProviderBar" class="au-prov-bar"></div>
+            <div id="telProviderLegend" class="au-prov-legend"></div>
+            <div style="overflow-x:auto;">
+              <table class="au-rank-table">
+                <thead><tr><th>Model</th><th style="width:34%;"></th><th>input</th><th>output</th><th>tasks</th></tr></thead>
+                <tbody id="telModelsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">AGENTS</h3>
+              <span class="au-panel-meta">click one to see only its usage</span>
+            </div>
+            <div style="overflow-x:auto;">
+              <table class="au-rank-table">
+                <thead><tr><th>Agent</th><th style="width:26%;"></th><th>input</th><th>output</th><th>rellam.</th><th>time</th></tr></thead>
+                <tbody id="telAgentsBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FORENSIC DRILL-DOWN: SESSIONS + CALL-BY-CALL TRACES + ANOMALIES + JSONL LOG -->
+        <div class="seam-grid seam-2" style="margin-bottom:16px;">
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">SESIONES RECIENTES (CLIC PARA DRILL-DOWN)</h3>
+              <div class="row-inline" style="gap:8px;">
+                <label class="row-inline" style="gap:4px;font-size:11.5px;cursor:pointer;color:var(--color-muted);">
+                  <input type="checkbox" id="telAnomaliesOnly" onchange="loadTelemetryDashboard()"> Solo anomalías
+                </label>
+                <span class="chip cool measured" id="telSessionsCountBadge">0</span>
+              </div>
+            </div>
+            <div style="overflow-x:auto;max-height:320px;">
+              <table>
+                <thead><tr><th>Agent</th><th>Modelo</th><th>Calls</th><th>Total</th><th>Cache</th><th>Alertas</th></tr></thead>
+                <tbody id="telSessionsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">INSPECTOR DRILL-DOWN DE TRAZAS</h3>
+              <span id="telDrillSessionId" class="chip cool measured">Selecciona una sesión</span>
+            </div>
+            <div id="telDrillSummary" class="muted" style="margin-bottom:8px;font-size:12px;">Haz clic en cualquier sesión de la tabla izquierda para inspeccionar sus trazas llamada por llamada.</div>
+            <div style="overflow-x:auto;max-height:270px;">
+              <table>
+                <thead><tr><th>#</th><th>Turno</th><th>Modelo</th><th>Uncached</th><th>Cache Read</th><th>Out</th><th>Flags</th></tr></thead>
+                <tbody id="telDrillBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="seam-grid seam-2">
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">ALERTAS Y ANOMALÍAS AUTOMÁTICAS</h3>
+              <span id="telLogSizeBadge" class="au-panel-meta">Log JSONL: 0 KB</span>
+            </div>
+            <div style="overflow-x:auto;max-height:230px;">
+              <table>
+                <thead><tr><th>Sev.</th><th>Regla</th><th>Agent</th><th>Valor</th><th>Recomendación</th></tr></thead>
+                <tbody id="telAnomaliesBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="au-panel">
+            <div class="au-panel-head">
+              <h3 class="au-panel-title">LOG ESTRUCTURADO (<code id="telLogPath" style="text-transform:none;">token-traces.jsonl</code>)</h3>
+              <span class="chip ok">Zero-Secrets</span>
+            </div>
+            <div style="overflow-x:auto;max-height:230px;">
+              <table>
+                <thead><tr><th>Hora</th><th>Agent</th><th>Modelo</th><th>Total</th><th>Flags</th></tr></thead>
+                <tbody id="telJsonlBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- TAB 7: SQLITE & ROLLBACKS -->
       <section id="tab-health" class="tabpanel" role="tabpanel" aria-labelledby="nav-health">
         <div class="seam-grid seam-2">
@@ -2034,6 +2308,7 @@ function showTab(name) {
   document.getElementById('tab-' + name).classList.add('active');
   const btn = document.getElementById('nav-' + name);
   if (btn) btn.setAttribute('aria-selected', 'true');
+  if (name === 'telemetry') loadTelemetryDashboard();
 }
 
 function showCatalogSubtab(subName) {
@@ -3874,6 +4149,508 @@ async function runAiAction(action) {
   else if (action === 'restore_codex_core') await restoreIde('codex');
   else if (action === 'sync_antigravity_agents') await syncAntigravity();
   openAiRecommend();
+}
+
+function _fmtInt(n) {
+  return Number(n || 0).toLocaleString('es-ES');
+}
+
+function _escHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+let _TEL_LAST_SUMMARY = null;
+let _TEL_CHART_MODE = 'mirror';
+
+const _HARNESS_COLORS = {
+  opencode: '#f59e0b',
+  codex: '#38bdf8',
+  antigravity: '#a855f7',
+  copilot: '#22c55e',
+  zcode: '#f43f5e',
+  cline: '#14b8a6',
+  claude: '#fb923c',
+  kilo: '#eab308',
+  muse: '#818cf8',
+  openclaw: '#94a3b8',
+};
+
+const _PROVIDER_COLORS = {
+  Anthropic: '#d97757',
+  OpenAI: '#34d399',
+  Google: '#60a5fa',
+  Zhipu: '#f43f5e',
+  xAI: '#e5e7eb',
+  'Open Weights': '#a78bfa',
+  Other: '#64748b',
+};
+
+function _fmtCompact(n, isUsd = false, isPct = false) {
+  const v = Number(n || 0);
+  if (isPct) return v.toFixed(0) + '%';
+  if (isUsd) return '$' + (v >= 100 ? v.toFixed(0) : v.toFixed(2));
+  if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+  return String(Math.round(v));
+}
+
+function _fmtDuration(sec) {
+  const s = Number(sec || 0);
+  if (s >= 3600) return (s / 3600).toFixed(s >= 36000 ? 0 : 1) + ' h';
+  if (s >= 60) return Math.round(s / 60) + ' min';
+  return Math.round(s) + ' s';
+}
+
+function _fmtShortDate(isoDay) {
+  if (!isoDay) return '';
+  const parts = isoDay.split('-');
+  if (parts.length < 3) return isoDay;
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const m = months[parseInt(parts[1], 10) - 1] || parts[1];
+  return `${m} ${parseInt(parts[2], 10)}`;
+}
+
+function _setDeltaBadge(elId, pct, invertGood = false) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (pct == null || Number.isNaN(Number(pct))) {
+    el.textContent = '—';
+    el.className = 'au-delta neutral';
+    return;
+  }
+  const v = Number(pct);
+  const sign = v > 0 ? '+' : '';
+  const capped = Math.abs(v) > 999 ? (v > 0 ? '+999%' : '-999%') : `${sign}${Math.round(v)}%`;
+  el.textContent = capped;
+  const isGood = invertGood ? v <= 0 : v >= 0;
+  el.className = 'au-delta ' + (v === 0 ? 'neutral' : (isGood ? '' : 'neg'));
+}
+
+function _renderSparkline(hostId, daily, key, color = 'rgba(255,255,255,0.45)') {
+  const host = document.getElementById(hostId);
+  if (!host) return;
+  if (!daily || !daily.length) {
+    host.innerHTML = '';
+    return;
+  }
+  const vals = daily.map(d => Number(d[key] || 0));
+  const maxV = Math.max(...vals, 1);
+  const w = 160, h = 22;
+  const step = w / Math.max(vals.length, 1);
+  const bw = Math.max(2, step - 1.5);
+  const bars = vals.map((v, i) => {
+    const bh = Math.max(1.5, (v / maxV) * (h - 2));
+    return `<rect x="${(i * step).toFixed(1)}" y="${(h - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" rx="1" fill="${color}"/>`;
+  }).join('');
+  host.innerHTML = `<svg class="au-spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${bars}</svg>`;
+}
+
+function setTelemetryRange(rng) {
+  const inp = document.getElementById('telRangeSelect');
+  if (inp) inp.value = rng;
+  document.querySelectorAll('#tab-telemetry .au-pill[data-range]').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-range') === rng);
+  });
+  loadTelemetryDashboard();
+}
+
+function selectTelemetryHarness(hrn) {
+  const inp = document.getElementById('telHarnessSelect');
+  const cur = inp ? inp.value : 'all';
+  const next = (hrn === cur && hrn !== 'all') ? 'all' : hrn;
+  if (inp) inp.value = next;
+  loadTelemetryDashboard();
+}
+
+function setTelemetryChartMode(mode) {
+  _TEL_CHART_MODE = mode;
+  document.getElementById('telChartModeMirror')?.classList.toggle('active', mode === 'mirror');
+  document.getElementById('telChartModeLines')?.classList.toggle('active', mode === 'lines');
+  renderTelemetryMainChart();
+}
+
+async function loadTelemetryDashboard() {
+  const rng = document.getElementById('telRangeSelect')?.value || '30d';
+  const hrn = document.getElementById('telHarnessSelect')?.value || 'all';
+  const anmOnly = document.getElementById('telAnomaliesOnly')?.checked ? '1' : '0';
+
+  const chip = document.getElementById('telActiveHarnessChip');
+  const clrBtn = document.getElementById('telClearHarnessBtn');
+  if (chip && clrBtn) {
+    if (hrn !== 'all') {
+      chip.textContent = 'Agent: ' + hrn;
+      chip.style.display = 'inline-flex';
+      clrBtn.style.display = 'inline-flex';
+    } else {
+      chip.style.display = 'none';
+      clrBtn.style.display = 'none';
+    }
+  }
+
+  try {
+    const [sumRes, sesRes, anmRes, logRes] = await Promise.all([
+      fetch(`/api/telemetry/summary?range=${encodeURIComponent(rng)}&harness=${encodeURIComponent(hrn)}`),
+      fetch(`/api/telemetry/sessions?range=${encodeURIComponent(rng)}&harness=${encodeURIComponent(hrn)}&anomalies_only=${anmOnly}&limit=60`),
+      fetch(`/api/telemetry/anomalies?limit=40`),
+      fetch(`/api/telemetry/log?limit=40`),
+    ]);
+    const sumData = (await sumRes.json()).result || {};
+    _TEL_LAST_SUMMARY = sumData;
+    const sesData = (await sesRes.json()).sessions || [];
+    const anmData = (await anmRes.json()).anomalies || [];
+    const logData = (await logRes.json()).entries || [];
+
+    const k = sumData.kpis || {};
+    const dlt = k.deltas || {};
+    const daily = sumData.daily || [];
+    const span = sumData.date_span || {};
+
+    document.getElementById('telDateSpanLabel').textContent = span.start
+      ? `${_fmtShortDate(span.start)} – ${_fmtShortDate(span.end)}`
+      : 'Sin sesiones en este rango';
+    document.getElementById('telLogPath').textContent = (sumData.trace_log_path || 'token-traces.jsonl').split(/[\\/]/).pop();
+    document.getElementById('telLastSync').textContent = sumData.last_synced_at
+      ? sumData.last_synced_at.slice(0, 19).replace('T', ' ') + ' UTC'
+      : 'Pendiente';
+    document.getElementById('telLogSizeBadge').textContent = `Log JSONL: ${(Number(sumData.trace_log_bytes || 0) / 1024).toFixed(1)} KB`;
+
+    // 6 KPI Cards
+    document.getElementById('telKpiInput').textContent = _fmtCompact(k.input_tokens);
+    document.getElementById('telKpiInputSub').textContent = `${Number(k.cache_hit_ratio || 0).toFixed(0)}% from cache · ${_fmtCompact(k.input_uncached)} nuevo`;
+    _setDeltaBadge('telDeltaInput', dlt.input_pct, false);
+    _renderSparkline('telSparkInput', daily, 'input_tokens', 'rgba(255,255,255,0.45)');
+
+    document.getElementById('telKpiOutput').textContent = _fmtCompact(k.output_total);
+    document.getElementById('telKpiOutputSub').textContent = `${_fmtCompact(k.avg_output_per_call)} per call`;
+    _setDeltaBadge('telDeltaOutput', dlt.output_pct, false);
+    _renderSparkline('telSparkOutput', daily, 'output_tokens', '#60a5fa');
+
+    document.getElementById('telKpiTasks').textContent = _fmtInt(k.sessions_count);
+    document.getElementById('telKpiTasksSub').textContent = `${_fmtInt(k.calls_count)} calls`;
+    _setDeltaBadge('telDeltaTasks', dlt.tasks_pct, false);
+    _renderSparkline('telSparkTasks', daily, 'sessions', 'rgba(255,255,255,0.45)');
+
+    document.getElementById('telKpiRellamados').textContent = _fmtInt(k.rellamados_count);
+    document.getElementById('telKpiRellamadosSub').textContent = `${Number(k.avg_rellamados_per_task || 0).toFixed(1)} / task · ${_fmtInt(k.anomalies_count)} alertas`;
+    _setDeltaBadge('telDeltaRellamados', dlt.rellamados_pct, true);
+    _renderSparkline('telSparkRellamados', daily, 'rellamados', '#f59e0b');
+
+    const eff = Number(k.efficiency_score || 0);
+    const effEl = document.getElementById('telKpiEfficiency');
+    effEl.textContent = eff.toFixed(1) + '%';
+    effEl.style.color = eff >= 75 ? '#4ade80' : (eff >= 50 ? '#fbbf24' : '#f87171');
+    document.getElementById('telKpiEfficiencySub').textContent = `${Number(k.cache_hit_ratio || 0).toFixed(0)}% cache · ${_fmtCompact(k.avg_uncached_per_call)}/call`;
+    _setDeltaBadge('telDeltaEfficiency', dlt.efficiency_pct, false);
+    _renderSparkline('telSparkEfficiency', daily, 'efficiency_score', '#4ade80');
+
+    document.getElementById('telKpiTime').textContent = _fmtDuration(k.agent_time_sec);
+    document.getElementById('telKpiTimeSub').textContent = `$${Number(k.cost_usd || 0).toFixed(2)} est. · ${Number(k.ai_credits || 0).toFixed(2)} cr`;
+    _setDeltaBadge('telDeltaTime', dlt.time_pct, false);
+    _renderSparkline('telSparkTime', daily, 'agent_time_sec', 'rgba(255,255,255,0.45)');
+
+    // Middle Row: TOKENS BY DAY + WHEN THEY WORK
+    document.getElementById('telDailyMeta').textContent = `${span.active_days || 0} of ${span.window_days || 0} days with agents · ${_fmtCompact(span.avg_tokens_per_day)}/day`;
+    renderTelemetryMainChart();
+    renderTelemetryHeatmap(sumData.when_they_work || {});
+
+    // Bottom Row: MODELS + AGENTS
+    renderTelemetryModels(sumData.by_model || [], sumData.by_provider || []);
+    renderTelemetryAgents(sumData.by_harness || [], hrn);
+
+    // Forensic Drill-down tables
+    document.getElementById('telSessionsCountBadge').textContent = String(sesData.length);
+    const sBody = document.getElementById('telSessionsBody');
+    sBody.innerHTML = sesData.length ? sesData.map(s => `
+      <tr style="cursor:pointer;" onclick="inspectTelemetrySession('${_escHtml(s.session_id)}')" title="Clic para ver trazas: ${_escHtml(s.title_sanitized || s.session_id)}">
+        <td><span class="chip cool">${_escHtml(s.harness)}</span></td>
+        <td class="measured">${_escHtml(s.primary_model)}</td>
+        <td>${_fmtInt(s.calls_count)}</td>
+        <td><strong>${_fmtCompact(s.total_tokens)}</strong></td>
+        <td>${Number(s.cache_hit_ratio || 0).toFixed(0)}%</td>
+        <td>${s.anomaly_count > 0 ? `<span class="chip bad">${s.anomaly_count}</span>` : '<span class="chip ok">0</span>'}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="6" class="muted">Sin sesiones para este filtro.</td></tr>';
+
+    const aBody = document.getElementById('telAnomaliesBody');
+    aBody.innerHTML = anmData.length ? anmData.map(a => `
+      <tr>
+        <td><span class="chip ${a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'bad' : 'warn'}">${_escHtml(a.severity)}</span></td>
+        <td class="measured">${_escHtml(a.rule_code)}</td>
+        <td>${_escHtml(a.harness || '—')}</td>
+        <td class="measured">${_fmtCompact(a.metric_value || 0)}</td>
+        <td>${_escHtml(a.recommendation)}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="5" class="muted">Sin anomalías detectadas.</td></tr>';
+
+    const lBody = document.getElementById('telJsonlBody');
+    lBody.innerHTML = logData.length ? logData.map(e => `
+      <tr>
+        <td class="measured">${_escHtml(String(e.recorded_at || '').slice(11, 19))}</td>
+        <td>${_escHtml(e.harness)}</td>
+        <td class="measured">${_escHtml(e.model)}</td>
+        <td>${_fmtCompact(e.total_tokens)}</td>
+        <td>${(e.anomalies && e.anomalies.length) ? `<span class="chip bad">${_escHtml(e.anomalies.join(', '))}</span>` : '<span class="chip ok">OK</span>'}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="5" class="muted">Log JSONL vacío. Pulsa Sync.</td></tr>';
+  } catch (err) {
+    toast('Error cargando telemetría: ' + err.message, true);
+  }
+}
+
+function renderTelemetryMainChart() {
+  const legendEl = document.getElementById('telTrendLegend');
+  if (_TEL_CHART_MODE === 'lines') {
+    legendEl.style.display = 'flex';
+    renderTelemetryLinesChart();
+  } else {
+    legendEl.style.display = 'none';
+    renderTelemetryMirroredChart();
+  }
+}
+
+function renderTelemetryMirroredChart() {
+  const host = document.getElementById('telDailyChart');
+  const daily = _TEL_LAST_SUMMARY?.daily || [];
+  if (!daily.length) {
+    host.innerHTML = '<div class="muted" style="padding:36px;text-align:center;">Sin actividad en este rango.</div>';
+    return;
+  }
+  const maxIn = Math.max(...daily.map(d => Number(d.input_tokens || 0)), 1);
+  const maxOut = Math.max(...daily.map(d => Number(d.output_tokens || 0)), 1);
+  const W = 540, H = 175, padL = 52, padR = 12, midY = 104, topH = 84, botH = 44;
+  const plotW = W - padL - padR;
+  const slot = plotW / Math.max(daily.length, 1);
+  const bw = Math.max(4, Math.min(18, slot * 0.72));
+
+  let svg = `
+    <line x1="${padL}" y1="${midY}" x2="${W - padR}" y2="${midY}" stroke="rgba(255,255,255,0.12)"/>
+    <text x="${padL - 8}" y="26" text-anchor="end" font-size="10" fill="#d1d5db" font-weight="600">${_escHtml(_fmtCompact(maxIn))}</text>
+    <text x="${padL - 8}" y="38" text-anchor="end" font-size="9" fill="var(--color-muted)">input</text>
+    <text x="${padL - 8}" y="${midY + 28}" text-anchor="end" font-size="10" fill="#60a5fa" font-weight="600">${_escHtml(_fmtCompact(maxOut))}</text>
+    <text x="${padL - 8}" y="${midY + 40}" text-anchor="end" font-size="9" fill="#60a5fa">output</text>
+  `;
+
+  daily.forEach((d, i) => {
+    const cx = padL + i * slot + (slot - bw) / 2;
+    const inH = Math.max(2, (Number(d.input_tokens || 0) / maxIn) * topH);
+    const outH = Math.max(2, (Number(d.output_tokens || 0) / maxOut) * botH);
+    svg += `
+      <g>
+        <rect x="${cx.toFixed(1)}" y="${(midY - inH).toFixed(1)}" width="${bw.toFixed(1)}" height="${inH.toFixed(1)}" rx="1.5" fill="rgba(209,213,219,0.52)">
+          <title>${_escHtml(d.day)} · Input: ${_fmtCompact(d.input_tokens)} | Output: ${_fmtCompact(d.output_tokens)} | Calls: ${d.calls}</title>
+        </rect>
+        <rect x="${cx.toFixed(1)}" y="${(midY + 1).toFixed(1)}" width="${bw.toFixed(1)}" height="${outH.toFixed(1)}" rx="1.5" fill="#3b82f6">
+          <title>${_escHtml(d.day)} · Output: ${_fmtCompact(d.output_tokens)}</title>
+        </rect>
+      </g>
+    `;
+  });
+
+  // Start, middle, end X labels
+  const idxs = daily.length <= 2 ? daily.map((_, i) => i) : [0, Math.floor(daily.length / 2), daily.length - 1];
+  idxs.forEach(idx => {
+    const x = padL + idx * slot + slot / 2;
+    const lbl = idx === daily.length - 1 ? 'today' : _fmtShortDate(daily[idx].day);
+    svg += `<text x="${x.toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--color-muted)">${_escHtml(lbl)}</text>`;
+  });
+
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:178px;display:block;">${svg}</svg>`;
+}
+
+function renderTelemetryLinesChart() {
+  const host = document.getElementById('telDailyChart');
+  const legendEl = document.getElementById('telTrendLegend');
+  const dbh = _TEL_LAST_SUMMARY?.daily_by_harness || {};
+  const days = dbh.days || [];
+  const series = dbh.series || {};
+  const harnesses = Object.keys(series);
+
+  if (!days.length || !harnesses.length) {
+    legendEl.innerHTML = '';
+    host.innerHTML = '<div class="muted" style="padding:36px;text-align:center;">Sin datos en este rango.</div>';
+    return;
+  }
+
+  let maxVal = 0;
+  harnesses.forEach(hk => (series[hk] || []).forEach(pt => { if (Number(pt.total_tokens || 0) > maxVal) maxVal = Number(pt.total_tokens || 0); }));
+  if (maxVal <= 0) maxVal = 1;
+
+  legendEl.innerHTML = harnesses.map((hk, idx) => {
+    const col = _HARNESS_COLORS[hk] || `hsl(${(idx * 55) % 360}, 75%, 60%)`;
+    return `<span style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;" onclick="selectTelemetryHarness('${_escHtml(hk)}')"><span style="width:10px;height:3px;border-radius:2px;background:${col};display:inline-block;"></span>${_escHtml(hk)}</span>`;
+  }).join('');
+
+  const W = 540, H = 175, padL = 50, padR = 14, padT = 12, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const xAt = (i) => days.length === 1 ? (padL + plotW / 2) : (padL + (i / (days.length - 1)) * plotW);
+  const yAt = (v) => padT + plotH - (Number(v || 0) / maxVal) * plotH;
+
+  let svg = '';
+  for (let step = 0; step <= 3; step++) {
+    const val = (maxVal * step) / 3;
+    const y = yAt(val);
+    svg += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W - padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.07)" stroke-dasharray="3,3"/>`;
+    svg += `<text x="${padL - 6}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="var(--color-muted)">${_escHtml(_fmtCompact(val))}</text>`;
+  }
+
+  const stride = Math.max(1, Math.ceil(days.length / 7));
+  days.forEach((d, i) => {
+    if (i % stride === 0 || i === days.length - 1) {
+      svg += `<text x="${xAt(i).toFixed(1)}" y="${H - 5}" text-anchor="middle" font-size="9.5" fill="var(--color-muted)">${_escHtml(_fmtShortDate(d))}</text>`;
+    }
+  });
+
+  harnesses.forEach((hk, idx) => {
+    const col = _HARNESS_COLORS[hk] || `hsl(${(idx * 55) % 360}, 75%, 60%)`;
+    const pts = series[hk] || [];
+    const coords = pts.map((pt, i) => `${xAt(i).toFixed(1)},${yAt(pt.total_tokens).toFixed(1)}`).join(' ');
+    if (pts.length > 1) svg += `<polyline fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" points="${coords}"/>`;
+    pts.forEach((pt, i) => {
+      if (Number(pt.total_tokens || 0) > 0 || pts.length === 1) {
+        svg += `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(pt.total_tokens).toFixed(1)}" r="3" fill="${col}"><title>${_escHtml(hk)} · ${pt.day}: ${_fmtCompact(pt.total_tokens)} (${pt.calls} calls)</title></circle>`;
+      }
+    });
+  });
+
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:178px;display:block;">${svg}</svg>`;
+}
+
+function renderTelemetryHeatmap(wtw) {
+  document.getElementById('telMostActiveLabel').textContent = 'most active ' + (wtw.most_active || '—');
+  const grid = document.getElementById('telHeatmapGrid');
+  const mat = wtw.matrix || [];
+  const maxC = Math.max(Number(wtw.max_cell || 0), 1);
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  let html = '';
+  for (let d = 0; d < 7; d++) {
+    const row = mat[d] || [];
+    for (let h = 0; h < 24; h++) {
+      const v = Number(row[h] || 0);
+      const ratio = v / maxC;
+      const alpha = v === 0 ? 0.04 : (0.16 + ratio * 0.78);
+      html += `<div class="au-hm-cell" style="background:rgba(255,255,255,${alpha.toFixed(2)});" title="${days[d]} ${String(h).padStart(2, '0')}:00 — ${v} calls"></div>`;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function renderTelemetryModels(models, providers) {
+  document.getElementById('telModelsCountLabel').textContent = `${models.length} models`;
+  const pBar = document.getElementById('telProviderBar');
+  const pLeg = document.getElementById('telProviderLegend');
+  pBar.innerHTML = providers.map(p => {
+    const col = _PROVIDER_COLORS[p.provider] || '#64748b';
+    return `<div style="width:${Math.max(1, p.pct)}%;background:${col};" title="${_escHtml(p.provider)}: ${p.pct}%"></div>`;
+  }).join('');
+  pLeg.innerHTML = providers.slice(0, 5).map(p => {
+    const col = _PROVIDER_COLORS[p.provider] || '#64748b';
+    return `<span><span class="au-dot" style="background:${col};"></span>${_escHtml(p.provider)} ${Math.round(p.pct)}%</span>`;
+  }).join('');
+
+  const body = document.getElementById('telModelsBody');
+  if (!models.length) {
+    body.innerHTML = '<tr><td colspan="5" class="muted">Sin modelos en este rango.</td></tr>';
+    return;
+  }
+  const maxIn = Math.max(...models.map(m => Number(m.input_tokens || m.total_tokens || 0)), 1);
+  const top = models.slice(0, 8);
+  const rest = models.slice(8);
+  let rows = top.map(m => {
+    const col = _PROVIDER_COLORS[m.provider] || '#64748b';
+    const pct = Math.max(2, (Number(m.input_tokens || 0) / maxIn) * 100);
+    return `
+      <tr class="au-rank-row">
+        <td><span class="au-dot" style="background:${col};"></span><strong>${_escHtml(m.model)}</strong></td>
+        <td><div class="au-bar-track"><div class="au-bar-fill" style="width:${pct.toFixed(1)}%;background:${col};"></div></div></td>
+        <td class="measured">${_fmtCompact(m.input_tokens)}</td>
+        <td class="measured">${_fmtCompact(m.output_tokens)}</td>
+        <td class="measured">${_fmtInt(m.sessions)}</td>
+      </tr>
+    `;
+  }).join('');
+  if (rest.length) {
+    const rIn = rest.reduce((a, b) => a + Number(b.input_tokens || 0), 0);
+    const rOut = rest.reduce((a, b) => a + Number(b.output_tokens || 0), 0);
+    const rTasks = rest.reduce((a, b) => a + Number(b.sessions || 0), 0);
+    rows += `<tr class="au-rank-row"><td class="muted">${rest.length} more</td><td></td><td class="muted measured">${_fmtCompact(rIn)}</td><td class="muted measured">${_fmtCompact(rOut)}</td><td class="muted measured">${_fmtInt(rTasks)}</td></tr>`;
+  }
+  body.innerHTML = rows;
+}
+
+function renderTelemetryAgents(agents, selectedHarness) {
+  const body = document.getElementById('telAgentsBody');
+  if (!agents.length) {
+    body.innerHTML = '<tr><td colspan="6" class="muted">Sin agentes en este rango.</td></tr>';
+    return;
+  }
+  const maxIn = Math.max(...agents.map(a => Number(a.input_tokens || a.total_tokens || 0)), 1);
+  body.innerHTML = agents.map((a, idx) => {
+    const col = _HARNESS_COLORS[a.harness] || `hsl(${(idx * 55) % 360}, 70%, 60%)`;
+    const pct = Math.max(2, (Number(a.input_tokens || 0) / maxIn) * 100);
+    const isSel = selectedHarness === a.harness;
+    return `
+      <tr class="au-rank-row clickable ${isSel ? 'selected' : ''}" onclick="selectTelemetryHarness('${_escHtml(a.harness)}')" title="Clic para filtrar por ${_escHtml(a.label || a.harness)}">
+        <td><span class="au-dot" style="background:${col};"></span><strong>${_escHtml(a.label || a.harness)}</strong></td>
+        <td><div class="au-bar-track"><div class="au-bar-fill" style="width:${pct.toFixed(1)}%;background:rgba(209,213,219,0.75);"></div></div></td>
+        <td class="measured">${_fmtCompact(a.input_tokens)}</td>
+        <td class="measured">${_fmtCompact(a.output_tokens)}</td>
+        <td class="measured">${_fmtInt(a.rellamados)}</td>
+        <td class="measured">${_fmtDuration(a.agent_time_sec)}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+async function inspectTelemetrySession(sessionId) {
+  try {
+    const res = await fetch(`/api/telemetry/traces?session_id=${encodeURIComponent(sessionId)}`);
+    const data = (await res.json()).result || {};
+    const sess = data.session;
+    const traces = data.traces || [];
+    document.getElementById('telDrillSessionId').textContent = sessionId.slice(0, 28);
+    document.getElementById('telDrillSummary').textContent = sess
+      ? `${sess.harness} · ${sess.primary_model} · ${_fmtInt(sess.total_tokens)} tokens · ${Number(sess.cache_hit_ratio || 0).toFixed(1)}% caché · ${sess.title_sanitized || '(sin título)'}`
+      : 'Sesión no encontrada';
+    const body = document.getElementById('telDrillBody');
+    body.innerHTML = traces.length ? traces.map(t => `
+      <tr>
+        <td>#${t.call_index}</td>
+        <td>T${t.turn_index}</td>
+        <td class="measured">${_escHtml(t.model)}</td>
+        <td>${_fmtInt(t.input_uncached)}</td>
+        <td>${_fmtInt(t.cache_read)}</td>
+        <td>${_fmtInt((t.output_tokens || 0) + (t.reasoning_tokens || 0))}</td>
+        <td>${(t.anomaly_flags && t.anomaly_flags.length) ? `<span class="chip bad">${_escHtml(t.anomaly_flags.join(', '))}</span>` : '<span class="chip ok">OK</span>'}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="7" class="muted">Esta sesión provino de resumen agregado (sin trazas por llamada individuales).</td></tr>';
+  } catch (err) {
+    toast('Error al cargar trazas: ' + err.message, true);
+  }
+}
+
+async function syncTelemetryNow() {
+  const btn = document.getElementById('telSyncBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await fetch('/api/telemetry/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Error de sincronización');
+    const r = data.result || {};
+    toast(`Telemetría sincronizada: ${r.sessions_updated || 0} sesiones, ${r.traces_new || 0} trazas nuevas`);
+    await loadTelemetryDashboard();
+  } catch (err) {
+    toast('Error sincronizando telemetría: ' + err.message, true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function exportTelemetryReport(fmt) {
+  const rng = document.getElementById('telRangeSelect')?.value || 'all';
+  const hrn = document.getElementById('telHarnessSelect')?.value || 'all';
+  window.open(`/api/telemetry/export?format=${encodeURIComponent(fmt)}&range=${encodeURIComponent(rng)}&harness=${encodeURIComponent(hrn)}`, '_blank');
 }
 
 loadSnapshot();

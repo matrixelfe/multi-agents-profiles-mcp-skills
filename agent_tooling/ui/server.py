@@ -8,7 +8,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import yaml
 
@@ -143,6 +143,63 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "live_processes": procs, "total_ram_mb": total_mb})
             return
 
+        if parsed.path.startswith("/api/telemetry/"):
+            from agent_tooling.telemetry import TelemetryStore, export_report
+            qs = parse_qs(parsed.query)
+            db_path = tl_root / "state" / "registry.sqlite3"
+            store = TelemetryStore(db_path, tl_root / "state" / "telemetry" / "token-traces.jsonl")
+            rng = (qs.get("range") or ["all"])[0]
+            hrn = (qs.get("harness") or ["all"])[0]
+
+            if parsed.path == "/api/telemetry/summary":
+                self._send_json({"ok": True, "result": store.get_summary(range_key=rng, harness=hrn)})
+                return
+            if parsed.path == "/api/telemetry/sessions":
+                mdl = (qs.get("model") or ["all"])[0]
+                anm_only = (qs.get("anomalies_only") or ["0"])[0] in ("1", "true", "yes")
+                lim = int((qs.get("limit") or ["50"])[0])
+                self._send_json({
+                    "ok": True,
+                    "sessions": store.list_sessions(
+                        range_key=rng, harness=hrn, model=mdl, anomalies_only=anm_only, limit=lim
+                    ),
+                })
+                return
+            if parsed.path == "/api/telemetry/traces":
+                sid = (qs.get("session_id") or [""])[0]
+                if not sid:
+                    self._send_json({"ok": False, "error": "session_id requerido"}, status=400)
+                    return
+                self._send_json({"ok": True, "result": store.get_session_traces(sid)})
+                return
+            if parsed.path == "/api/telemetry/anomalies":
+                sev = (qs.get("severity") or ["all"])[0]
+                lim = int((qs.get("limit") or ["50"])[0])
+                self._send_json({"ok": True, "anomalies": store.list_anomalies(severity=sev, limit=lim)})
+                return
+            if parsed.path == "/api/telemetry/log":
+                lim = int((qs.get("limit") or ["50"])[0])
+                self._send_json({
+                    "ok": True,
+                    "log_path": str(store.trace_log_path),
+                    "entries": store.tail_trace_log(limit=lim),
+                })
+                return
+            if parsed.path == "/api/telemetry/export":
+                fmt = (qs.get("format") or ["md"])[0]
+                summary = store.get_summary(range_key=rng, harness=hrn)
+                sessions = store.list_sessions(range_key=rng, harness=hrn, limit=250)
+                anomalies = store.list_anomalies(limit=100)
+                content, mime, ext = export_report(summary, sessions, anomalies, fmt=fmt)
+                raw = content.encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", mime)
+                self.send_header("Content-Disposition", f'attachment; filename="token-telemetry-report.{ext}"')
+                self.send_header("Content-Length", str(len(raw)))
+                self.end_headers()
+                self.wfile.write(raw)
+                return
+
         self._send_json({"error": "Not found"}, status=404)
 
     def do_POST(self) -> None:
@@ -158,6 +215,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if parsed.path == "/api/oac/role-chain":
                 from agent_tooling.oac.reader import update_oac_role_chain
                 res = update_oac_role_chain(str(body["role"]), list(body.get("preferred") or []))
+                self._send_json({"ok": True, "result": res})
+                return
+
+            if parsed.path == "/api/telemetry/sync":
+                from agent_tooling.telemetry import sync_all_harnesses
+                res = sync_all_harnesses(tooling_root=tl_root)
                 self._send_json({"ok": True, "result": res})
                 return
 
