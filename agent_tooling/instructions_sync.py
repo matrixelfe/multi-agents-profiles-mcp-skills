@@ -19,8 +19,8 @@ from typing import Any
 BEGIN_MARKER = "<!-- BEGIN:UNIFIED-AGENTS (managed by agent-tooling sync-instructions — do not edit inside this block) -->"
 END_MARKER = "<!-- END:UNIFIED-AGENTS -->"
 _BLOCK_RE = re.compile(
-    r"<!-- BEGIN:UNIFIED-AGENTS[^>]*-->.*?<!-- END:UNIFIED-AGENTS -->",
-    re.DOTALL,
+    r"^<!-- BEGIN:UNIFIED-AGENTS[^\n]*-->.*?^<!-- END:UNIFIED-AGENTS -->",
+    re.DOTALL | re.MULTILINE,
 )
 
 
