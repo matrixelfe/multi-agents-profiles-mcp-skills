@@ -160,6 +160,9 @@ powershell -ExecutionPolicy Bypass -File scripts\install-skills.ps1
 
 # Crea NTFS Junctions para Antigravity, Copilot y Claude -> ~/.agents/skills
 powershell -ExecutionPolicy Bypass -File scripts\setup-junctions.ps1
+
+# Propaga ~/.agents/AGENTS.md a los 5 harnesses sin pisar reglas nativas (bloque BEGIN/END + backup SHA-256)
+agent-tooling sync-instructions
 ```
 
 ### 3. Lanzar el Control Center Web

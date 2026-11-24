@@ -236,6 +236,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._send_json({"ok": True, "result": res})
                 return
 
+            if parsed.path == "/api/instructions/sync":
+                from agent_tooling.instructions_sync import sync_global_instructions
+                res = sync_global_instructions(dry_run=bool(body.get("dry_run", False)))
+                self._send_json({"ok": True, "result": res})
+                return
+
             if parsed.path == "/api/oac/retry":
                 res = update_oac_retry_behavior(
                     line2_fallback_enabled=body.get("line2_fallback_enabled"),

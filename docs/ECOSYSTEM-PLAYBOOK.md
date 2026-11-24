@@ -14,7 +14,14 @@ La arquitectura que realmente escala separa el estado en **3 capas sin solapamie
 |---|---|---|---|
 | **Estado observado e historial** | `SQLite` (`WAL`, `FK=ON`) | Inventario de clientes, skills, MCPs, auditoría de cambios | Nunca editar a mano; actualizar con `agent-tooling scan`. |
 | **Estado deseado (Declarativo)** | `YAML` (`profiles/*.yaml`, `oac-routing.yaml`) | Qué skills y MCPs pertenecen a cada perfil y cómo enrutar modelos | Versionado en Git; **0 secretos**. |
-| **Conocimiento y contratos** | `Markdown` (`AGENTS.md`, `SKILL.md`, `.agent-docs/`) | Instrucciones humanas/agénticas y documentación viva | Un solo `AGENTS.md` canónico sincronizado a todos los clientes. |
+| **Conocimiento y contratos** | `Markdown` (`AGENTS.md`, `SKILL.md`, `.agent-docs/`) | Instrucciones humanas/agénticas y documentación viva | Un solo `AGENTS.md` canónico (`~/.agents/AGENTS.md`) sincronizado vía `sync-instructions`. |
+
+### Jerarquía de Instrucciones en 3 Capas (`sync-instructions`)
+Para compartir reglas globales entre **OpenCode/OpenChamber, Codex, Claude Code, GitHub Copilot y Antigravity** sin destruir las reglas nativas de cada IDE:
+1. **Capa 1 — Contrato Global Canónico (`~/.agents/AGENTS.md`):** única fuente editable para reglas universales (bóveda fría JIT, `pmb-shared`, `agent-browser`, `.agent-docs/` + `CHANGELOG.md`, `0` secretos).
+2. **Capa 2 — Adaptadores Nativos con Bloque Gestionado (`BEGIN/END`):** `agent-tooling sync-instructions` inyecta o actualiza únicamente el bloque `<!-- BEGIN:UNIFIED-AGENTS --> ... <!-- END:UNIFIED-AGENTS -->` dentro de `~/.config/opencode/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md` y `~/.gemini/config/plugins/oac-custom-agents/rules/AGENTS.md` (con backup SHA-256), dejando intacto todo el texto nativo de cada cliente fuera del bloque.
+3. **Capa 3 — `AGENTS.md` Local del Proyecto:** cada repositorio conserva su propio `AGENTS.md` con su stack y convenciones; nunca es sobrescrito por el sincronizador global.
+- **Retroalimentación en 2 velocidades:** el aprendizaje diario va a **PMB (`pmb-shared`)** para no inflar el contexto; solo los patrones recurrentes confirmados (PMB / instintos `ecc-homunculus`) se promueven a `~/.agents/AGENTS.md` y se propagan con `agent-tooling sync-instructions`.
 
 ---
 

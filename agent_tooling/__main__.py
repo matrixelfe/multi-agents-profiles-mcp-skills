@@ -135,6 +135,9 @@ def main() -> None:
     tel_pr = tel_sub.add_parser("prune", help="Prune telemetry sessions older than N days")
     tel_pr.add_argument("--days", type=int, default=90)
 
+    si_p = sub.add_parser("sync-instructions", help="Sync ~/.agents/AGENTS.md into all 5 harnesses via BEGIN/END managed blocks")
+    si_p.add_argument("--dry-run", action="store_true", help="Preview changes without modifying files")
+
     args = parser.parse_args()
     if args.command == "scan":
         cmd_scan()
@@ -154,6 +157,10 @@ def main() -> None:
     elif args.command == "switch-profile":
         from agent_tooling.profile_switcher import switch_active_profile
         res = switch_active_profile(args.profile, dry_run=args.dry_run)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+    elif args.command == "sync-instructions":
+        from agent_tooling.instructions_sync import sync_global_instructions
+        res = sync_global_instructions(dry_run=args.dry_run)
         print(json.dumps(res, indent=2, ensure_ascii=False))
     elif args.command == "telemetry":
         from agent_tooling.telemetry import TelemetryStore, export_report, sync_all_harnesses

@@ -163,3 +163,36 @@ def test_skill_installer_inspects_repairs_frontmatter_and_detects_hooks(tmp_path
     repaired_md = (tmp_path / ".agents" / "catalog" / "skills" / "demo-hook-skill" / "SKILL.md").read_text(encoding="utf-8")
     assert repaired_md.startswith("---")
     assert "name: demo-hook-skill" in repaired_md
+
+
+def test_sync_global_instructions_preserves_native_rules(tmp_path):
+    from agent_tooling.instructions_sync import (
+        BEGIN_MARKER,
+        END_MARKER,
+        get_instructions_sync_status,
+        sync_global_instructions,
+    )
+
+    canonical = tmp_path / ".agents" / "AGENTS.md"
+    canonical.parent.mkdir(parents=True)
+    canonical.write_text("# Unified Contract\nRule A: Use Cold Vault JIT.\n", encoding="utf-8")
+
+    codex_file = tmp_path / ".codex" / "AGENTS.md"
+    codex_file.parent.mkdir(parents=True)
+    codex_file.write_text("# Codex Native Rules\nKeep Codex custom section.\n", encoding="utf-8")
+
+    res = sync_global_instructions(home=tmp_path)
+    assert len(res["results"]) == 5
+
+    updated_codex = codex_file.read_text(encoding="utf-8")
+    assert "# Codex Native Rules" in updated_codex
+    assert BEGIN_MARKER in updated_codex
+    assert "Rule A: Use Cold Vault JIT." in updated_codex
+    assert END_MARKER in updated_codex
+
+    # Second run is idempotent and preserves native content
+    res2 = sync_global_instructions(home=tmp_path)
+    assert all(r["action"] == "unchanged" for r in res2["results"])
+
+    status = get_instructions_sync_status(home=tmp_path)
+    assert all(t["status"] == "synced" for t in status["targets"])

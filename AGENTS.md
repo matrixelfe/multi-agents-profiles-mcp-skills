@@ -32,6 +32,14 @@
   - **Mandatory Git / GitHub Inclusion:** Every commit or push to Git/GitHub **MUST** stage and include updated `.agent-docs/` (including `CHANGELOG.md`) and `AGENTS.md`. If a project has no Git yet, continue maintaining `.agent-docs/` normally; as soon as Git is initialized, `.agent-docs/` and `AGENTS.md` **MUST** be tracked and included in commits.
 - **Management Commands:**
   - `agent-tooling scan` / `status` / `doctor`
+  - `agent-tooling sync-instructions` *(propagates this file into all 5 harnesses via `BEGIN/END` managed blocks without overwriting native harness rules)*
   - `agent-tooling recommend --agent <id> --task "<task>" --profile <profile>`
-  - `agent-tooling sync-antigravity-agents`
+  - `agent-tooling switch-profile <profile>`
   - `agent-tooling ui` (local Control Center at `http://127.0.0.1:8765`)
+
+## 4. Shared Behavior & 3-Layer Instructions Hierarchy
+To share global rules across **OpenCode/OpenChamber, Codex CLI, Claude Code, GitHub Copilot, and Google Antigravity** without causing drift or deleting harness-specific rules, follow this 3-layer cascade:
+1. **Layer 1 — Canonical Global Contract (`~/.agents/AGENTS.md`):** Single Source of Truth for universal rules (active skills & Cold Vault JIT, `pmb-shared`, `agent-browser`, `.agent-docs/` + `CHANGELOG.md`, zero secrets). Edit ONLY here.
+2. **Layer 2 — Harness-Native Files (Managed Block Injection):** Each harness keeps its own native global file (`~/.config/opencode/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.copilot/copilot-instructions.md`, `~/.gemini/config/plugins/oac-custom-agents/rules/AGENTS.md`). Running `agent-tooling sync-instructions` updates ONLY the `<!-- BEGIN:UNIFIED-AGENTS --> ... <!-- END:UNIFIED-AGENTS -->` block inside each file (with SHA-256 backup), preserving all harness-specific instructions outside the block.
+3. **Layer 3 — Project-Local `AGENTS.md`:** Every repository keeps its own `AGENTS.md` (maintained by `project-docs`) for repo stack, commands, and architecture; it layers on top of the global rules and is never overwritten by `sync-instructions`.
+- **Feedback Loop (Two Speeds):** Day-to-day learnings, facts, and decisions go to **PMB (`pmb-shared`, workspace `personal`)** so `~/.agents/AGENTS.md` stays compact. Only recurring, high-confidence patterns distilled via PMB / `ecc-homunculus` instincts are promoted into `~/.agents/AGENTS.md` and synced with `agent-tooling sync-instructions`.
