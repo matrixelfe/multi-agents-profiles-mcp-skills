@@ -19,7 +19,7 @@ pmb doctor
 ```
 
 ### Wire Cross-Harness
-- **MCP Server (`pmb-shared`):** Register `~/.local/bin/pmb-mcp.EXE` (stdio) or `http://127.0.0.1:8765/mcp` (daemon) using `templates/mcp-cross-agent.json`.
+- **MCP Server (`pmb-shared`):** Configure `pmb workspace use personal`, `pmb config set daemon.idle_exit_min 0 --global`, start `pmb daemon start --host 127.0.0.1 --port 8765`, and register `~/.local/bin/pmb.exe` with `["mcp", "proxy", "--no-fallback"]` using `templates/mcp-cross-agent.json` (shares one warm daemon instead of loading ~1.2 GiB RAM per client).
 - **Hooks (Claude Code):** `pmb connect claude-code --workspace personal --active` registers `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, and `Stop` hooks in `~/.claude/settings.json`.
 - **Skill:** Copy `skills/pmb-memory/` to `~/.agents/catalog/skills/pmb-memory/`.
 

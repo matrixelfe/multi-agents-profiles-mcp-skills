@@ -67,7 +67,8 @@ Si trabajas en Antigravity por la mañana, Codex al mediodía y OpenChamber/Copi
 Apunta el servidor MCP `pmb-shared` en **todos** tus clientes (`opencode.json`, `.codex/config.toml`, `.claude.json`, `~/.gemini/config/mcp_config.json`, `~/.copilot/mcp-config.json`, `%APPDATA%\Code\User\mcp.json`) exactamente al mismo binario y al mismo workspace:
 ```json
 {
-  "command": "<USER_HOME>\\.local\\bin\\pmb-mcp.EXE",
+  "command": "<USER_HOME>\\.local\\bin\\pmb.exe",
+  "args": ["mcp", "proxy", "--no-fallback"],
   "env": {
     "PMB_WORKSPACE": "personal",
     "PMB_CWD": "<USER_HOME>"
@@ -100,7 +101,7 @@ Problemas reales que aparecieron en producción y cómo resolverlos de raíz:
 4. **Antigravity ignorando rutas absolutas en `skills.json`:** usa rutas relativas al home (`"~/.agents/skills"`) más la NTFS Junction en `~/.gemini/config/skills`.
 5. **Backups reversibles antes de tocar configs:** nunca sobrescribas un JSON/TOML de usuario sin copiar antes el original a `%LOCALAPPDATA%\agent-tooling-backups\<change-id>\` con hash SHA-256.
 6. **Hooks de Claude Code en Windows (`/usr/bin/bash`):** Claude Code ejecuta los hooks mediante Git Bash. Cualquier comando en `~/.claude/settings.json` con barras invertidas sin escapar (`C:\Users\...`) será corrompido por Bash (`C:Users...: command not found`). **Solución:** usa siempre barras diagonales y comillas: `"C:/Users/.../python.exe"`.
-7. **PMB MCP en `stdio` para evitar `ECONNREFUSED` y colisión en puerto `8765`:** configura `pmb-shared` siempre con `"type": "stdio"` apuntando a `pmb-mcp.EXE` (en vez de HTTP `:8765`), así nunca choca con `agent-tooling ui` ni falla si no levantaste un daemon HTTP aparte.
+7. **PMB MCP vía `pmb mcp proxy --no-fallback` + daemon compartido en `127.0.0.1:8765`:** evita que cada cliente/ventana cargue su propia copia de PyTorch + MiniLM (~1,2 GiB RAM por instancia). Configura `pmb workspace use personal` y `pmb config set daemon.idle_exit_min 0 --global`, inicia `pmb daemon start --host 127.0.0.1 --port 8765`, y apunta los clientes a `pmb.exe mcp proxy --no-fallback`. `agent-tooling ui` detecta automáticamente si `:8765` está ocupado y salta al siguiente puerto libre (`8766`, etc.).
 
 ---
 

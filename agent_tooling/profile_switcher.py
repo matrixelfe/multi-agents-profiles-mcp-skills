@@ -140,6 +140,8 @@ def switch_active_profile(
 
     # Step 1: Ensure every real directory in hot_dir is safely preserved in cold_dir
     archived_to_cold = 0
+    duplicate_conflicts: list[str] = []
+    conflict_backup_dir: Path | None = None
     for entry in list(hot_dir.iterdir()):
         if not entry.is_dir():
             continue
@@ -150,8 +152,14 @@ def switch_active_profile(
             if not target.exists():
                 shutil.move(str(entry), str(target))
             else:
-                # Already exists in cold vault; remove duplicate real folder in hot_dir
-                shutil.rmtree(entry)
+                # Never silently delete a duplicate real folder; back it up first
+                if conflict_backup_dir is None:
+                    local_app = Path(os.environ.get("LOCALAPPDATA", home / ".local" / "share"))
+                    ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+                    conflict_backup_dir = local_app / "agent-tooling-backups" / f"profile-switch-duplicates-{ts}"
+                    conflict_backup_dir.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(entry), str(conflict_backup_dir / entry.name))
+                duplicate_conflicts.append(entry.name)
         archived_to_cold += 1
 
     # Gather all available skills in the master catalog
@@ -212,6 +220,8 @@ def switch_active_profile(
         "active_skills_count": len(desired),
         "catalog_skills_count": len(all_catalog),
         "archived_to_cold": archived_to_cold,
+        "duplicate_conflicts": duplicate_conflicts,
+        "conflict_backup_dir": str(conflict_backup_dir) if conflict_backup_dir else None,
         "context_reduction_pct": max(0, saved_pct),
         "dry_run": dry_run,
     }

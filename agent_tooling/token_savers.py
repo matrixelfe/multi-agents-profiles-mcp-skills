@@ -205,28 +205,40 @@ def inspect_token_savers(home: Path | None = None) -> dict[str, Any]:
     })
 
     # 7. PMB Shared (Cross-IDE persistent memory)
+    def _has_pmb(txt: str) -> bool:
+        return '"pmb-shared"' in txt or '"pmb"' in txt or "mcp_servers.pmb-shared" in txt or "mcp_servers.pmb]" in txt
+
     pmb_harnesses = []
-    if "pmb-shared" in oc_json_txt:
-        pmb_harnesses.append("OpenCode / OpenChamber")
-    if "pmb-shared" in cx_toml_txt:
-        pmb_harnesses.append("Codex")
-    if "pmb-shared" in ag_mcp_txt:
-        pmb_harnesses.append("Antigravity")
-    if "pmb-shared" in cp_mcp_txt:
-        pmb_harnesses.append("GitHub Copilot")
-    if "pmb-shared" in cl_json_txt:
-        pmb_harnesses.append("Claude Code")
+    pmb_proxy_count = 0
+    for label, txt in [
+        ("OpenCode / OpenChamber", oc_json_txt),
+        ("Codex", cx_toml_txt),
+        ("Antigravity", ag_mcp_txt),
+        ("GitHub Copilot", cp_mcp_txt),
+        ("Claude Code", cl_json_txt),
+    ]:
+        if _has_pmb(txt):
+            pmb_harnesses.append(label)
+            if "proxy" in txt and "--no-fallback" in txt:
+                pmb_proxy_count += 1
+    pmb_mode = (
+        "daemon + proxy (--no-fallback)"
+        if pmb_harnesses and pmb_proxy_count == len(pmb_harnesses)
+        else f"mixto ({pmb_proxy_count}/{len(pmb_harnesses)} proxy)"
+        if pmb_proxy_count > 0
+        else "stdio directo (alto uso RAM)"
+    )
     installed.append({
         "id": "pmb-shared",
         "name": "PMB Shared Memory",
         "category": "Memoria persistente cross-IDE",
         "active": len(pmb_harnesses) >= 4,
         "health": "ok" if pmb_harnesses else "warn",
-        "health_detail": f"Conectado en {len(pmb_harnesses)}/5 harnesses vía stdio (evita re-explicar contexto)",
-        "version": "stdio (personal)",
-        "update_status": "Al día",
+        "health_detail": f"Conectado en {len(pmb_harnesses)}/5 harnesses vía {pmb_mode}",
+        "version": f"{pmb_mode} (personal)",
+        "update_status": "Al día" if pmb_proxy_count == len(pmb_harnesses) else "Migrar a proxy",
         "harnesses": pmb_harnesses,
-        "estimated_saving": "Evita 2k–10k tokens por sesión",
+        "estimated_saving": "Evita 2k–10k tokens y ~1 GiB RAM/cliente",
     })
 
     # 8. Headroom & Code-Mode (OpenCode skills)

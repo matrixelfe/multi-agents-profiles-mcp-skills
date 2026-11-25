@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import socket
 import webbrowser
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -360,10 +361,24 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": False, "error": str(exc)}, status=400)
 
 
+def _pick_available_port(host: str, preferred: int) -> int:
+    for candidate in (preferred, preferred + 1, preferred + 2, preferred + 3):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex((host, candidate)) != 0:
+                return candidate
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind((host, 0))
+        return int(s.getsockname()[1])
+
+
 def run_server(host: str = "127.0.0.1", port: int = 8765, open_browser: bool = True) -> None:
-    server = ThreadingHTTPServer((host, port), DashboardHandler)
-    url = f"http://{host}:{port}"
-    print(f"agent-tooling UI running at {url} (Ctrl+C to stop)")
+    chosen_port = _pick_available_port(host, port)
+    server = ThreadingHTTPServer((host, chosen_port), DashboardHandler)
+    url = f"http://{host}:{chosen_port}"
+    if chosen_port != port:
+        print(f"Port {port} is busy (e.g. PMB daemon); agent-tooling UI running at {url} (Ctrl+C to stop)")
+    else:
+        print(f"agent-tooling UI running at {url} (Ctrl+C to stop)")
     if open_browser:
         webbrowser.open(url)
     try:

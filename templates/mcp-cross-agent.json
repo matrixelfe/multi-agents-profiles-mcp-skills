@@ -10,8 +10,8 @@
   "mcpServers": {
     "pmb-shared": {
       "type": "stdio",
-      "command": "<USER_HOME>\\.local\\bin\\pmb-mcp.EXE",
-      "args": [],
+      "command": "<USER_HOME>\\.local\\bin\\pmb.exe",
+      "args": ["mcp", "proxy", "--no-fallback"],
       "env": {
         "PMB_WORKSPACE": "personal",
         "PMB_CWD": "<USER_HOME>"

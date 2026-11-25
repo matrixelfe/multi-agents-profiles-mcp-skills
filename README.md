@@ -105,7 +105,7 @@ En lugar de cargar 359 skills en cada conversación, el framework utiliza un **N
 
 El ecosistema **aprende y evoluciona con el tiempo** sin importar qué IDE abras hoy:
 
-- **Memoria Cross-IDE (`pmb-shared`):** los 5 harnesses (OpenCode, Codex, Antigravity, GitHub Copilot CLI/VS Code y Claude) comparten exactamente el mismo motor de memoria persistente local (`pmb-mcp.EXE`, workspace `personal`). Decisiones, lecciones aprendidas y hechos clave viajan contigo entre herramientas.
+- **Memoria Cross-IDE (`pmb-shared`):** los 5 harnesses (OpenCode, Codex, Antigravity, GitHub Copilot CLI/VS Code y Claude) comparten exactamente el mismo motor de memoria persistente local (`pmb.exe mcp proxy --no-fallback` sobre un único daemon en `127.0.0.1:8765`, workspace `personal`). Decisiones, lecciones aprendidas y hechos clave viajan contigo entre herramientas ahorrando ~1 GiB de RAM por cliente.
 - **Suite completa Superpowers (14 skills activas en `core`):** `brainstorming`, `writing-plans`, `executing-plans`, `systematic-debugging`, `test-driven-development`, `verification-before-completion`, `subagent-driven-development`, `dispatching-parallel-agents`, `using-git-worktrees`, `requesting-code-review`, `receiving-code-review`, `finishing-a-development-branch`, `using-superpowers` y `writing-skills`.
 - **Documentación viva automática:** `project-docs` y `project-changelog` mantienen `.agent-docs/`, `CHANGELOG.md` y `AGENTS.md` actualizados en cada iteración.
 - **Actualización fácil desde repos oficiales:** [manifests/skills-top.yaml](manifests/skills-top.yaml) guarda los repos upstream oficiales y [scripts/install-skills.ps1](scripts/install-skills.ps1) permite actualizar tu stack en un comando.

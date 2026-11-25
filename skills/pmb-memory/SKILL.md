@@ -86,7 +86,7 @@ PMB is a local-first memory layer for AI coding agents backed by SQLite, LanceDB
 
 PMB exposes an MCP server for agents to interact with directly.
 
-- **Executable**: `C:\Users\edgar\.local\bin\pmb-mcp.exe` (or `pmb mcp` / `pmb-mcp`)
+- **Executable**: `C:\Users\edgar\.local\bin\pmb.exe` with `args: ["mcp", "proxy", "--no-fallback"]` (connects to the shared warm daemon on `127.0.0.1:8765`)
 - **Shared Daemon HTTP Endpoint**: `http://127.0.0.1:8765/mcp`
 - **Native MCP Tools Available**:
   - `recall`: Search relevant facts, lessons, and decisions.

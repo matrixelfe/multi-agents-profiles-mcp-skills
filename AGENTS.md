@@ -23,6 +23,7 @@
 5. **Zero Secrets:** Never store PATs, API keys, OAuth tokens, or cookies in Git, SQLite, reports, or prompts.
 
 ## 3. Core Capabilities & Routing Rules
+- **PMB Shared Memory (`pmb-shared`, workspace `personal`):** All clients connect via `pmb mcp proxy --no-fallback` to a single warm local daemon (`127.0.0.1:8765`, `daemon.idle_exit_min = 0`). When recording activities, decisions, or facts in PMB, always include **date, project, outcome, client/IDE, and agent** (when known). When asked about recent cross-client activity, verify timestamps and fall back to local history if provenance is missing.
 - **OAC V3.4 Governance:** `config/oac-routing.yaml` is the sole authority for model routing and fallbacks. **PAYG Spend Guard (`DENY`)** is strictly protected; never edit `state/oac/quota-state.json`.
 - **Browser Automation (`browser-automation`):** Prefer `agent-browser` CLI + Skill (`snapshot -i`, isolated sessions, `close` on finish; quote `'@eN'` refs in PowerShell 5.1) for navigation, forms, and dynamic web extraction. Escalate to `chrome-devtools` for console/network/perf, `Playwright Test` for maintainable E2E, and `computer-use` for native Windows apps.
 - **Documentation Standard:** Project `README.md` files must follow `othneildrew/Best-README-Template`.
